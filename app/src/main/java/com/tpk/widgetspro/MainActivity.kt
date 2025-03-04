@@ -110,12 +110,11 @@ class MainActivity : AppCompatActivity() {
             )
         }
         findViewById<Button>(R.id.reset_image_button).setOnClickListener {
-            getConnectedBluetoothDevice(this)?.let { resetImageForDevice(this, it.name) }
-                ?: Toast.makeText(this, "Something is wrong", Toast.LENGTH_SHORT).show()
-        }
-        findViewById<Button>(R.id.reset_image_button).setOnClickListener {
-            getConnectedBluetoothDevice(this)?.let { clearCustomQueryForDevice(this, it.name) }
-                ?: Toast.makeText(this, "Something is wrong", Toast.LENGTH_SHORT).show()
+            getConnectedBluetoothDevice(this)?.let { device ->
+                resetImageForDevice(this, device.name)
+                clearCustomQueryForDevice(this, device.name)
+                Toast.makeText(this, "Reset image and query for ${device.name}", Toast.LENGTH_SHORT).show()
+            } ?: Toast.makeText(this, "No connected device found", Toast.LENGTH_SHORT).show()
         }
         findViewById<ImageView>(R.id.update_query_button).setOnClickListener {
             getConnectedBluetoothDevice(this)?.let {
@@ -173,12 +172,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPermissionDialog() {
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(this, R.style.CustomDialogTheme)
             .setTitle(R.string.permission_required_title)
             .setMessage(R.string.permission_required_message)
             .setPositiveButton(R.string.retry) { _, _ -> checkPermissions() }
             .setNegativeButton(R.string.cancel) { _, _ -> null }
-            .show()
+            .show().applyDialogTheme()
     }
 
     override fun onRequestPermissionsResult(
@@ -297,8 +296,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEnumSelectionDialog() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Select")
+        val builder = AlertDialog.Builder(this, R.style.CustomDialogTheme)
+        builder.setTitle("Select options")
         builder.setMultiChoiceItems(enumOptions, null) { dialog, which, isChecked -> }
         builder.setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
             val checkedItems = (dialog as AlertDialog).listView.checkedItemPositions
@@ -310,16 +309,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
         builder.setNegativeButton("Cancel", null)
-        builder.show()
+        builder.show().applyDialogTheme()
     }
 
     private fun addChipToGroup(enumText: String) {
         val chip = Chip(this)
         chip.text = enumText
         chip.isCloseIconVisible = true
-        chip.setChipBackgroundColorResource(android.R.color.darker_gray)
-        chip.setTextColor(resources.getColor(android.R.color.black))
-        chip.setCloseIconTintResource(android.R.color.black)
+        chip.setChipBackgroundColorResource(R.color.text_color)
+        chip.setTextColor(resources.getColor(R.color.shape_background_color))
+        chip.setCloseIconTintResource(R.color.shape_background_color)
         chip.setOnCloseIconClickListener { v: View? -> chipGroup.removeView(chip) }
         chipGroup.addView(chip)
     }
@@ -331,5 +330,19 @@ class MainActivity : AppCompatActivity() {
             selectedItems.add(chip.text.toString())
         }
         return java.lang.String.join(" ", selectedItems)
+    }
+
+    private fun AlertDialog.applyDialogTheme() {
+        val textColor = ContextCompat.getColor(context, R.color.text_color)
+        findViewById<TextView>(android.R.id.title)?.setTextColor(
+            ContextCompat.getColor(context, R.color.text_color)
+        )
+        findViewById<TextView>(android.R.id.message)?.setTextColor(textColor)
+        getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
+            ContextCompat.getColor(context, R.color.text_color)
+        )
+        getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
+            ContextCompat.getColor(context, R.color.text_color)
+        )
     }
 }

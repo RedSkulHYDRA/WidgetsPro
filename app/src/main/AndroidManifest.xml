@@ -19,6 +19,18 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_PRIVILEGED"
+        tools:ignore="ProtectedPermissions" />
+
+    <queries>
+        <intent>
+            <action android:name="android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE" />
+        </intent>
+        <intent>
+            <action android:name="android.bluetooth.device.action.BATTERY_LEVEL_CHANGED" />
+        </intent>
+    </queries>
 
     <uses-feature
         android:name="android.hardware.bluetooth_le"

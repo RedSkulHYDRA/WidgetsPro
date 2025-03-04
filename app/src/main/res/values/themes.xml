@@ -8,4 +8,32 @@
     <style name="CustomTextView">
         <item name="android:textColor">#ff000000</item>
     </style>
+
+    <style name="CustomDialogTheme" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+        <item name="android:backgroundTint">@color/shape_background_color</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/CustomDialogTitle</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/CustomDialogBody</item>
+        <item name="buttonBarPositiveButtonStyle">@style/CustomDialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/CustomDialogButton</item>
+        <item name="shapeAppearanceSmallComponent">@style/CustomDialogCorners</item>
+    </style>
+
+    <style name="CustomDialogTitle" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textColor">@color/text_color</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="CustomDialogBody" parent="MaterialAlertDialog.MaterialComponents.Body.Text">
+        <item name="android:textColor">@color/text_color</item>
+    </style>
+
+    <style name="CustomDialogButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/text_color</item>
+        <item name="rippleColor">@color/text_color</item>
+    </style>
+
+    <style name="CustomDialogCorners">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
 </resources>
