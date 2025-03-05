@@ -1,5 +1,5 @@
 [versions]
-agp = "8.8.2"
+agp = "8.9.0"
 api = "12.1.0"
 converterGson = "2.9.0"
 gson = "2.10.1"
@@ -16,6 +16,7 @@ loggingInterceptor = "4.10.0"
 material = "1.12.0"
 picasso = "2.8"
 securityCrypto = "1.0.0"
+workRuntimeKtx = "2.10.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -35,6 +36,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 picasso = { module = "com.squareup.picasso:picasso", version.ref = "picasso" }
 provider = { module = "dev.rikka.shizuku:provider", version.ref = "api" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "converterGson" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

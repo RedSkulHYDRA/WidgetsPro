@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/horizon_background"
+    android:padding="8dp">
+
+    <!-- Sun and Moon Images -->
+    <ImageView
+        android:id="@+id/sun_orb"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:contentDescription="@string/sun_position"
+        android:layout_gravity="center"
+        android:elevation="8dp"
+        android:visibility="gone"
+        android:src="@drawable/sun_orb"/>
+
+    <ImageView
+        android:id="@+id/moon_orb"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:contentDescription="@string/moon_position"
+        android:layout_gravity="center"
+        android:elevation="8dp"
+        android:visibility="gone"
+        android:src="@drawable/moon_orb"/>
+
+    <!-- Time Until Sunset/Sunrise -->
+    <TextView
+        android:id="@+id/time_until_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:text="Loading..." />
+</FrameLayout>

@@ -35,4 +35,8 @@
     <string name="widgets_pro">Widgets Pro</string>
     <string name="_60">60</string>
     <string name="unknown_device">Unknown device</string>
+    <string name="sun_tracker_description">Sun Widget</string>
+    <string name="sun_position">Current sun position indicator</string>
+    <string name="moon_position">Current moon position indicator</string>
+    <string name="weather_icon">Weather Icon</string>
 </resources>

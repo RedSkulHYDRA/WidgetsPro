@@ -16,6 +16,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.RemoteViews
 import android.widget.SeekBar
@@ -48,7 +49,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var enumInputLayout: TextInputLayout
     private lateinit var chipGroup: ChipGroup
     private lateinit var dropdownArrow: View
-
     private val enumOptions = arrayOf(
         "black",
         "blue",
