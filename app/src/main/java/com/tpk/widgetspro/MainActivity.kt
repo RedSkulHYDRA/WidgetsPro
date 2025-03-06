@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
         seekBarBattery = findViewById(R.id.seekBarBattery)
         enumInputLayout = findViewById(R.id.enum_input_layout);
         chipGroup = findViewById(R.id.chip_group);
-        dropdownArrow = findViewById(R.id.dropdown_arrow);
+//        dropdownArrow = findViewById(R.id.dropdown_arrow);
         val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         seekBarCpu.progress = prefs.getInt("cpu_interval", 60)
         seekBarBattery.progress = prefs.getInt("battery_interval", 60)
@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
         setupSeekBarListeners(prefs)
-        dropdownArrow.setOnClickListener { v: View? -> showEnumSelectionDialog() }
+//        dropdownArrow.setOnClickListener { v: View? -> showEnumSelectionDialog() }
         enumInputLayout.setOnClickListener { v: View? -> showEnumSelectionDialog() }
         findViewById<Button>(R.id.button1).setOnClickListener {
             if (PermissionUtils.hasShizukuAccess() || PermissionUtils.hasRootAccess()) requestWidgetInstallation(

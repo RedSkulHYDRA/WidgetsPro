@@ -3,6 +3,6 @@
     android:initialLayout="@layout/widget_sun_tracker"
     android:minWidth="280dp"
     android:minHeight="120dp"
-    android:updatePeriodMillis="900000"
+    android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"
     android:description="@string/sun_tracker_description"/>

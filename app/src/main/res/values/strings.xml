@@ -39,5 +39,9 @@
     <string name="sun_position">Current sun position indicator</string>
     <string name="moon_position">Current moon position indicator</string>
     <string name="weather_icon">Weather Icon</string>
-    <string name="add_sun_widget">Sun Widget</string>
+    <string name="add_sun_widget">Add Sun Widget</string>
+    <string name="select_enums">Select Enums</string>
+    <string name="reset_device_image">Reset Device Image</string>
+    <string name="image_settings">Bluetooth widget settings</string>
+    <string name="cpu_battery_settings">CPU and Battery widget settings</string>
 </resources>

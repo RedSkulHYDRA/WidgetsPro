@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.utils.NotificationUtils
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -20,7 +21,6 @@ class SunTrackerWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        SunSyncService.start(context)
         appWidgetIds.forEach { updateWidget(context, appWidgetManager, it) }
     }
 
@@ -34,10 +34,13 @@ class SunTrackerWidget : AppWidgetProvider() {
     }
 
     override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        NotificationUtils.createAppWidgetChannel(context)
         SunSyncService.start(context)
     }
 
     override fun onDisabled(context: Context) {
+        super.onDisabled(context)
         context.stopService(Intent(context, SunSyncService::class.java))
     }
 
@@ -51,7 +54,6 @@ class SunTrackerWidget : AppWidgetProvider() {
         val now = LocalTime.now()
         val animator = CelestialAnimator(options, context, now)
 
-        // Set sun/moon visibility and position along Bezier path
         if (animator.isDaytime) {
             views.setViewVisibility(R.id.sun_orb, View.VISIBLE)
             views.setViewVisibility(R.id.moon_orb, View.GONE)
@@ -66,7 +68,6 @@ class SunTrackerWidget : AppWidgetProvider() {
             views.setFloat(R.id.moon_orb, "setTranslationY", moonY)
         }
 
-        // Time until sunset or sunrise
         val currentDateTime = LocalDateTime.now()
         val sunrise = LocalDateTime.of(currentDateTime.toLocalDate(), CelestialAnimator.DAY_START)
         val sunset = LocalDateTime.of(currentDateTime.toLocalDate(), CelestialAnimator.DAY_END)
@@ -124,7 +125,7 @@ class SunTrackerWidget : AppWidgetProvider() {
                 } else if (currentTime.isBefore(DAY_START)) {
                     currentSeconds + (secondsInDay - dayEndSeconds)
                 } else {
-                    0f // During daytime, moon hidden
+                    0f
                 }
                 return (timeSinceSunset / (NIGHT_DURATION * 3600f)).coerceIn(0f, 1f)
             }
