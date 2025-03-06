@@ -39,4 +39,5 @@
     <string name="sun_position">Current sun position indicator</string>
     <string name="moon_position">Current moon position indicator</string>
     <string name="weather_icon">Weather Icon</string>
+    <string name="add_sun_widget">Sun Widget</string>
 </resources>

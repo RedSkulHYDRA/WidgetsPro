@@ -20,13 +20,12 @@ class SunSyncService : Service() {
     private fun setupPeriodicSync() {
         val syncRequest = PeriodicWorkRequest.Builder(
             SunUpdateWorker::class.java,
-            15, // Minimum interval
-            TimeUnit.MINUTES
+            15, TimeUnit.MINUTES
         ).addTag("SUN_SYNC").build()
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "SUN_TRACKER_SYNC",
-            ExistingPeriodicWorkPolicy.UPDATE,
+            ExistingPeriodicWorkPolicy.KEEP,
             syncRequest
         )
     }

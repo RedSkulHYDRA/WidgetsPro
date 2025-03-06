@@ -37,6 +37,7 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
+import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
 
 
@@ -107,6 +108,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.button4).setOnClickListener {
             requestWidgetInstallation(
                 BluetoothWidgetProvider::class.java
+            )
+        }
+        findViewById<Button>(R.id.button5).setOnClickListener {
+            requestWidgetInstallation(
+                SunTrackerWidget::class.java
             )
         }
         findViewById<Button>(R.id.reset_image_button).setOnClickListener {
