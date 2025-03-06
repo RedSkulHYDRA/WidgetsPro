@@ -13,7 +13,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
@@ -122,7 +121,6 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                         return device
                     }
                 } catch (e: Exception) {
-                    Log.e("BluetoothWidget", "Error checking connection status", e)
                 }
             }
             return null
@@ -178,7 +176,6 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                     }
                     latch.await(5, TimeUnit.SECONDS)
                 } catch (e: Exception) {
-                    Log.e("BluetoothWidget", "BLE battery read error", e)
                 }
                 return batteryLevel.coerceIn(-1..100)
 
@@ -188,7 +185,6 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                     arrayOf("getBatteryLevel", "getBattery", "getBatteryInfo", "getHeadsetBattery")
                 for (methodName in methods) {
                     try {
-                        Thread.sleep(2000)
                         val method = device.javaClass.getMethod(methodName)
                         val level = method.invoke(device) as? Int ?: -1
                         if (level in 0..100) return level
