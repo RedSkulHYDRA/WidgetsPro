@@ -5,4 +5,5 @@
     android:description="@string/bluetooth_battery_name"
     android:updatePeriodMillis="0"
     android:resizeMode="horizontal|vertical"
+    android:configure="com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetConfigActivity"
     android:widgetCategory="home_screen"/>

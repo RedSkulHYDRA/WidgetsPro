@@ -16,13 +16,13 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.RemoteViews
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -40,28 +40,18 @@ import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
 
-
 class MainActivity : AppCompatActivity() {
     private val SHIZUKU_REQUEST_CODE = 1001
+    private val REQUEST_BLUETOOTH_PERMISSIONS = 100
     private lateinit var seekBarCpu: SeekBar
     private lateinit var seekBarBattery: SeekBar
     private lateinit var tvCpuValue: TextView
     private lateinit var tvBatteryValue: TextView
     private lateinit var enumInputLayout: TextInputLayout
     private lateinit var chipGroup: ChipGroup
-    private lateinit var dropdownArrow: View
     private val enumOptions = arrayOf(
-        "black",
-        "blue",
-        "white",
-        "silver",
-        "transparent",
-        "case",
-        "fullproduct",
-        "product",
-        "withcase",
-        "headphones",
-        "headset"
+        "black", "blue", "white", "silver", "transparent", "case",
+        "fullproduct", "product", "withcase", "headphones", "headset"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,9 +65,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupUI() {
         seekBarCpu = findViewById(R.id.seekBarCpu)
         seekBarBattery = findViewById(R.id.seekBarBattery)
-        enumInputLayout = findViewById(R.id.enum_input_layout);
-        chipGroup = findViewById(R.id.chip_group);
-//        dropdownArrow = findViewById(R.id.dropdown_arrow);
+        enumInputLayout = findViewById(R.id.enum_input_layout)
+        chipGroup = findViewById(R.id.chip_group)
         val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         seekBarCpu.progress = prefs.getInt("cpu_interval", 60)
         seekBarBattery.progress = prefs.getInt("battery_interval", 60)
@@ -86,51 +75,57 @@ class MainActivity : AppCompatActivity() {
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
         setupSeekBarListeners(prefs)
-//        dropdownArrow.setOnClickListener { v: View? -> showEnumSelectionDialog() }
-        enumInputLayout.setOnClickListener { v: View? -> showEnumSelectionDialog() }
+        enumInputLayout.setOnClickListener { showEnumSelectionDialog() }
+
         findViewById<Button>(R.id.button1).setOnClickListener {
-            if (PermissionUtils.hasShizukuAccess() || PermissionUtils.hasRootAccess()) requestWidgetInstallation(
-                CpuWidgetProvider::class.java
-            )
-            else Toast.makeText(this, "Provide Root/Shizuku access", Toast.LENGTH_SHORT).show()
+            if (PermissionUtils.hasShizukuAccess() || PermissionUtils.hasRootAccess()) {
+                requestWidgetInstallation(CpuWidgetProvider::class.java)
+            } else {
+                Toast.makeText(this, "Provide Root/Shizuku access", Toast.LENGTH_SHORT).show()
+            }
         }
         findViewById<Button>(R.id.button2).setOnClickListener {
-            requestWidgetInstallation(
-                BatteryWidgetProvider::class.java
-            )
+            requestWidgetInstallation(BatteryWidgetProvider::class.java)
         }
         findViewById<ImageView>(R.id.imageViewButton).setOnClickListener { checkPermissions() }
         findViewById<Button>(R.id.button3).setOnClickListener {
-            requestWidgetInstallation(
-                CaffeineWidget::class.java
-            )
+            requestWidgetInstallation(CaffeineWidget::class.java)
         }
         findViewById<Button>(R.id.button4).setOnClickListener {
-            requestWidgetInstallation(
-                BluetoothWidgetProvider::class.java
-            )
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                requestWidgetInstallation(BluetoothWidgetProvider::class.java)
+            } else {
+                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT), REQUEST_BLUETOOTH_PERMISSIONS)
+            }
         }
         findViewById<Button>(R.id.button5).setOnClickListener {
-            requestWidgetInstallation(
-                SunTrackerWidget::class.java
-            )
+            requestWidgetInstallation(SunTrackerWidget::class.java)
         }
         findViewById<Button>(R.id.reset_image_button).setOnClickListener {
-            getConnectedBluetoothDevice(this)?.let { device ->
-                resetImageForDevice(this, device.name)
-                clearCustomQueryForDevice(this, device.name)
-                Toast.makeText(this, "Reset image and query for ${device.name}", Toast.LENGTH_SHORT).show()
-            } ?: Toast.makeText(this, "No connected device found", Toast.LENGTH_SHORT).show()
+            val appWidgetIds = getBluetoothWidgetIds(this)
+            appWidgetIds.forEach { appWidgetId ->
+                val deviceAddress = getSelectedDeviceAddress(this, appWidgetId)
+                deviceAddress?.let {
+                    val device = getBluetoothDeviceByAddress(it)
+                    device?.let {
+                        resetImageForDevice(this, it.name, appWidgetId)
+                        clearCustomQueryForDevice(this, it.name, appWidgetId)
+                        Toast.makeText(this, "Reset image and query for ${it.name}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
         findViewById<ImageView>(R.id.update_query_button).setOnClickListener {
-            getConnectedBluetoothDevice(this)?.let {
-                setCustomQueryForDevice(
-                    this,
-                    it.name,
-                    getSelectedItemsAsString()
-                )
+            val appWidgetIds = getBluetoothWidgetIds(this)
+            appWidgetIds.forEach { appWidgetId ->
+                val deviceAddress = getSelectedDeviceAddress(this, appWidgetId)
+                deviceAddress?.let {
+                    val device = getBluetoothDeviceByAddress(it)
+                    device?.let {
+                        setCustomQueryForDevice(this, it.name, getSelectedItemsAsString(), appWidgetId)
+                    }
+                }
             }
-                ?: Toast.makeText(this, "Something is wrong", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -140,9 +135,7 @@ class MainActivity : AppCompatActivity() {
             val provider = ComponentName(this, providerClass)
             if (appWidgetManager.isRequestPinAppWidgetSupported) {
                 val requestCode = System.currentTimeMillis().toInt()
-                val intent =
-                    Intent().setComponent(provider)
-                        .setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                val intent = Intent().setComponent(provider).setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
                 val successCallback = PendingIntent.getBroadcast(
                     this,
                     requestCode,
@@ -163,10 +156,7 @@ class MainActivity : AppCompatActivity() {
     private fun checkPermissions() {
         when {
             PermissionUtils.hasRootAccess() -> startServiceAndFinish(true)
-            Shizuku.pingBinder() -> if (PermissionUtils.hasShizukuAccess()) startServiceAndFinish(
-                false
-            ) else Shizuku.requestPermission(SHIZUKU_REQUEST_CODE)
-
+            Shizuku.pingBinder() -> if (PermissionUtils.hasShizukuAccess()) startServiceAndFinish(false) else Shizuku.requestPermission(SHIZUKU_REQUEST_CODE)
             else -> showPermissionDialog()
         }
     }
@@ -174,7 +164,8 @@ class MainActivity : AppCompatActivity() {
     private fun startServiceAndFinish(useRoot: Boolean) {
         ContextCompat.startForegroundService(
             this,
-            Intent(this, CpuMonitorService::class.java).apply { putExtra("use_root", useRoot) })
+            Intent(this, CpuMonitorService::class.java).apply { putExtra("use_root", useRoot) }
+        )
     }
 
     private fun showPermissionDialog() {
@@ -195,7 +186,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == SHIZUKU_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startServiceAndFinish(false)
         } else {
-            Toast.makeText(this, "Shizuku permission denied", Toast.LENGTH_LONG).show()
+            //Toast.makeText(this, "Shizuku permission denied", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -229,57 +220,60 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun resetImageForDevice(context: Context, deviceName: String) {
+    private fun resetImageForDevice(context: Context, deviceName: String, appWidgetId: Int) {
         ImageApiClient.clearUrlCache(context, deviceName)
         BitmapCacheManager.clearBitmapCache(context, deviceName)
-        updateWidgets(context)
+        updateWidget(context, appWidgetId)
     }
 
-    private fun setCustomQueryForDevice(context: Context, deviceName: String, query: String) {
+    private fun setCustomQueryForDevice(context: Context, deviceName: String, query: String, appWidgetId: Int) {
         ImageApiClient.setCustomQuery(context, deviceName, query)
-        resetImageForDevice(context, deviceName)
-        resetUpdateWidgets(context)
+        resetImageForDevice(context, deviceName, appWidgetId)
+        resetUpdateWidget(context, appWidgetId)
     }
 
-    private fun clearCustomQueryForDevice(context: Context, deviceName: String) {
+    private fun clearCustomQueryForDevice(context: Context, deviceName: String, appWidgetId: Int) {
         ImageApiClient.clearCustomQuery(context, deviceName)
-        resetImageForDevice(context, deviceName)
-        updateWidgets(context)
+        resetImageForDevice(context, deviceName, appWidgetId)
     }
 
-    private fun updateWidgets(context: Context) {
+    private fun updateWidget(context: Context, appWidgetId: Int) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(
-            ComponentName(
-                context,
-                BluetoothWidgetProvider::class.java
-            )
-        )
         val views = RemoteViews(context.packageName, R.layout.bluetooth_widget_layout)
         views.setImageViewResource(R.id.device_image, R.drawable.ic_bluetooth_placeholder)
-        appWidgetIds.forEach { appWidgetManager.updateAppWidget(it, views) }
+        appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
-    private fun resetUpdateWidgets(context: Context) {
+    private fun resetUpdateWidget(context: Context, appWidgetId: Int) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(
-            ComponentName(
-                context,
-                BluetoothWidgetProvider::class.java
-            )
-        )
-        val currentDevice = getConnectedBluetoothDevice(this)
         val views = RemoteViews(context.packageName, R.layout.bluetooth_widget_layout)
-        appWidgetIds.forEach { appWidgetId ->
-            currentDevice?.let {
-                ImageLoader(
-                    context,
-                    appWidgetManager,
-                    appWidgetId,
-                    views
-                ).loadImageAsync(it)
+        val deviceAddress = getSelectedDeviceAddress(context, appWidgetId)
+        deviceAddress?.let {
+            val device = getBluetoothDeviceByAddress(it)
+            device?.let {
+                ImageLoader(context, appWidgetManager, appWidgetId, views).loadImageAsync(it)
             }
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+        }
+        appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+
+    private fun getBluetoothWidgetIds(context: Context): IntArray {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        return appWidgetManager.getAppWidgetIds(ComponentName(context, BluetoothWidgetProvider::class.java))
+    }
+
+    private fun getSelectedDeviceAddress(context: Context, appWidgetId: Int): String? {
+        val prefs = context.getSharedPreferences("BluetoothWidgetPrefs", Context.MODE_PRIVATE)
+        return prefs.getString("device_address_$appWidgetId", null)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getBluetoothDeviceByAddress(address: String): BluetoothDevice? {
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter() ?: return null
+        return try {
+            bluetoothAdapter.getRemoteDevice(address)
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -335,20 +329,14 @@ class MainActivity : AppCompatActivity() {
             val chip = chipGroup.getChildAt(i) as Chip
             selectedItems.add(chip.text.toString())
         }
-        return java.lang.String.join(" ", selectedItems)
+        return selectedItems.joinToString(" ")
     }
 
     private fun AlertDialog.applyDialogTheme() {
         val textColor = ContextCompat.getColor(context, R.color.text_color)
-        findViewById<TextView>(android.R.id.title)?.setTextColor(
-            ContextCompat.getColor(context, R.color.text_color)
-        )
+        findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
         findViewById<TextView>(android.R.id.message)?.setTextColor(textColor)
-        getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
-            ContextCompat.getColor(context, R.color.text_color)
-        )
-        getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
-            ContextCompat.getColor(context, R.color.text_color)
-        )
+        getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)
+        getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
     }
 }

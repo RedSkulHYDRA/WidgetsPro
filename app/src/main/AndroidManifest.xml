@@ -134,9 +134,13 @@
         </receiver>
 
         <activity
-            android:name=".widgets.bluetooth.PermissionRequestActivity"
-            android:exported="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
+            android:name=".widgets.bluetooth.BluetoothWidgetConfigActivity"
+            android:theme="@style/BluetoothConfigTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
 
         <receiver
             android:name=".widgets.sun.SunTrackerWidget"

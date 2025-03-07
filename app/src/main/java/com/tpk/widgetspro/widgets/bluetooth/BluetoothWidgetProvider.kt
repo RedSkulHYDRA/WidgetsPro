@@ -14,7 +14,6 @@ import android.content.Intent
 import android.os.Build
 import android.provider.Settings
 import android.widget.RemoteViews
-import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseWidgetProvider
 import com.tpk.widgetspro.utils.ImageLoader
@@ -29,7 +28,7 @@ import java.util.concurrent.TimeUnit
 class BluetoothWidgetProvider : BaseWidgetProvider() {
     override val layoutId = R.layout.bluetooth_widget_layout
     override val setupText = "Tap to setup Bluetooth"
-    override val setupDestination = PermissionRequestActivity::class.java
+    override val setupDestination = BluetoothWidgetConfigActivity::class.java
 
     override fun onUpdate(
         context: Context,
@@ -38,27 +37,18 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
     ) {
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, layoutId)
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.BLUETOOTH_CONNECT
-                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                val intent = Intent(context, PermissionRequestActivity::class.java).apply {
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                }
-                val pendingIntent = PendingIntent.getActivity(
-                    context,
-                    appWidgetId,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.device_image, pendingIntent)
-            } else {
-                updateNormalWidgetView(context, appWidgetManager, appWidgetId)
+            val configIntent = Intent(context, BluetoothWidgetConfigActivity::class.java).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             }
+            val configPendingIntent = PendingIntent.getActivity(
+                context,
+                appWidgetId,
+                configIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
             val refreshIntent = Intent(context, BluetoothWidgetProvider::class.java).apply {
                 action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetId)
             }
             val refreshPendingIntent = PendingIntent.getBroadcast(
                 context,
@@ -66,7 +56,17 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                 refreshIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+            val bluetoothIntent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                bluetoothIntent,
+                PendingIntent.FLAG_IMMUTABLE
+            )
             views.setOnClickPendingIntent(R.id.battery_percentage, refreshPendingIntent)
+            views.setOnClickPendingIntent(R.id.device_image, pendingIntent)
+            views.setOnClickPendingIntent(R.id.device_name, configPendingIntent)
+            updateNormalWidgetView(context, appWidgetManager, appWidgetId)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
@@ -76,29 +76,56 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        val views = RemoteViews(context.packageName, layoutId)
+        val views = RemoteViews(context.packageName, R.layout.bluetooth_widget_layout) // Adjust layoutId as needed
+
+        val configIntent = Intent(context, BluetoothWidgetConfigActivity::class.java).apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        }
+        val configPendingIntent = PendingIntent.getActivity(
+            context,
+            appWidgetId,
+            configIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val refreshIntent = Intent(context, BluetoothWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetId)
+        }
+        val refreshPendingIntent = PendingIntent.getBroadcast(
+            context,
+            0,
+            refreshIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val bluetoothIntent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            bluetoothIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.battery_percentage, refreshPendingIntent)
+        views.setOnClickPendingIntent(R.id.device_image, pendingIntent)
+        views.setOnClickPendingIntent(R.id.device_name, configPendingIntent)
+
         scope.launch {
-            val device = withContext(Dispatchers.IO) { getConnectedBluetoothDevice(context) }
-            if (device != null) {
-                views.setTextViewText(R.id.device_name, device.name)
-                val retrievedLevel = withContext(Dispatchers.IO) { getBatteryLevel(context,device) }
-                views.setTextViewText(
-                    R.id.battery_percentage,
-                    if (retrievedLevel in 0..100) "$retrievedLevel%" else "--%"
-                )
-                val bluetoothIntent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
-                val pendingIntent = PendingIntent.getActivity(
-                    context,
-                    0,
-                    bluetoothIntent,
-                    PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.device_name, pendingIntent)
-                ImageLoader(context, appWidgetManager, appWidgetId, views).loadImageAsync(device)
+            val selectedDeviceAddress = getSelectedDeviceAddress(context, appWidgetId)
+            if (selectedDeviceAddress != null) {
+                val device = withContext(Dispatchers.IO) { getBluetoothDeviceByAddress(selectedDeviceAddress) }
+                if (device != null && withContext(Dispatchers.IO) { isDeviceConnected(device) }) {
+                    views.setTextViewText(R.id.device_name, device.name)
+                    val batteryLevel = withContext(Dispatchers.IO) { getBatteryLevel(context, device) }
+                    views.setTextViewText(
+                        R.id.battery_percentage,
+                        if (batteryLevel in 0..100) "$batteryLevel%" else "--%"
+                    )
+                } else {
+                    views.setTextViewText(R.id.device_name, "Device not connected")
+                    views.setTextViewText(R.id.battery_percentage, "--%")
+                }
             } else {
-                views.setTextViewText(R.id.device_name, "")
-                views.setImageViewResource(R.id.device_image, R.drawable.ic_bluetooth_placeholder)
-                views.setTextViewText(R.id.battery_percentage, "")
+                views.setTextViewText(R.id.device_name, "Click here to select device")
+                views.setTextViewText(R.id.battery_percentage, "--%")
             }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
@@ -109,26 +136,8 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
         private val BATTERY_SERVICE_UUID = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb")
         private val BATTERY_LEVEL_UUID = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb")
 
-        @SuppressLint("MissingPermission")
-        private fun getConnectedBluetoothDevice(context: Context): BluetoothDevice? {
-            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter() ?: return null
-            val pairedDevices = bluetoothAdapter.bondedDevices ?: return null
-            for (device in pairedDevices) {
-                try {
-                    val method = device.javaClass.getMethod("isConnected")
-                    val isConnected = method.invoke(device) as Boolean
-                    if (isConnected) {
-                        return device
-                    }
-                } catch (e: Exception) {
-                }
-            }
-            return null
-        }
-
         private fun getBatteryLevel(context: Context, device: BluetoothDevice): Int {
             if (device.name.lowercase().contains("watch")) {
-
                 var batteryLevel = -1
                 val latch = CountDownLatch(1)
                 val gattCallback = object : BluetoothGattCallback() {
@@ -178,8 +187,6 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                 } catch (e: Exception) {
                 }
                 return batteryLevel.coerceIn(-1..100)
-
-
             } else {
                 val methods =
                     arrayOf("getBatteryLevel", "getBattery", "getBatteryInfo", "getHeadsetBattery")
@@ -202,20 +209,53 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
             appWidgetId: Int,
             views: RemoteViews
         ) {
-            val device = getConnectedBluetoothDevice(context) // Hypothetical method
-            if (device != null) {
-                views.setTextViewText(R.id.device_name, device.name)
-                val batteryLevel = getBatteryLevel(context, device) // Your custom method
-                val batteryText = if (batteryLevel != -1) "$batteryLevel%" else "--%"
-                val loader = ImageLoader(context, appWidgetManager, appWidgetId, views)
-                loader.loadImageAsync(device)
-                views.setTextViewText(R.id.battery_percentage, batteryText)
+            val selectedDeviceAddress = getSelectedDeviceAddress(context, appWidgetId)
+            if (selectedDeviceAddress != null) {
+                val device = getBluetoothDeviceByAddress(selectedDeviceAddress)
+                if (device != null && isDeviceConnected(device)) {
+                    views.setTextViewText(R.id.device_name, device.name)
+                    val batteryLevel = getBatteryLevel(context, device)
+                    val batteryText = if (batteryLevel in 0..100) "$batteryLevel%" else "--%"
+                    views.setTextViewText(R.id.battery_percentage, batteryText)
+                    val loader = ImageLoader(context, appWidgetManager, appWidgetId, views)
+                    loader.loadImageAsync(device)
+                } else {
+                    views.setTextViewText(R.id.device_name, "Device not connected")
+                    views.setImageViewResource(R.id.device_image, R.drawable.ic_bluetooth_placeholder)
+                    views.setTextViewText(R.id.battery_percentage, "--%")
+                }
             } else {
-                views.setTextViewText(R.id.device_name, "No device connected")
+                views.setTextViewText(R.id.device_name, "No device selected")
                 views.setImageViewResource(R.id.device_image, R.drawable.ic_bluetooth_placeholder)
                 views.setTextViewText(R.id.battery_percentage, "--%")
             }
             appWidgetManager.updateAppWidget(appWidgetId, views)
+        }
+
+        @SuppressLint("MissingPermission")
+        private fun getSelectedDeviceAddress(context: Context, appWidgetId: Int): String? {
+            val prefs = context.getSharedPreferences("BluetoothWidgetPrefs", Context.MODE_PRIVATE)
+            return prefs.getString("device_address_$appWidgetId", null)
+        }
+
+        @SuppressLint("MissingPermission")
+        private fun getBluetoothDeviceByAddress(address: String): BluetoothDevice? {
+            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter() ?: return null
+            return try {
+                bluetoothAdapter.getRemoteDevice(address)
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        private fun isDeviceConnected(device: BluetoothDevice): Boolean {
+            return try {
+                val method = device.javaClass.getMethod("isConnected")
+                method.invoke(device) as Boolean
+            } catch (e: Exception) {
+                false
+            }
         }
     }
 }
