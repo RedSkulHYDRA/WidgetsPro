@@ -121,7 +121,7 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
             R.id.battery_percentage,
             if (batteryLevel in 0..100) "$batteryLevel%" else "--%"
         )
-
+        setupCommonComponents(context, appWidgetId, views)
         ImageLoader(context, appWidgetManager, appWidgetId, views).loadImageAsync(device)
     }
 
@@ -160,63 +160,64 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
 
         @SuppressLint("MissingPermission")
         fun getBatteryLevel(context: Context, device: BluetoothDevice): Int {
-            return if (device.name?.lowercase()?.contains("watch") == true) {
-                readBleBattery(context, device)
-            } else {
-                readReflectiveBattery(device)
-            }
+//            return if (device.name?.lowercase()?.contains("watch") == true) {
+//                readBleBattery(context, device)
+//            } else {
+//                readReflectiveBattery(device)
+//            }
+            return readReflectiveBattery(device)
         }
 
-        @SuppressLint("MissingPermission")
-        private fun readBleBattery(context: Context, device: BluetoothDevice): Int {
-            var batteryLevel = -1
-            val latch = CountDownLatch(1)
-
-            val gattCallback = object : BluetoothGattCallback() {
-                override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-                    if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        gatt.discoverServices()
-                    } else {
-                        gatt.close()
-                        latch.countDown()
-                    }
-                }
-
-                override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-                    if (status == BluetoothGatt.GATT_SUCCESS) {
-                        gatt.getService(BATTERY_SERVICE_UUID)
-                            ?.getCharacteristic(BATTERY_LEVEL_UUID)
-                            ?.let { gatt.readCharacteristic(it) }
-                            ?: run { latch.countDown() }
-                    }
-                }
-
-                override fun onCharacteristicRead(
-                    gatt: BluetoothGatt,
-                    characteristic: BluetoothGattCharacteristic,
-                    status: Int
-                ) {
-                    batteryLevel = if (status == BluetoothGatt.GATT_SUCCESS) {
-                        characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0)
-                    } else -1
-                    gatt.disconnect()
-                    gatt.close()
-                    latch.countDown()
-                }
-            }
-
-            try {
-                val gatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
-                } else {
-                    device.connectGatt(context, false, gattCallback)
-                }
-                latch.await(5, TimeUnit.SECONDS)
-            } catch (e: Exception) {
-                // Handle exception
-            }
-            return batteryLevel.coerceIn(-1..100)
-        }
+//        @SuppressLint("MissingPermission")
+//        private fun readBleBattery(context: Context, device: BluetoothDevice): Int {
+//            var batteryLevel = -1
+//            val latch = CountDownLatch(1)
+//
+//            val gattCallback = object : BluetoothGattCallback() {
+//                override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+//                    if (newState == BluetoothProfile.STATE_CONNECTED) {
+//                        gatt.discoverServices()
+//                    } else {
+//                        gatt.close()
+//                        latch.countDown()
+//                    }
+//                }
+//
+//                override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+//                    if (status == BluetoothGatt.GATT_SUCCESS) {
+//                        gatt.getService(BATTERY_SERVICE_UUID)
+//                            ?.getCharacteristic(BATTERY_LEVEL_UUID)
+//                            ?.let { gatt.readCharacteristic(it) }
+//                            ?: run { latch.countDown() }
+//                    }
+//                }
+//
+//                override fun onCharacteristicRead(
+//                    gatt: BluetoothGatt,
+//                    characteristic: BluetoothGattCharacteristic,
+//                    status: Int
+//                ) {
+//                    batteryLevel = if (status == BluetoothGatt.GATT_SUCCESS) {
+//                        characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0)
+//                    } else -1
+//                    gatt.disconnect()
+//                    gatt.close()
+//                    latch.countDown()
+//                }
+//            }
+//
+//            try {
+//                val gatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                    device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+//                } else {
+//                    device.connectGatt(context, false, gattCallback)
+//                }
+//                latch.await(5, TimeUnit.SECONDS)
+//            } catch (e: Exception) {
+//                // Handle exception
+//            }
+//            return batteryLevel.coerceIn(-1..100)
+//        }
 
         private fun readReflectiveBattery(device: BluetoothDevice): Int {
             val methods = arrayOf(
