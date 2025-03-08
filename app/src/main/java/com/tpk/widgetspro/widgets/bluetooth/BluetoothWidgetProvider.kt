@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
@@ -35,11 +36,20 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        for (appWidgetId in appWidgetIds) {
-            val views = RemoteViews(context.packageName, layoutId)
-            setupCommonComponents(context, appWidgetId, views)
-            appWidgetManager.updateAppWidget(appWidgetId, views)
-            updateNormalWidgetView(context, appWidgetManager, appWidgetId)
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+//        for (appWidgetId in appWidgetIds) {
+//            val views = RemoteViews(context.packageName, layoutId)
+//            setupCommonComponents(context, appWidgetId, views)
+//            appWidgetManager.updateAppWidget(appWidgetId, views)
+//            updateNormalWidgetView(context, appWidgetManager, appWidgetId)
+//        }
+        appWidgetIds.forEach { appWidgetId ->
+            scope.launch {
+                val views = RemoteViews(context.packageName, layoutId)
+                setupCommonComponents(context, appWidgetId, views)
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+                updateNormalWidgetView(context, appWidgetManager, appWidgetId)
+            }
         }
     }
 
@@ -133,6 +143,16 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
         }
     }
 
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        updateNormalWidgetView(context, appWidgetManager, appWidgetId)
+    }
+
     companion object {
         private val scope = CoroutineScope(Dispatchers.Main)
         private val BATTERY_SERVICE_UUID = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb")
@@ -155,6 +175,7 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                     setTextViewText(R.id.battery_percentage, "--%")
                 }
             }
+            setupCommonComponents(context, appWidgetId, views)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
@@ -279,8 +300,26 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                 R.id.battery_percentage,
                 if (batteryLevel in 0..100) "$batteryLevel%" else "--%"
             )
+            setupCommonComponents(context, appWidgetId, views)
             ImageLoader(context, AppWidgetManager.getInstance(context), appWidgetId, views)
                 .loadImageAsync(device)
+        }
+
+        private fun setupCommonComponents(
+            context: Context,
+            appWidgetId: Int,
+            views: RemoteViews
+        ) {
+            // Common click listeners setup
+            val configPI = createConfigPendingIntent(context, appWidgetId)
+            val refreshPI = createRefreshPendingIntent(context, appWidgetId)
+            val bluetoothPI = createBluetoothPendingIntent(context)
+
+            views.apply {
+                setOnClickPendingIntent(R.id.battery_percentage, refreshPI)
+                setOnClickPendingIntent(R.id.device_image, bluetoothPI)
+                setOnClickPendingIntent(R.id.device_name, configPI)
+            }
         }
 
         private fun createConfigPendingIntent(context: Context, appWidgetId: Int): PendingIntent {
@@ -297,7 +336,7 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
         private fun createRefreshPendingIntent(context: Context, appWidgetId: Int): PendingIntent {
             return PendingIntent.getBroadcast(
                 context,
-                0,
+                appWidgetId, // Unique request code per widget
                 Intent(context, BluetoothWidgetProvider::class.java).apply {
                     action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
