@@ -74,11 +74,12 @@ class BluetoothWidgetConfigActivity : AppCompatActivity() {
 
         val titleTextView = TextView(this)
         titleTextView.text = "Select a Bluetooth device"
+        titleTextView.setTextColor(ContextCompat.getColor(this, R.color.text_color))
         layout.addView(titleTextView)
 
         val listView = ListView(this)
         val deviceNames = pairedDevices.map { it.name }
-        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, deviceNames)
+        val adapter = ArrayAdapter(this, R.layout.custom_simple_list_item, deviceNames)
         listView.adapter = adapter
 
         listView.setOnItemClickListener { _, _, position, _ ->
