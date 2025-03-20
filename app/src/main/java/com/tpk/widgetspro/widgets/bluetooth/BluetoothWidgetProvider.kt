@@ -14,6 +14,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseWidgetProvider
@@ -132,6 +133,7 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
             if (batteryLevel in 0..100) "$batteryLevel%" else "--%"
         )
         setupCommonComponents(context, appWidgetId, views)
+        views.setViewVisibility(R.id.device_image1, View.GONE);
         ImageLoader(context, appWidgetManager, appWidgetId, views).loadImageAsync(device)
     }
 
@@ -139,7 +141,7 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
         views.apply {
             setTextViewText(R.id.device_name, "Device not connected")
             setTextViewText(R.id.battery_percentage, "--%")
-            setImageViewResource(R.id.device_image, R.drawable.ic_bluetooth_placeholder)
+            setImageViewResource(R.id.device_image1, R.drawable.ic_bluetooth_placeholder)
         }
     }
 
@@ -301,6 +303,7 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                 if (batteryLevel in 0..100) "$batteryLevel%" else "--%"
             )
             setupCommonComponents(context, appWidgetId, views)
+            views.setViewVisibility(R.id.device_image1, View.GONE);
             ImageLoader(context, AppWidgetManager.getInstance(context), appWidgetId, views)
                 .loadImageAsync(device)
         }

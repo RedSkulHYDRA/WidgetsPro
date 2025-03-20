@@ -8,11 +8,18 @@
 
     <ImageView
         android:id="@+id/device_image"
-        android:padding="22dp"
+        android:layout_margin="22dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:adjustViewBounds="true"
-        android:scaleType="centerCrop"
+        android:scaleType="centerCrop"/>
+
+    <ImageView
+        android:id="@+id/device_image1"
+        android:layout_margin="22dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
         android:src="@drawable/ic_bluetooth_placeholder" />
 
     <TextView
