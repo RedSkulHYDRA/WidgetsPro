@@ -12,5 +12,5 @@
         android:background="@android:color/transparent"
         android:contentDescription="@string/caffeine_toggle_desc"
         android:layout_margin="20dp"
-        android:scaleType="centerCrop" />
+        android:scaleType="fitCenter"/>
 </LinearLayout>

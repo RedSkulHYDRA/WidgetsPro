@@ -2,8 +2,13 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/horizon_background"
-    android:padding="8dp">
+    android:background="@color/shape_background_color">
+
+    <!-- Path ImageView -->
+    <ImageView
+        android:id="@+id/path_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 
     <!-- Sun and Moon Images -->
     <ImageView

@@ -10,7 +10,7 @@ import com.tpk.widgetspro.services.BaseMonitorService
 
 class SunSyncService : BaseMonitorService() {
 
-    override val notificationId = 1001
+    override val notificationId = 3
     override val notificationTitle = "Sun Tracker Widget"
     override val notificationText = "Monitoring sun position"
 

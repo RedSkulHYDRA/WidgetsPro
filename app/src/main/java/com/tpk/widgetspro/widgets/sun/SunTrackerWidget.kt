@@ -4,11 +4,18 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
 import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.utils.NotificationUtils
+import com.tpk.widgetspro.widgets.sun.SunTrackerWidget.CelestialAnimator.Companion.dpToPx
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -54,6 +61,15 @@ class SunTrackerWidget : AppWidgetProvider() {
         val now = LocalTime.now()
         val animator = CelestialAnimator(options, context, now)
 
+        // Get widget dimensions and set the path bitmap
+        val widgetWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+            .dpToPx(context.resources.displayMetrics)
+        val widgetHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+            .dpToPx(context.resources.displayMetrics)
+        val pathBitmap = generatePathBitmap(context, widgetWidth, widgetHeight)
+        views.setImageViewBitmap(R.id.path_view, pathBitmap)
+
+        // Update sun or moon position
         if (animator.isDaytime) {
             views.setViewVisibility(R.id.sun_orb, View.VISIBLE)
             views.setViewVisibility(R.id.moon_orb, View.GONE)
@@ -68,6 +84,7 @@ class SunTrackerWidget : AppWidgetProvider() {
             views.setFloat(R.id.moon_orb, "setTranslationY", moonY)
         }
 
+        // Update time until sunset/sunrise
         val currentDateTime = LocalDateTime.now()
         val sunrise = LocalDateTime.of(currentDateTime.toLocalDate(), CelestialAnimator.DAY_START)
         val sunset = LocalDateTime.of(currentDateTime.toLocalDate(), CelestialAnimator.DAY_END)
@@ -82,6 +99,25 @@ class SunTrackerWidget : AppWidgetProvider() {
         views.setTextViewText(R.id.time_until_text, timeText)
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+
+    private fun generatePathBitmap(context: Context, width: Int, height: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint().apply {
+            color = ContextCompat.getColor(context, R.color.text_color)
+            strokeWidth = 2f
+            style = Paint.Style.STROKE
+        }
+        val path = Path()
+        // Scale control points to widget dimensions
+        val p0 = Pair(40f / 300f * width, 82f / 150f * height)
+        val p1 = Pair(150f / 300f * width, (-20f) / 150f * height)
+        val p2 = Pair(260f / 300f * width, 82f / 150f * height)
+        path.moveTo(p0.first, p0.second)
+        path.quadTo(p1.first, p1.second, p2.first, p2.second)
+        canvas.drawPath(path, paint)
+        return bitmap
     }
 
     private fun formatDuration(duration: Duration, event: String): String {
