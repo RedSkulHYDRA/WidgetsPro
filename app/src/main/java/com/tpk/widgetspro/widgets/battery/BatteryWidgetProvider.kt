@@ -18,6 +18,15 @@ class BatteryWidgetProvider : BaseWidgetProvider() {
         context.startService(Intent(context, BatteryMonitorService::class.java))
     }
 
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        super.onEnabled(context)
+        context.startService(Intent(context, BatteryMonitorService::class.java))
+    }
+
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
         context.stopService(Intent(context, BatteryMonitorService::class.java))

@@ -13,5 +13,4 @@
         android:contentDescription="@string/caffeine_toggle_desc"
         android:layout_margin="20dp"
         android:scaleType="centerCrop" />
-
 </LinearLayout>

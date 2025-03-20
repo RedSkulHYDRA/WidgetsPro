@@ -19,6 +19,15 @@ class CpuWidgetProvider : BaseWidgetProvider() {
         if (hasRequiredPermissions(context)) context.startService(Intent(context, CpuMonitorService::class.java))
     }
 
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        super.onEnabled(context)
+        if (hasRequiredPermissions(context)) context.startService(Intent(context, CpuMonitorService::class.java))
+    }
+
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
         context.stopService(Intent(context, CpuMonitorService::class.java))

@@ -25,6 +25,20 @@ class CaffeineWidget : BaseWidgetProvider() {
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        val prefs = context.getSharedPreferences("caffeine", Context.MODE_PRIVATE)
+        val isActive = prefs.getBoolean("active", false)
+        val views = RemoteViews(context.packageName, layoutId).apply {
+            setImageViewResource(R.id.widget_toggle, if (isActive) R.drawable.ic_coffee_active else R.drawable.ic_coffee_inactive)
+            setOnClickPendingIntent(R.id.widget_toggle, getToggleIntent(context))
+        }
+        appWidgetManager.updateAppWidget(appWidgetIds, views)
+    }
+
     companion object {
         fun getToggleIntent(context: Context) = PendingIntent.getBroadcast(context, 0, Intent(context, CaffeineToggleReceiver::class.java).apply {
             action = "TOGGLE_CAFFEINE"
