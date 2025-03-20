@@ -12,8 +12,8 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
@@ -37,6 +37,7 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
+import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
 
@@ -101,6 +102,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.button5).setOnClickListener {
             requestWidgetInstallation(SunTrackerWidget::class.java)
         }
+        findViewById<Button>(R.id.button6).setOnClickListener {
+            requestWidgetInstallation(SpeedWidgetProvider::class.java)
+        }
         findViewById<Button>(R.id.reset_image_button).setOnClickListener {
             val appWidgetIds = getBluetoothWidgetIds(this)
             appWidgetIds.forEach { appWidgetId ->
@@ -111,17 +115,6 @@ class MainActivity : AppCompatActivity() {
                         resetImageForDevice(this, it.name, appWidgetId)
                         clearCustomQueryForDevice(this, it.name, appWidgetId)
                         Toast.makeText(this, "Reset image and query for ${it.name}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-        findViewById<ImageView>(R.id.update_query_button).setOnClickListener {
-            val appWidgetIds = getBluetoothWidgetIds(this)
-            appWidgetIds.forEach { appWidgetId ->
-                val deviceAddress = getSelectedDeviceAddress(this, appWidgetId)
-                deviceAddress?.let {
-                    val device = getBluetoothDeviceByAddress(it)
-                    device?.let {
                         setCustomQueryForDevice(this, it.name, getSelectedItemsAsString(), appWidgetId)
                     }
                 }
@@ -172,9 +165,26 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this, R.style.CustomDialogTheme)
             .setTitle(R.string.permission_required_title)
             .setMessage(R.string.permission_required_message)
-            .setPositiveButton(R.string.retry) { _, _ -> checkPermissions() }
-            .setNegativeButton(R.string.cancel) { _, _ -> null }
+            .setPositiveButton("Open Shizuku") { _, _ ->
+                if (isShizukuInstalled()) {
+                    checkPermissions()
+                } else {
+                    startActivity(Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse("https://shizuku.rikka.app/")
+                    })
+                }
+                finish()
+            }
+            .setNegativeButton("Exit") { _, _ -> null }
+            .setCancelable(false)
             .show().applyDialogTheme()
+    }
+
+    private fun isShizukuInstalled() = try {
+        packageManager.getPackageInfo("moe.shizuku.privileged.api", 0)
+        true
+    } catch (e: PackageManager.NameNotFoundException) {
+        false
     }
 
     override fun onRequestPermissionsResult(
@@ -186,7 +196,6 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == SHIZUKU_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startServiceAndFinish(false)
         } else {
-            //Toast.makeText(this, "Shizuku permission denied", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -275,24 +284,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             null
         }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun getConnectedBluetoothDevice(context: Context): BluetoothDevice? {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter() ?: return null
-        val pairedDevices = bluetoothAdapter.bondedDevices ?: return null
-        for (device in pairedDevices) {
-            try {
-                val method = device.javaClass.getMethod("isConnected")
-                val isConnected = method.invoke(device) as Boolean
-                if (isConnected) {
-                    return device
-                }
-            } catch (e: Exception) {
-                Log.e("BluetoothWidget", "Error checking connection status", e)
-            }
-        }
-        return null
     }
 
     private fun showEnumSelectionDialog() {

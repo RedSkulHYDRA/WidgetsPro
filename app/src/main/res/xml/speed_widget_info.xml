@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:targetCellHeight="1"
+    android:targetCellWidth="2"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/speed_widget_layout"
+    android:resizeMode="horizontal|vertical"
+    android:description="@string/speed_test_description"
+    android:widgetCategory="home_screen" />

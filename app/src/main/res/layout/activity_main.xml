@@ -74,6 +74,13 @@
         android:layout_height="wrap_content"
         android:text="@string/add_sun_widget" />
 
+    <Button
+        android:id="@+id/button6"
+        style="@style/CustomTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/add_speed_widget" />
+
     <!-- ImageView as a refresh button -->
     <!-- Updated CPU Section -->
     <LinearLayout
@@ -177,8 +184,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="0.1"
                 android:background="@drawable/rounded_layout_bg"
-                android:hint="@string/select_enums"
-                android:padding="20dp"
+                android:padding="10dp"
                 app:boxCornerRadiusBottomEnd="8dp"
                 app:boxCornerRadiusBottomStart="8dp"
                 app:boxCornerRadiusTopEnd="8dp"
@@ -195,25 +201,25 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1" />
 
-                    <!--<ImageView
+                    <ImageView
                         android:id="@+id/dropdown_arrow"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="center"
-                        android:contentDescription="Dropdown"
-                        android:src="@android:drawable/arrow_down_float" />-->
+                        android:contentDescription="@string/dropdown"
+                        android:src="@drawable/arrow_down" />
 
                 </LinearLayout>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <ImageView
+            <!--<ImageView
                 android:id="@+id/update_query_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_weight="0.9"
                 android:contentDescription="@string/refresh_widgets"
-                android:src="@drawable/ic_refresh" />
+                android:src="@drawable/ic_refresh" />-->
         </LinearLayout>
 
 

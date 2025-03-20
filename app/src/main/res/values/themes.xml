@@ -3,6 +3,7 @@
     <style name="Theme.WidgetsPro" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@android:color/system_neutral1_50</item>
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="CustomTextView">
