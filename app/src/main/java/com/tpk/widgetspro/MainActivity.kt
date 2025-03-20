@@ -12,9 +12,14 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.RemoteViews
@@ -38,8 +43,10 @@ import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
+import com.tpk.widgetspro.widgets.sun.SunSyncService
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     private val SHIZUKU_REQUEST_CODE = 1001
@@ -50,6 +57,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvBatteryValue: TextView
     private lateinit var enumInputLayout: TextInputLayout
     private lateinit var chipGroup: ChipGroup
+    private lateinit var locationAutoComplete: AutoCompleteTextView
+    private lateinit var setLocationButton: Button
+    private lateinit var suggestionsAdapter: ArrayAdapter<String>
     private val enumOptions = arrayOf(
         "black", "blue", "white", "silver", "transparent", "case",
         "fullproduct", "product", "withcase", "headphones", "headset"
@@ -73,6 +83,8 @@ class MainActivity : AppCompatActivity() {
         seekBarBattery.progress = prefs.getInt("battery_interval", 60)
         tvCpuValue = findViewById(R.id.tvCpuValue)
         tvBatteryValue = findViewById(R.id.tvBatteryValue)
+        locationAutoComplete = findViewById(R.id.location_auto_complete)
+        setLocationButton = findViewById(R.id.set_location_button)
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
         setupSeekBarListeners(prefs)
@@ -118,6 +130,33 @@ class MainActivity : AppCompatActivity() {
                         setCustomQueryForDevice(this, it.name, getSelectedItemsAsString(), appWidgetId)
                     }
                 }
+            }
+        }
+        suggestionsAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line)
+        locationAutoComplete.setAdapter(suggestionsAdapter)
+        locationAutoComplete.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // No action needed
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (s != null && s.length > 2) { // Fetch suggestions after 3 characters
+                    fetchLocationSuggestions(s.toString())
+                }
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                // No action needed
+            }
+        })
+
+        // Handle button click
+        setLocationButton.setOnClickListener {
+            val location = locationAutoComplete.text.toString().trim()
+            if (location.isNotEmpty()) {
+                getCoordinatesFromLocation(location)
+            } else {
+                Toast.makeText(this, "Please enter a location", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -195,7 +234,6 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == SHIZUKU_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startServiceAndFinish(false)
-        } else {
         }
     }
 
@@ -289,13 +327,13 @@ class MainActivity : AppCompatActivity() {
     private fun showEnumSelectionDialog() {
         val builder = AlertDialog.Builder(this, R.style.CustomDialogTheme)
         builder.setTitle("Select options")
-        builder.setMultiChoiceItems(enumOptions, null) { dialog, which, isChecked -> }
-        builder.setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
+        builder.setMultiChoiceItems(enumOptions, null) { _, _, _ -> }
+        builder.setPositiveButton("OK") { dialog: DialogInterface, _: Int ->
             val checkedItems = (dialog as AlertDialog).listView.checkedItemPositions
             chipGroup.removeAllViews()
             for (i in 0 until enumOptions.size) {
                 if (checkedItems[i]) {
-                    addChipToGroup(enumOptions.get(i))
+                    addChipToGroup(enumOptions[i])
                 }
             }
         }
@@ -310,7 +348,7 @@ class MainActivity : AppCompatActivity() {
         chip.setChipBackgroundColorResource(R.color.text_color)
         chip.setTextColor(resources.getColor(R.color.shape_background_color))
         chip.setCloseIconTintResource(R.color.shape_background_color)
-        chip.setOnCloseIconClickListener { v: View? -> chipGroup.removeView(chip) }
+        chip.setOnCloseIconClickListener { chipGroup.removeView(chip) }
         chipGroup.addView(chip)
     }
 
@@ -329,5 +367,48 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(android.R.id.message)?.setTextColor(textColor)
         getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)
         getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
+    }
+
+    private fun getCoordinatesFromLocation(location: String) {
+        val geocoder = Geocoder(this, Locale.getDefault())
+        try {
+            val addresses = geocoder.getFromLocationName(location, 1)
+            if (!addresses.isNullOrEmpty()) {
+                val address = addresses[0]
+                val latitude = address.latitude
+                val longitude = address.longitude
+                saveLocationToPreferences(latitude, longitude)
+                Toast.makeText(this, "Location set to $location", Toast.LENGTH_SHORT).show()
+                // Trigger data refresh
+                SunSyncService.start(this)
+            } else {
+                Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error finding location: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveLocationToPreferences(latitude: Double, longitude: Double) {
+        val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+        with(prefs.edit()) {
+            putString("latitude", latitude.toString())
+            putString("longitude", longitude.toString())
+            apply()
+        }
+    }
+
+    private fun fetchLocationSuggestions(query: String) {
+        val geocoder = Geocoder(this, Locale.getDefault())
+        try {
+            val addresses = geocoder.getFromLocationName(query, 5) // Limit to 5 suggestions
+            val suggestions = addresses?.map { it.getAddressLine(0) } ?: emptyList()
+            suggestionsAdapter.clear()
+            suggestionsAdapter.addAll(suggestions)
+            suggestionsAdapter.notifyDataSetChanged()
+            locationAutoComplete.showDropDown() // Ensure dropdown is shown
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error fetching suggestions", Toast.LENGTH_SHORT).show()
+        }
     }
 }

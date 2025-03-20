@@ -32,6 +32,16 @@
         android:src="@drawable/moon_orb"/>
 
     <!-- Time Until Sunset/Sunrise -->
+
+    <TextView
+        android:id="@+id/temp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="59dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:textColor="@color/text_color"
+        android:textSize="14sp"
+        android:text="Loading..." />
     <TextView
         android:id="@+id/time_until_text"
         android:layout_width="wrap_content"

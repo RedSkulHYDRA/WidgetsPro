@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.os.Bundle
@@ -17,8 +16,11 @@ import com.tpk.widgetspro.R
 import com.tpk.widgetspro.utils.NotificationUtils
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget.CelestialAnimator.Companion.dpToPx
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import kotlin.math.pow
 
 class SunTrackerWidget : AppWidgetProvider() {
@@ -58,10 +60,8 @@ class SunTrackerWidget : AppWidgetProvider() {
     ) {
         val views = RemoteViews(context.packageName, R.layout.widget_sun_tracker)
         val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        val now = LocalTime.now()
-        val animator = CelestialAnimator(options, context, now)
+        val animator = CelestialAnimator(options, context)
 
-        // Get widget dimensions and set the path bitmap
         val widgetWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
             .dpToPx(context.resources.displayMetrics)
         val widgetHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
@@ -69,7 +69,6 @@ class SunTrackerWidget : AppWidgetProvider() {
         val pathBitmap = generatePathBitmap(context, widgetWidth, widgetHeight)
         views.setImageViewBitmap(R.id.path_view, pathBitmap)
 
-        // Update sun or moon position
         if (animator.isDaytime) {
             views.setViewVisibility(R.id.sun_orb, View.VISIBLE)
             views.setViewVisibility(R.id.moon_orb, View.GONE)
@@ -84,20 +83,35 @@ class SunTrackerWidget : AppWidgetProvider() {
             views.setFloat(R.id.moon_orb, "setTranslationY", moonY)
         }
 
-        // Update time until sunset/sunrise
+        // Time zone and duration fix
         val currentDateTime = LocalDateTime.now()
-        val sunrise = LocalDateTime.of(currentDateTime.toLocalDate(), CelestialAnimator.DAY_START)
-        val sunset = LocalDateTime.of(currentDateTime.toLocalDate(), CelestialAnimator.DAY_END)
+        val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+        val sunriseTimeStr = prefs.getString("sunrise_time_today", "06:00") ?: "06:00"
+        val sunsetTimeStr = prefs.getString("sunset_time_today", "18:00") ?: "18:00"
+        val sunriseTomorrowTimeStr = prefs.getString("sunrise_time_tomorrow", "06:00") ?: "06:00"
+        val offsetStr = prefs.getString("location_offset", "Z") ?: "Z"
+        val offset = ZoneOffset.of(offsetStr)
+        val currentLocationDateTime = Instant.now().atOffset(offset).toLocalDateTime()
+
+        val sunriseTime = LocalTime.parse(sunriseTimeStr)
+        val sunsetTime = LocalTime.parse(sunsetTimeStr)
+        val sunriseTomorrowTime = LocalTime.parse(sunriseTomorrowTimeStr)
+
+        val sunriseToday = LocalDateTime.of(currentDateTime.toLocalDate(), sunriseTime)
+        val sunsetToday = LocalDateTime.of(currentDateTime.toLocalDate(), sunsetTime)
+        val sunriseTomorrow = LocalDateTime.of(currentDateTime.toLocalDate().plusDays(1), sunriseTomorrowTime)
+        val temperature = prefs.getFloat("current_temperature", 0f)
+
         val timeText = if (animator.isDaytime) {
-            val duration = Duration.between(currentDateTime, sunset)
+            val duration = Duration.between(currentLocationDateTime, sunsetToday)
             formatDuration(duration, "sunset")
         } else {
-            val nextSunrise = if (currentDateTime.isBefore(sunrise)) sunrise else sunrise.plusDays(1)
-            val duration = Duration.between(currentDateTime, nextSunrise)
+            val nextSunrise = if (currentLocationDateTime.isBefore(sunriseToday)) sunriseToday else sunriseTomorrow
+            val duration = Duration.between(currentLocationDateTime, nextSunrise)
             formatDuration(duration, "sunrise")
         }
-        views.setTextViewText(R.id.time_until_text, timeText)
-
+        views.setTextViewText(R.id.time_until_text, "$timeText")
+        views.setTextViewText(R.id.temp, "$temperature°C")
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
@@ -110,7 +124,6 @@ class SunTrackerWidget : AppWidgetProvider() {
             style = Paint.Style.STROKE
         }
         val path = Path()
-        // Scale control points to widget dimensions
         val p0 = Pair(40f / 300f * width, 82f / 150f * height)
         val p1 = Pair(150f / 300f * width, (-20f) / 150f * height)
         val p2 = Pair(260f / 300f * width, 82f / 150f * height)
@@ -128,8 +141,7 @@ class SunTrackerWidget : AppWidgetProvider() {
 
     private class CelestialAnimator(
         private val widgetOptions: Bundle,
-        private val context: Context,
-        private val currentTime: LocalTime
+        private val context: Context
     ) {
         private val displayMetrics = context.resources.displayMetrics
         private val widgetWidth = widgetOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
@@ -137,13 +149,20 @@ class SunTrackerWidget : AppWidgetProvider() {
         private val widgetHeight = widgetOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
             .dpToPx(displayMetrics)
 
-        val isDaytime get() = currentTime.isAfter(DAY_START) && currentTime.isBefore(DAY_END)
+        private val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+        private val sunriseTime = LocalTime.parse(prefs.getString("sunrise_time_today", "06:00"))
+        private val sunsetTime = LocalTime.parse(prefs.getString("sunset_time_today", "18:00"))
+        private val sunriseTomorrowTime = LocalTime.parse(prefs.getString("sunrise_time_tomorrow", "06:00"))
+        private val offset = ZoneOffset.of(prefs.getString("location_offset", "Z"))
+        private val currentLocationTime = Instant.now().atOffset(offset).toLocalTime()
+
+        val isDaytime get() = currentLocationTime.isAfter(sunriseTime) && currentLocationTime.isBefore(sunsetTime)
 
         private val sunNormalizedTime: Float
             get() {
-                val dayStartSeconds = DAY_START.toSecondOfDay().toFloat()
-                val dayEndSeconds = DAY_END.toSecondOfDay().toFloat()
-                val currentSeconds = currentTime.toSecondOfDay().toFloat()
+                val dayStartSeconds = sunriseTime.toSecondOfDay().toFloat()
+                val dayEndSeconds = sunsetTime.toSecondOfDay().toFloat()
+                val currentSeconds = currentLocationTime.toSecondOfDay().toFloat()
                 return if (currentSeconds in dayStartSeconds..dayEndSeconds) {
                     (currentSeconds - dayStartSeconds) / (dayEndSeconds - dayStartSeconds)
                 } else {
@@ -151,19 +170,26 @@ class SunTrackerWidget : AppWidgetProvider() {
                 }
             }
 
+        private val totalNightDuration: Float
+            get() {
+                val sunsetSeconds = sunsetTime.toSecondOfDay().toFloat()
+                val sunriseTomorrowSeconds = sunriseTomorrowTime.toSecondOfDay().toFloat()
+                return (86400f - sunsetSeconds) + sunriseTomorrowSeconds
+            }
+
         private val moonNormalizedTime: Float
             get() {
-                val secondsInDay = 86400f
-                val dayEndSeconds = DAY_END.toSecondOfDay().toFloat()
-                val currentSeconds = currentTime.toSecondOfDay().toFloat()
-                val timeSinceSunset = if (currentSeconds >= dayEndSeconds) {
-                    currentSeconds - dayEndSeconds
-                } else if (currentTime.isBefore(DAY_START)) {
-                    currentSeconds + (secondsInDay - dayEndSeconds)
+                val currentSeconds = currentLocationTime.toSecondOfDay().toFloat()
+                val sunsetSeconds = sunsetTime.toSecondOfDay().toFloat()
+                val sunriseSeconds = sunriseTime.toSecondOfDay().toFloat()
+                val timeSinceSunset: Float = if (currentSeconds >= sunsetSeconds) {
+                    currentSeconds - sunsetSeconds
+                } else if (currentSeconds <= sunriseSeconds) {
+                    (86400f - sunsetSeconds) + currentSeconds
                 } else {
                     0f
                 }
-                return (timeSinceSunset / (NIGHT_DURATION * 3600f)).coerceIn(0f, 1f)
+                return (timeSinceSunset / totalNightDuration).coerceIn(0f, 1f)
             }
 
         private fun bezierPosition(t: Float): Pair<Float, Float> {
@@ -183,10 +209,6 @@ class SunTrackerWidget : AppWidgetProvider() {
         val moonTranslation get() = getTranslation(moonNormalizedTime)
 
         companion object {
-            val DAY_START = LocalTime.of(6, 0)  // Fixed sunrise
-            val DAY_END = LocalTime.of(18, 0)   // Fixed sunset
-            const val NIGHT_DURATION = 12       // Hours
-
             fun Int.dpToPx(metrics: android.util.DisplayMetrics) = (this * metrics.density).toInt()
         }
     }

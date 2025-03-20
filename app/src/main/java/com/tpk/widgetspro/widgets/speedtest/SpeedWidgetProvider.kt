@@ -10,6 +10,7 @@ import android.net.TrafficStats
 import android.os.Handler
 import android.os.Looper
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.utils.WidgetUtils
@@ -55,7 +56,7 @@ class SpeedWidgetProvider : AppWidgetProvider() {
                     for (appWidgetId in appWidgetIds) {
                         val views = RemoteViews(context.packageName, R.layout.speed_widget_layout)
                         val typeface = ResourcesCompat.getFont(context, R.font.my_custom_font)!!
-                        val setupBitmap = WidgetUtils.createTextBitmap(context, String.format("%.2f MB/s", speedMBps), 20f, Color.WHITE, typeface)
+                        val setupBitmap = WidgetUtils.createTextBitmap(context, String.format("%.2f MB/s", speedMBps), 20f, ContextCompat.getColor(context, R.color.text_color), typeface)
                         views.setImageViewBitmap(R.id.speed_text, setupBitmap)
                         appWidgetManager.updateAppWidget(appWidgetId, views)
                     }
