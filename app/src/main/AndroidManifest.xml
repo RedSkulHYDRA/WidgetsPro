@@ -163,6 +163,11 @@
                 android:resource="@xml/speed_widget_info" />
         </receiver>
 
+        <service
+            android:name=".widgets.speedtest.SpeedUpdateService"
+            android:exported="false"
+            android:foregroundServiceType="systemExempted" />
+
         <receiver
             android:name=".utils.BootReceiver"
             android:enabled="true"
