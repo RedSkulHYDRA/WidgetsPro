@@ -17,7 +17,6 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
-
             updateWidgets(context, appWidgetManager, CpuWidgetProvider::class.java)
             updateWidgets(context, appWidgetManager, BatteryWidgetProvider::class.java)
             updateWidgets(context, appWidgetManager, CaffeineWidget::class.java)
@@ -28,11 +27,7 @@ class BootReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun updateWidgets(
-        context: Context,
-        manager: AppWidgetManager,
-        providerClass: Class<*>
-    ) {
+    private fun updateWidgets(context: Context, manager: AppWidgetManager, providerClass: Class<*>) {
         val provider = ComponentName(context, providerClass)
         val widgetIds = manager.getAppWidgetIds(provider)
         if (widgetIds.isNotEmpty()) {

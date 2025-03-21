@@ -4,18 +4,18 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import com.tpk.widgetspro.services.SpeedUpdateService
 
 class SpeedWidgetProvider : AppWidgetProvider() {
-
     override fun onEnabled(context: Context) {
-        // Start the background update service when the first widget is placed.
-        val intent = Intent(context, SpeedUpdateService::class.java)
-        context.startForegroundService(intent)
+        context.startForegroundService(Intent(context, SpeedUpdateService::class.java))
+    }
+
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        context.startForegroundService(Intent(context, SpeedUpdateService::class.java))
     }
 
     override fun onDisabled(context: Context) {
-        // Stop the service when the widget is removed.
-        val intent = Intent(context, SpeedUpdateService::class.java)
-        context.stopService(intent)
+        context.stopService(Intent(context, SpeedUpdateService::class.java))
     }
 }

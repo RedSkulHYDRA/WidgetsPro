@@ -4,12 +4,12 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.base.BaseMonitorService
 import com.tpk.widgetspro.utils.WidgetUtils
 import com.tpk.widgetspro.widgets.cpu.CpuMonitor
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
@@ -73,7 +73,7 @@ class CpuMonitorService : BaseMonitorService() {
     }
 
     override fun onDestroy() {
-        cpuMonitor.stopMonitoring()
+        if (::cpuMonitor.isInitialized) cpuMonitor.stopMonitoring()
         super.onDestroy()
     }
 }

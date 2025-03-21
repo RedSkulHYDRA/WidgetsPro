@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.base
 
 import android.app.Notification
 import android.app.PendingIntent

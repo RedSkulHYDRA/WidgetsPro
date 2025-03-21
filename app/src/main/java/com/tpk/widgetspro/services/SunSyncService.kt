@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.widgets.sun
+package com.tpk.widgetspro.services
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -6,20 +6,20 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
-import com.tpk.widgetspro.services.BaseMonitorService
+import com.tpk.widgetspro.base.BaseMonitorService
+import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class SunSyncService : BaseMonitorService() {
-
     override val notificationId = 3
     override val notificationTitle = "Sun Tracker Widget"
     override val notificationText = "Monitoring sun position"
@@ -33,9 +33,7 @@ class SunSyncService : BaseMonitorService() {
             val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
             val lastFetchDate = prefs.getString("last_fetch_date", null)
             val today = LocalDate.now().toString()
-            if (lastFetchDate != today) {
-                fetchSunriseSunsetData()
-            }
+            if (lastFetchDate != today) fetchSunriseSunsetData()
             fetchWeatherData()
             updateWidgets()
             handler.postDelayed(this, 60 * 1000L)
@@ -92,16 +90,12 @@ class SunSyncService : BaseMonitorService() {
             val sunriseStr = timeObject.getString("sunrise")
             val sunsetStr = timeObject.getString("sunset")
 
-            // Parse API times (which include offset) and convert to device's local time zone
             val sunriseOffsetDateTime = OffsetDateTime.parse(sunriseStr)
             val sunsetOffsetDateTime = OffsetDateTime.parse(sunsetStr)
-
-            // Convert to device's local time zone
             val localZoneId = ZoneId.systemDefault()
             val sunriseLocal = sunriseOffsetDateTime.atZoneSameInstant(localZoneId).toLocalTime()
             val sunsetLocal = sunsetOffsetDateTime.atZoneSameInstant(localZoneId).toLocalTime()
 
-            // Save times as strings in local time
             val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
             with(prefs.edit()) {
                 if (keyPrefix == "today") {
@@ -114,7 +108,6 @@ class SunSyncService : BaseMonitorService() {
                 apply()
             }
         } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -134,7 +127,6 @@ class SunSyncService : BaseMonitorService() {
                 apply()
             }
         } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -146,9 +138,10 @@ class SunSyncService : BaseMonitorService() {
             stopSelf()
             return
         }
-        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
-        intent.component = componentName
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+            component = componentName
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+        }
         sendBroadcast(intent)
     }
 
@@ -167,8 +160,8 @@ class SunSyncService : BaseMonitorService() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         handler.removeCallbacks(updateRunnable)
+        super.onDestroy()
     }
 
     companion object {

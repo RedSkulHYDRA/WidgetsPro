@@ -15,16 +15,12 @@ class BatteryWidgetProvider : BaseWidgetProvider() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        context.startService(Intent(context, BatteryMonitorService::class.java))
+        startService(context)
     }
 
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        super.onEnabled(context)
-        context.startService(Intent(context, BatteryMonitorService::class.java))
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        startService(context)
     }
 
     override fun onDisabled(context: Context) {
@@ -33,6 +29,10 @@ class BatteryWidgetProvider : BaseWidgetProvider() {
     }
 
     override fun updateNormalWidgetView(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
+        startService(context)
+    }
+
+    private fun startService(context: Context) {
         context.startService(Intent(context, BatteryMonitorService::class.java))
     }
 }

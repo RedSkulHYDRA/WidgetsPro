@@ -16,16 +16,12 @@ class CpuWidgetProvider : BaseWidgetProvider() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        if (hasRequiredPermissions(context)) context.startService(Intent(context, CpuMonitorService::class.java))
+        if (hasRequiredPermissions(context)) startService(context)
     }
 
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        super.onEnabled(context)
-        if (hasRequiredPermissions(context)) context.startService(Intent(context, CpuMonitorService::class.java))
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        if (hasRequiredPermissions(context)) startService(context)
     }
 
     override fun onDisabled(context: Context) {
@@ -34,8 +30,12 @@ class CpuWidgetProvider : BaseWidgetProvider() {
     }
 
     override fun updateNormalWidgetView(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-        context.startService(Intent(context, CpuMonitorService::class.java))
+        startService(context)
     }
 
     override fun hasRequiredPermissions(context: Context) = PermissionUtils.hasRootAccess() || PermissionUtils.hasShizukuAccess()
+
+    private fun startService(context: Context) {
+        context.startService(Intent(context, CpuMonitorService::class.java))
+    }
 }

@@ -4,11 +4,11 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.base.BaseMonitorService
 import com.tpk.widgetspro.utils.WidgetUtils
 import com.tpk.widgetspro.widgets.battery.BatteryDottedView
 import com.tpk.widgetspro.widgets.battery.BatteryMonitor
@@ -53,7 +53,7 @@ class BatteryMonitorService : BaseMonitorService() {
     }
 
     override fun onDestroy() {
-        batteryMonitor.stopMonitoring()
+        if (::batteryMonitor.isInitialized) batteryMonitor.stopMonitoring()
         super.onDestroy()
     }
 }

@@ -1,6 +1,9 @@
-package com.tpk.widgetspro.widgets.datausage
+package com.tpk.widgetspro.services
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -11,11 +14,11 @@ import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.widgets.datausage.DataUsageWidgetProvider
 
 class DataUsageWidgetService : Service() {
-
     private val handler = Handler(Looper.getMainLooper())
-    private val updateInterval = 1000L // Update every minute.
+    private val updateInterval = 1000L
 
     private val updateRunnable = object : Runnable {
         override fun run() {
@@ -31,57 +34,38 @@ class DataUsageWidgetService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Ensure the service is recreated if the system kills it.
         return START_STICKY
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         handler.removeCallbacks(updateRunnable)
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    /**
-     * Updates all widget instances using the provider's existing update method.
-     */
     private fun updateWidgets() {
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val componentName = ComponentName(this, DataUsageWidgetProvider::class.java)
         val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
-        for (widgetId in widgetIds) {
-            DataUsageWidgetProvider.updateAppWidget(this, appWidgetManager, widgetId)
-        }
+        widgetIds.forEach { DataUsageWidgetProvider.updateAppWidget(this, appWidgetManager, it) }
     }
 
-    /**
-     * Creates a notification channel (for Android O and above) and starts this service in the foreground.
-     */
     private fun startForegroundServiceNotification() {
         val channelId = "data_usage_widget_service_channel"
         val notificationId = 5
 
-        // Create a notification channel on Android O and above.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName = "Widget Updater Service"
-            val channel = NotificationChannel(
-                channelId,
-                channelName,
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val notificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            val channel = NotificationChannel(channelId, "Widget Updater Service", NotificationManager.IMPORTANCE_LOW)
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
         }
 
-        // Build a minimal notification.
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Data Usage Widget Active")
             .setContentText("Widget updater service is running")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)  // Ensure this icon resource exists.
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
 
-        // Start as a foreground service.
         startForeground(notificationId, notification)
     }
 }

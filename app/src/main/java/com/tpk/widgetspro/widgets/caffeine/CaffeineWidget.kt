@@ -25,11 +25,7 @@ class CaffeineWidget : BaseWidgetProvider() {
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         val prefs = context.getSharedPreferences("caffeine", Context.MODE_PRIVATE)
         val isActive = prefs.getBoolean("active", false)
         val views = RemoteViews(context.packageName, layoutId).apply {

@@ -34,6 +34,7 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputLayout
 import com.tpk.widgetspro.api.ImageApiClient
 import com.tpk.widgetspro.services.CpuMonitorService
+import com.tpk.widgetspro.services.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.utils.ImageLoader
 import com.tpk.widgetspro.utils.NotificationUtils
@@ -44,7 +45,6 @@ import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.datausage.DataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
-import com.tpk.widgetspro.widgets.sun.SunSyncService
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
 import java.util.Locale

@@ -21,7 +21,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.intent.action.BOOT_COMPLETED" />
 
-
     <queries>
         <intent>
             <action android:name="android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE" />
@@ -130,10 +129,10 @@
 
         <activity
             android:name=".widgets.bluetooth.BluetoothWidgetConfigActivity"
-            android:theme="@style/BluetoothConfigTheme"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/BluetoothConfigTheme">
             <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
 
@@ -149,11 +148,12 @@
         </receiver>
 
         <service
-            android:name=".widgets.sun.SunSyncService"
+            android:name=".services.SunSyncService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
-        <receiver android:name=".widgets.speedtest.SpeedWidgetProvider"
+        <receiver
+            android:name=".widgets.speedtest.SpeedWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -164,7 +164,7 @@
         </receiver>
 
         <service
-            android:name=".widgets.speedtest.SpeedUpdateService"
+            android:name=".services.SpeedUpdateService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
@@ -177,7 +177,8 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".widgets.datausage.DataUsageWidgetProvider"
+        <receiver
+            android:name=".widgets.datausage.DataUsageWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -188,7 +189,7 @@
         </receiver>
 
         <service
-            android:name=".widgets.datausage.DataUsageWidgetService"
+            android:name=".services.DataUsageWidgetService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 

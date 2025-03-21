@@ -22,11 +22,7 @@ object BitmapCacheManager {
 
     fun cacheBitmap(context: Context, deviceName: String, bitmap: Bitmap) {
         val file = File(getCacheDir(context), "${deviceName.hashCode()}.png")
-        try {
-            FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     private fun getCacheDir(context: Context): File {

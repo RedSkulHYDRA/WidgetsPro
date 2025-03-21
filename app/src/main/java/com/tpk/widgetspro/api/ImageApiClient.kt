@@ -7,7 +7,6 @@ import com.tpk.widgetspro.models.GoogleSearchResponse
 import com.tpk.widgetspro.utils.CryptoUtils
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import kotlin.coroutines.resume
@@ -19,20 +18,19 @@ object ImageApiClient {
     private const val TIMESTAMP_PREFIX = "ts_"
     private const val WEEK_IN_MILLIS = 604_800_000L
 
-    val fernetKey = BuildConfig.API_KEY_1
-    val encryptedApiKey1 = BuildConfig.API_KEY_2
-    val encryptedApiKey2 = BuildConfig.API_KEY_3
+    private val fernetKey = BuildConfig.API_KEY_1
+    private val encryptedApiKey1 = BuildConfig.API_KEY_2
+    private val encryptedApiKey2 = BuildConfig.API_KEY_3
     private val API_KEY = CryptoUtils.decryptApiKey(encryptedApiKey1, fernetKey)
     private val SEARCH_ENGINE_ID = CryptoUtils.decryptApiKey(encryptedApiKey2, fernetKey)
 
     private fun createService(context: Context): GoogleSearchApiService {
-
         val client = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
                 val packageName = context.packageName
                 val packageInfo = context.packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-                val sha1Hex = packageInfo.signingInfo?.apkContentsSigners?.get(0)?.toByteArray()
+                val sha1Hex = packageInfo.signingInfo?.apkContentsSigners[0]?.toByteArray()
                     .let { java.security.MessageDigest.getInstance("SHA1").digest(it) }
                     .joinToString("") { "%02x".format(it) }
 

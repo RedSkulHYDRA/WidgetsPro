@@ -59,22 +59,25 @@ class BluetoothWidgetConfigActivity : AppCompatActivity() {
             return
         }
 
-        val window = window
-        val displayMetrics = resources.displayMetrics
-        val width = (displayMetrics.widthPixels * 0.8).toInt()
-        window.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
-        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        window.attributes.dimAmount = 0.5f
+        window.apply {
+            val displayMetrics = resources.displayMetrics
+            val width = (displayMetrics.widthPixels * 0.8).toInt()
+            setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            attributes.dimAmount = 0.5f
+        }
         setFinishOnTouchOutside(true)
 
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setBackgroundResource(R.drawable.dialog_background)
-        layout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundResource(R.drawable.dialog_background)
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+        }
 
-        val titleTextView = TextView(this)
-        titleTextView.text = "Select a Bluetooth device"
-        titleTextView.setTextColor(ContextCompat.getColor(this, R.color.text_color))
+        val titleTextView = TextView(this).apply {
+            text = "Select a Bluetooth device"
+            setTextColor(ContextCompat.getColor(this@BluetoothWidgetConfigActivity, R.color.text_color))
+        }
         layout.addView(titleTextView)
 
         val listView = ListView(this)
@@ -96,8 +99,10 @@ class BluetoothWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun saveSelectedDevice(appWidgetId: Int, deviceAddress: String) {
-        val prefs = getSharedPreferences("BluetoothWidgetPrefs", Context.MODE_PRIVATE)
-        prefs.edit().putString("device_address_$appWidgetId", deviceAddress).apply()
+        getSharedPreferences("BluetoothWidgetPrefs", Context.MODE_PRIVATE)
+            .edit()
+            .putString("device_address_$appWidgetId", deviceAddress)
+            .apply()
     }
 
     private fun updateWidget(appWidgetId: Int) {

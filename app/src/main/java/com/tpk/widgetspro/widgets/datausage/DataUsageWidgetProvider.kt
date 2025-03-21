@@ -10,42 +10,30 @@ import android.net.TrafficStats
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import java.text.SimpleDateFormat
-import java.util.*
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.services.DataUsageWidgetService
 import com.tpk.widgetspro.utils.WidgetUtils
-
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class DataUsageWidgetProvider : AppWidgetProvider() {
-
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        // Update all active widget instances.
-        for (widgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, widgetId)
-        }
-        // Schedule a reset at the next midnight.
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        appWidgetIds.forEach { updateAppWidget(context, appWidgetManager, it) }
         scheduleMidnightReset(context)
     }
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        // Start our persistent widget update service.
         context.startForegroundService(Intent(context, DataUsageWidgetService::class.java))
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        // Stop the service when the last widget is removed.
         context.stopService(Intent(context, DataUsageWidgetService::class.java))
     }
 
-    /**
-     * Schedules an AlarmManager update at midnight so that the baseline resets.
-     */
     private fun scheduleMidnightReset(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, DataUsageWidgetProvider::class.java).apply {
@@ -58,7 +46,6 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Calculate the time for the next midnight.
         val calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
             add(Calendar.DAY_OF_YEAR, 1)
@@ -68,7 +55,6 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             set(Calendar.MILLISECOND, 0)
         }
 
-        // Set an exact alarm for midnight.
         alarmManager.setExact(AlarmManager.RTC, calendar.timeInMillis, pendingIntent)
     }
 
@@ -77,21 +63,12 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
         private const val KEY_BASELINE = "baseline"
         private const val KEY_DATE = "baseline_date"
 
-        /**
-         * Updates a single widget instance by calculating today’s data usage.
-         */
-        fun updateAppWidget(
-            context: Context,
-            appWidgetManager: AppWidgetManager,
-            appWidgetId: Int
-        ) {
+        fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            // Format today's date as "yyyyMMdd" to verify the baseline.
             val currentDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
             var baseline = prefs.getLong(KEY_BASELINE, -1)
             val savedDate = prefs.getString(KEY_DATE, null)
 
-            // Reset baseline if it's not set or outdated.
             if (baseline == -1L || savedDate != currentDate) {
                 baseline = TrafficStats.getTotalRxBytes() + TrafficStats.getTotalTxBytes()
                 prefs.edit().apply {
@@ -101,14 +78,10 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            // Compute today's usage.
             val currentBytes = TrafficStats.getTotalRxBytes() + TrafficStats.getTotalTxBytes()
             val usedBytesToday = currentBytes - baseline
-
-            // Create a human-readable string.
             val usageText = formatBytes(usedBytesToday)
 
-            // Update the widget's RemoteViews.
             val views = RemoteViews(context.packageName, R.layout.data_usage_widget)
             val typeface = ResourcesCompat.getFont(context, R.font.my_custom_font)!!
             val setupBitmap = WidgetUtils.createTextBitmap(
@@ -119,13 +92,9 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
                 typeface
             )
             views.setImageViewBitmap(R.id.data_text, setupBitmap)
-
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
-        /**
-         * Formats the byte count into a readable string (e.g., "1.5 MB").
-         */
         private fun formatBytes(bytes: Long): String {
             val unit = 1024
             if (bytes < unit) return "$bytes B"

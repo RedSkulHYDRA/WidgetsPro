@@ -23,7 +23,6 @@ class CaffeineService : Service() {
 
     private fun createNotification(): Notification {
         NotificationChannel(CHANNEL_ID, getString(R.string.channel_name), NotificationManager.IMPORTANCE_LOW).apply {
-            description = getString(R.string.channel_description)
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(this)
         }

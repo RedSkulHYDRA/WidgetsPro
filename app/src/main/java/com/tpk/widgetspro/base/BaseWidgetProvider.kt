@@ -4,7 +4,6 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
-import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
