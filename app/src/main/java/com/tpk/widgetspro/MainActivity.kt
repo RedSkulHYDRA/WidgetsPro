@@ -42,6 +42,7 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
+import com.tpk.widgetspro.widgets.datausage.DataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunSyncService
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
@@ -116,6 +117,9 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.button6).setOnClickListener {
             requestWidgetInstallation(SpeedWidgetProvider::class.java)
+        }
+        findViewById<Button>(R.id.button7).setOnClickListener {
+            requestWidgetInstallation(DataUsageWidgetProvider::class.java)
         }
         findViewById<Button>(R.id.reset_image_button).setOnClickListener {
             val appWidgetIds = getBluetoothWidgetIds(this)
