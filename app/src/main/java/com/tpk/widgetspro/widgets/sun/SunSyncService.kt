@@ -12,7 +12,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
+import java.time.ZoneId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,9 +36,9 @@ class SunSyncService : BaseMonitorService() {
             if (lastFetchDate != today) {
                 fetchSunriseSunsetData()
             }
-            fetchWeatherData() // Fetch weather data every run
+            fetchWeatherData()
             updateWidgets()
-            handler.postDelayed(this, 60 * 1000L) // Adjust interval as needed
+            handler.postDelayed(this, 60 * 1000L)
         }
     }
 
@@ -61,9 +61,6 @@ class SunSyncService : BaseMonitorService() {
             val today = LocalDate.now()
             val tomorrow = today.plusDays(1)
 
-            // Removed the weather API call from here
-
-            // Fetch sunrise/sunset for today and tomorrow
             val urlToday = "https://api.met.no/weatherapi/sunrise/2.0/.json?lat=$latitude&lon=$longitude&date=$today"
             val jsonToday = fetchData(urlToday)
             jsonToday?.let { parseAndSaveSunriseSunset(it, today.toString(), "today") }
@@ -92,26 +89,32 @@ class SunSyncService : BaseMonitorService() {
             val jsonObject = JSONObject(json)
             val timeArray = jsonObject.getJSONObject("location").getJSONArray("time")
             val timeObject = timeArray.getJSONObject(0)
-            val sunrise = timeObject.getString("sunrise")
-            val sunset = timeObject.getString("sunset")
-            val sunriseTime = OffsetDateTime.parse(sunrise).toLocalTime()
-            val sunsetTime = OffsetDateTime.parse(sunset).toLocalTime()
-            val offset = OffsetDateTime.parse(sunrise).offset
+            val sunriseStr = timeObject.getString("sunrise")
+            val sunsetStr = timeObject.getString("sunset")
 
+            // Parse API times (which include offset) and convert to device's local time zone
+            val sunriseOffsetDateTime = OffsetDateTime.parse(sunriseStr)
+            val sunsetOffsetDateTime = OffsetDateTime.parse(sunsetStr)
+
+            // Convert to device's local time zone
+            val localZoneId = ZoneId.systemDefault()
+            val sunriseLocal = sunriseOffsetDateTime.atZoneSameInstant(localZoneId).toLocalTime()
+            val sunsetLocal = sunsetOffsetDateTime.atZoneSameInstant(localZoneId).toLocalTime()
+
+            // Save times as strings in local time
             val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
             with(prefs.edit()) {
                 if (keyPrefix == "today") {
-                    putString("sunrise_time_today", sunriseTime.toString())
-                    putString("sunset_time_today", sunsetTime.toString())
-                    putString("location_offset", offset.toString())
+                    putString("sunrise_time_today", sunriseLocal.toString())
+                    putString("sunset_time_today", sunsetLocal.toString())
                     putString("last_fetch_date", date)
                 } else if (keyPrefix == "tomorrow") {
-                    putString("sunrise_time_tomorrow", sunriseTime.toString())
+                    putString("sunrise_time_tomorrow", sunriseLocal.toString())
                 }
                 apply()
             }
         } catch (e: Exception) {
-            // Log error if needed
+            e.printStackTrace()
         }
     }
 
@@ -131,7 +134,6 @@ class SunSyncService : BaseMonitorService() {
                 apply()
             }
         } catch (e: Exception) {
-            // Log error for debugging
             e.printStackTrace()
         }
     }
