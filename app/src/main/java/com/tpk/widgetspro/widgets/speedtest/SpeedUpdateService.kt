@@ -133,6 +133,6 @@ class SpeedUpdateService : Service() {
             .setSmallIcon(R.drawable.ic_launcher_foreground) // Make sure your drawable exists.
             .build()
 
-        startForeground(1, notification)
+        startForeground(4, notification)
     }
 }

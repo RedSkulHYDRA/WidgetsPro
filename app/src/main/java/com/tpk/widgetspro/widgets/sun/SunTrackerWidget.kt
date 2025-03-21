@@ -123,7 +123,7 @@ class SunTrackerWidget : AppWidgetProvider() {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint().apply {
-            color = ContextCompat.getColor(context, R.color.text_color)
+            color = ContextCompat.getColor(context, R.color.accent_color)
             strokeWidth = 2f
             style = Paint.Style.STROKE
         }

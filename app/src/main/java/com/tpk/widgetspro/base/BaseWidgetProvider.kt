@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.utils.WidgetUtils
@@ -35,7 +36,7 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         val componentName = ComponentName(context, this::class.java)
         val ids = appWidgetIds ?: appWidgetManager.getAppWidgetIds(componentName)
         val typeface = ResourcesCompat.getFont(context, R.font.my_custom_font)!!
-        val setupBitmap = WidgetUtils.createTextBitmap(context, setupText, 20f, Color.RED, typeface)
+        val setupBitmap = WidgetUtils.createTextBitmap(context, setupText, 20f, ContextCompat.getColor(context, R.color.accent_color), typeface)
 
         ids.forEach { appWidgetId ->
             val views = RemoteViews(context.packageName, layoutId).apply {

@@ -49,4 +49,6 @@
     <string name="add_speed_widget">Add Speed Widget</string>
     <string name="weather_settings">Weather widget settings</string>
     <string name="set_location">Set Location</string>
+    <string name="data_usage_description">Data Usage Widget</string>
+    <string name="add_data_widget">Add Data Usage Widget</string>
 </resources>

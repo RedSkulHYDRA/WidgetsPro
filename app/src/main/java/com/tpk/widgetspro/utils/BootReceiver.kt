@@ -9,6 +9,7 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
+import com.tpk.widgetspro.widgets.datausage.DataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 
@@ -23,6 +24,7 @@ class BootReceiver : BroadcastReceiver() {
             updateWidgets(context, appWidgetManager, BluetoothWidgetProvider::class.java)
             updateWidgets(context, appWidgetManager, SunTrackerWidget::class.java)
             updateWidgets(context, appWidgetManager, SpeedWidgetProvider::class.java)
+            updateWidgets(context, appWidgetManager, DataUsageWidgetProvider::class.java)
         }
     }
 

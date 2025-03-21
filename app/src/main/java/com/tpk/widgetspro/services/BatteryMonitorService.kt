@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.utils.WidgetUtils
@@ -31,8 +32,8 @@ class BatteryMonitorService : BaseMonitorService() {
             val componentName = ComponentName(this, BatteryWidgetProvider::class.java)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
             val typeface = ResourcesCompat.getFont(this, R.font.my_custom_font)!!
-            val percentageBitmap = WidgetUtils.createTextBitmap(this, "$percentage%", 20f, Color.RED, typeface)
-            val batteryBitmap = WidgetUtils.createTextBitmap(this, "BAT", 20f, Color.RED, typeface)
+            val percentageBitmap = WidgetUtils.createTextBitmap(this, "$percentage%", 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
+            val batteryBitmap = WidgetUtils.createTextBitmap(this, "BAT", 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
             val graphBitmap = WidgetUtils.createGraphBitmap(this, percentage, BatteryDottedView::class)
 
             appWidgetIds.forEach { appWidgetId ->

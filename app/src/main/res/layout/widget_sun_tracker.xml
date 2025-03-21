@@ -40,7 +40,7 @@
         android:layout_marginBottom="59dp"
         android:layout_gravity="bottom|center_horizontal"
         android:textColor="@color/text_color"
-        android:textSize="14sp"
+        android:textSize="16sp"
         android:text="Loading..." />
     <TextView
         android:id="@+id/time_until_text"
@@ -49,6 +49,6 @@
         android:layout_marginBottom="10dp"
         android:layout_gravity="bottom|center_horizontal"
         android:textColor="@color/text_color"
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:text="Loading..." />
 </FrameLayout>

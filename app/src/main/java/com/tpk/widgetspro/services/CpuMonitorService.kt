@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.utils.WidgetUtils
@@ -43,8 +44,8 @@ class CpuMonitorService : BaseMonitorService() {
             val componentName = ComponentName(this, CpuWidgetProvider::class.java)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
             val typeface = ResourcesCompat.getFont(this, R.font.my_custom_font)!!
-            val usageBitmap = WidgetUtils.createTextBitmap(this, "%.0f%%".format(cpuUsage), 20f, Color.RED, typeface)
-            val cpuBitmap = WidgetUtils.createTextBitmap(this, "CPU", 20f, Color.RED, typeface)
+            val usageBitmap = WidgetUtils.createTextBitmap(this, "%.0f%%".format(cpuUsage), 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
+            val cpuBitmap = WidgetUtils.createTextBitmap(this, "CPU", 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
 
             dataPoints.addLast(cpuUsage)
             if (dataPoints.size > MAX_DATA_POINTS) dataPoints.removeFirst()
