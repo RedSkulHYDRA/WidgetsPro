@@ -177,6 +177,21 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".widgets.datausage.DataUsageWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/data_usage_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".widgets.datausage.DataUsageWidgetService"
+            android:exported="false"
+            android:foregroundServiceType="systemExempted" />
+
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
