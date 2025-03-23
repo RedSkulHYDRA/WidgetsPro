@@ -60,28 +60,60 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val PREFS_NAME = "DataUsagePrefs"
-        private const val KEY_BASELINE = "baseline"
+        private const val KEY_INITIAL_BASELINE = "initial_baseline"
+        private const val KEY_LAST_BASELINE = "last_baseline"
+        private const val KEY_ACCUMULATED = "accumulated"
         private const val KEY_DATE = "baseline_date"
 
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val currentDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-            var baseline = prefs.getLong(KEY_BASELINE, -1)
+            var initialBaseline = prefs.getLong(KEY_INITIAL_BASELINE, -1)
+            var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1)
+            var accumulated = prefs.getLong(KEY_ACCUMULATED, 0)
             val savedDate = prefs.getString(KEY_DATE, null)
+            val currentBytes = TrafficStats.getTotalRxBytes() + TrafficStats.getTotalTxBytes()
 
-            if (baseline == -1L || savedDate != currentDate) {
-                baseline = TrafficStats.getTotalRxBytes() + TrafficStats.getTotalTxBytes()
+            if (savedDate != currentDate) {
+                initialBaseline = currentBytes
+                lastBaseline = currentBytes
+                accumulated = 0
                 prefs.edit().apply {
-                    putLong(KEY_BASELINE, baseline)
+                    putLong(KEY_INITIAL_BASELINE, initialBaseline)
+                    putLong(KEY_LAST_BASELINE, lastBaseline)
+                    putLong(KEY_ACCUMULATED, accumulated)
                     putString(KEY_DATE, currentDate)
                     apply()
                 }
+            } else {
+                if (initialBaseline == -1L || lastBaseline == -1L) {
+                    initialBaseline = currentBytes
+                    lastBaseline = currentBytes
+                    prefs.edit().apply {
+                        putLong(KEY_INITIAL_BASELINE, initialBaseline)
+                        putLong(KEY_LAST_BASELINE, lastBaseline)
+                        apply()
+                    }
+                } else {
+                    if (currentBytes < lastBaseline) {
+                        accumulated += lastBaseline - initialBaseline
+                        initialBaseline = currentBytes
+                        lastBaseline = currentBytes
+                        prefs.edit().apply {
+                            putLong(KEY_INITIAL_BASELINE, initialBaseline)
+                            putLong(KEY_LAST_BASELINE, lastBaseline)
+                            putLong(KEY_ACCUMULATED, accumulated)
+                            apply()
+                        }
+                    } else {
+                        prefs.edit().putLong(KEY_LAST_BASELINE, currentBytes).apply()
+                        lastBaseline = currentBytes
+                    }
+                }
             }
 
-            val currentBytes = TrafficStats.getTotalRxBytes() + TrafficStats.getTotalTxBytes()
-            val usedBytesToday = currentBytes - baseline
-            val usageText = formatBytes(usedBytesToday)
-
+            val totalUsage = accumulated + (currentBytes - initialBaseline)
+            val usageText = formatBytes(totalUsage)
             val views = RemoteViews(context.packageName, R.layout.data_usage_widget)
             val typeface = ResourcesCompat.getFont(context, R.font.my_custom_font)!!
             val setupBitmap = WidgetUtils.createTextBitmap(

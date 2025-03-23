@@ -15,6 +15,8 @@ import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -52,6 +54,7 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
     private val SHIZUKU_REQUEST_CODE = 1001
     private val REQUEST_BLUETOOTH_PERMISSIONS = 100
+    private val REQUEST_IGNORE_BATTERY_OPTIMIZATIONS = 1
     private lateinit var seekBarCpu: SeekBar
     private lateinit var seekBarBattery: SeekBar
     private lateinit var tvCpuValue: TextView
@@ -163,6 +166,8 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Please enter a location", Toast.LENGTH_SHORT).show()
             }
         }
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {requestIgnoreBatteryOptimizations()}
     }
 
     private fun requestWidgetInstallation(providerClass: Class<*>) {
@@ -414,5 +419,11 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Toast.makeText(this, "Error fetching suggestions", Toast.LENGTH_SHORT).show()
         }
+    }
+    private fun requestIgnoreBatteryOptimizations() {
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:$packageName")
+        }
+        startActivityForResult(intent, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
     }
 }
