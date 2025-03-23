@@ -18,7 +18,7 @@ abstract class BaseDottedGraphView(context: Context) : View(context) {
         style = Paint.Style.FILL
     }
     protected val greyDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.DKGRAY
+        color = ContextCompat.getColor(context, R.color.battery_grey)
         strokeWidth = 1.5f
         strokeCap = Paint.Cap.ROUND
         style = Paint.Style.FILL
