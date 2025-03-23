@@ -44,6 +44,12 @@ android {
                 "proguard-rules.pro"
             )
         }
+        applicationVariants.configureEach {
+            outputs.configureEach {
+                (this as? com.android.build.gradle.internal.api.ApkVariantOutputImpl)?.outputFileName =
+                    "Widgets-Pro-v$versionName.apk"
+            }
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
