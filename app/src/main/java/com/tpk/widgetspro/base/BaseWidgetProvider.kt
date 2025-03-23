@@ -34,7 +34,7 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val componentName = ComponentName(context, this::class.java)
         val ids = appWidgetIds ?: appWidgetManager.getAppWidgetIds(componentName)
-        val typeface = ResourcesCompat.getFont(context, R.font.my_custom_font)!!
+        val typeface = ResourcesCompat.getFont(context, R.font.ndot)!!
         val setupBitmap = WidgetUtils.createTextBitmap(context, setupText, 20f, ContextCompat.getColor(context, R.color.accent_color), typeface)
 
         ids.forEach { appWidgetId ->

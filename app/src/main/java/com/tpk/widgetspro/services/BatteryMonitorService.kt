@@ -31,7 +31,7 @@ class BatteryMonitorService : BaseMonitorService() {
             val appWidgetManager = AppWidgetManager.getInstance(this)
             val componentName = ComponentName(this, BatteryWidgetProvider::class.java)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            val typeface = ResourcesCompat.getFont(this, R.font.my_custom_font)!!
+            val typeface = ResourcesCompat.getFont(this, R.font.ndot)!!
             val percentageBitmap = WidgetUtils.createTextBitmap(this, "$percentage%", 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
             val batteryBitmap = WidgetUtils.createTextBitmap(this, "BAT", 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
             val graphBitmap = WidgetUtils.createGraphBitmap(this, percentage, BatteryDottedView::class)

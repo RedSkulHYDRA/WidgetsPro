@@ -3,4 +3,5 @@
     <color name="shape_background_color">@android:color/system_neutral1_50</color>
     <color name="text_color">@android:color/system_neutral1_900</color>
     <color name="accent_color">@android:color/system_accent1_500</color>
+    <color name="accent_color1">#ffff0000</color>
 </resources>

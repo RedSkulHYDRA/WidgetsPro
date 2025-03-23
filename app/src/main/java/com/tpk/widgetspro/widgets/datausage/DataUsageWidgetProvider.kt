@@ -115,7 +115,7 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             val totalUsage = accumulated + (currentBytes - initialBaseline)
             val usageText = formatBytes(totalUsage)
             val views = RemoteViews(context.packageName, R.layout.data_usage_widget)
-            val typeface = ResourcesCompat.getFont(context, R.font.my_custom_font)!!
+            val typeface = ResourcesCompat.getFont(context, R.font.ndot)!!
             val setupBitmap = WidgetUtils.createTextBitmap(
                 context,
                 usageText,

@@ -16,7 +16,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/my_custom_font"
+            android:fontFamily="@font/ndot"
             android:paddingTop="20dp"
             android:textColor="@color/accent_color"
             android:paddingBottom="20dp"

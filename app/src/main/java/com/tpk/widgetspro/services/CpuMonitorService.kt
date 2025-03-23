@@ -43,7 +43,7 @@ class CpuMonitorService : BaseMonitorService() {
             val appWidgetManager = AppWidgetManager.getInstance(this)
             val componentName = ComponentName(this, CpuWidgetProvider::class.java)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            val typeface = ResourcesCompat.getFont(this, R.font.my_custom_font)!!
+            val typeface = ResourcesCompat.getFont(this, R.font.ndot)!!
             val usageBitmap = WidgetUtils.createTextBitmap(this, "%.0f%%".format(cpuUsage), 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
             val cpuBitmap = WidgetUtils.createTextBitmap(this, "CPU", 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
 

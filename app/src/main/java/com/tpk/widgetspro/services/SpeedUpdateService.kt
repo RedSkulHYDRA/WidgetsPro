@@ -64,7 +64,7 @@ class SpeedUpdateService : Service() {
 
                 appWidgetIds.forEach { appWidgetId ->
                     val views = RemoteViews(packageName, R.layout.speed_widget_layout)
-                    val typeface = ResourcesCompat.getFont(applicationContext, R.font.my_custom_font)!!
+                    val typeface = ResourcesCompat.getFont(applicationContext, R.font.ndot)!!
                     val speedText = "↓  " + String.format("%.2f MB/s", speedMBps)
                     val setupBitmap = WidgetUtils.createTextBitmap(
                         applicationContext,
@@ -81,7 +81,7 @@ class SpeedUpdateService : Service() {
         } else {
             appWidgetIds.forEach { appWidgetId ->
                 val views = RemoteViews(packageName, R.layout.speed_widget_layout)
-                val typeface = ResourcesCompat.getFont(applicationContext, R.font.my_custom_font)!!
+                val typeface = ResourcesCompat.getFont(applicationContext, R.font.ndot)!!
                 val setupBitmap = WidgetUtils.createTextBitmap(
                     applicationContext,
                     "N/A",
