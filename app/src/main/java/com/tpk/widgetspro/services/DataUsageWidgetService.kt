@@ -56,7 +56,7 @@ class DataUsageWidgetService : Service() {
         val notificationId = 5
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Widget Updater Service", NotificationManager.IMPORTANCE_LOW)
+            val channel = NotificationChannel(channelId, "Data Usage Widget Updater Service", NotificationManager.IMPORTANCE_LOW)
             (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
         }
 

@@ -49,6 +49,8 @@
     <string name="add_speed_widget">Add Speed Widget</string>
     <string name="weather_settings">Weather widget settings</string>
     <string name="set_location">Set Location</string>
-    <string name="data_usage_description">Data Usage Widget</string>
+    <string name="data_usage_description">WiFi Data Usage Widget</string>
+    <string name="sim_data_usage_description">Sim Data Usage Widget</string>
     <string name="add_data_widget">Add Data Usage Widget</string>
+    <string name="add_sim_data_widget">Add Sim Data Usage Widget</string>
 </resources>

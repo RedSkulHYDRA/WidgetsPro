@@ -72,7 +72,12 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1)
             var accumulated = prefs.getLong(KEY_ACCUMULATED, 0)
             val savedDate = prefs.getString(KEY_DATE, null)
-            val currentBytes = TrafficStats.getTotalRxBytes() + TrafficStats.getTotalTxBytes()
+            val totalRx = TrafficStats.getTotalRxBytes()
+            val mobileRx = TrafficStats.getMobileRxBytes()
+            val currentBytes = when {
+                totalRx.toInt() == TrafficStats.UNSUPPORTED || mobileRx.toInt() == TrafficStats.UNSUPPORTED -> 0L
+                else -> totalRx - mobileRx
+            }
 
             if (savedDate != currentDate) {
                 initialBaseline = currentBytes
