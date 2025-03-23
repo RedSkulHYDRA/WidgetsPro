@@ -20,8 +20,7 @@ class CaffeineToggleReceiver : BroadcastReceiver() {
         val serviceIntent = Intent(context, CaffeineService::class.java)
         return try {
             if (enable) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(serviceIntent)
-                else context.startService(serviceIntent)
+                context.startForegroundService(serviceIntent)
             } else {
                 context.stopService(serviceIntent)
             }

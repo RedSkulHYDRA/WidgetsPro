@@ -2,17 +2,17 @@ package com.tpk.widgetspro.base
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.view.View
 import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.utils.CommonUtils
 
 abstract class BaseDottedGraphView(context: Context) : View(context) {
     protected data class Dot(val x: Float, val y: Float)
     protected val greyDots = mutableListOf<Dot>()
     protected val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ContextCompat.getColor(context, R.color.accent_color)
+        color = CommonUtils.getAccentColor(context)
         strokeWidth = 1.5f
         strokeCap = Paint.Cap.ROUND
         style = Paint.Style.FILL

@@ -1,7 +1,6 @@
 package com.tpk.widgetspro.widgets.cpu
 
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -59,7 +58,7 @@ class CpuMonitor(private val useRoot: Boolean, private val callback: (cpuUsage: 
     private fun executeCommand(command: Array<String>): Process? = try {
         if (useRoot) Runtime.getRuntime().exec(arrayOf("su", "-c", command.joinToString(" ")))
         else rikka.shizuku.Shizuku.newProcess(command, null, null)
-    } catch (e: IOException) {
+    } catch (e: Exception) {
         null
     }
 

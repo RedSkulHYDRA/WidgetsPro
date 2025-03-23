@@ -9,6 +9,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
 import android.net.TrafficStats
 import android.os.Build
 import android.os.Handler
@@ -16,10 +17,8 @@ import android.os.IBinder
 import android.os.Looper
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.utils.WidgetUtils
+import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
 
 class SpeedUpdateService : Service() {
@@ -45,7 +44,7 @@ class SpeedUpdateService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startMyForeground()
+        startForeground(4, createNotification())
         return START_STICKY
     }
 
@@ -56,65 +55,69 @@ class SpeedUpdateService : Service() {
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
         val thisWidget = ComponentName(applicationContext, SpeedWidgetProvider::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
+        val typeface = CommonUtils.getTypeface(applicationContext)
 
         if (currentBytes != TrafficStats.UNSUPPORTED.toLong()) {
             if (previousBytes != 0L) {
                 val bytesInLastInterval = currentBytes - previousBytes
                 val speedMBps = (bytesInLastInterval / 1024.0 / 1024.0).toFloat()
-
-                appWidgetIds.forEach { appWidgetId ->
-                    val views = RemoteViews(packageName, R.layout.speed_widget_layout)
-                    val typeface = ResourcesCompat.getFont(applicationContext, R.font.ndot)!!
-                    val speedText = String.format("%.2f MB/s", speedMBps)
-                    val setupBitmap = WidgetUtils.createTextBitmap(
-                        applicationContext,
-                        speedText,
-                        20f,
-                        ContextCompat.getColor(applicationContext, R.color.text_color),
-                        typeface
-                    )
-                    views.setImageViewBitmap(R.id.speed_text, setupBitmap)
-                    appWidgetManager.updateAppWidget(appWidgetId, views)
-                }
+                val speedText = String.format("%.2f MB/s", speedMBps)
+                updateWidgets(appWidgetManager, appWidgetIds, speedText, typeface)
             }
             previousBytes = currentBytes
         } else {
-            appWidgetIds.forEach { appWidgetId ->
-                val views = RemoteViews(packageName, R.layout.speed_widget_layout)
-                val typeface = ResourcesCompat.getFont(applicationContext, R.font.ndot)!!
-                val setupBitmap = WidgetUtils.createTextBitmap(
-                    applicationContext,
-                    "N/A",
-                    20f,
-                    androidx.core.content.ContextCompat.getColor(applicationContext, R.color.text_color),
-                    typeface
-                )
-                views.setImageViewBitmap(R.id.speed_text, setupBitmap)
-                appWidgetManager.updateAppWidget(appWidgetId, views)
-            }
+            updateWidgets(appWidgetManager, appWidgetIds, "N/A", typeface)
         }
     }
 
-    private fun startMyForeground() {
-        val notificationChannelId = "SPEED_WIDGET_CHANNEL"
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(notificationChannelId, "Speed Widget Updates", NotificationManager.IMPORTANCE_LOW)
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+    private fun updateWidgets(
+        manager: AppWidgetManager,
+        appWidgetIds: IntArray,
+        speedText: String,
+        typeface: Typeface
+    ) {
+        appWidgetIds.forEach { appWidgetId ->
+            val views = RemoteViews(packageName, R.layout.speed_widget_layout).apply {
+                setImageViewBitmap(
+                    R.id.speed_text,
+                    CommonUtils.createTextAlternateBitmap(
+                        applicationContext,
+                        speedText,
+                        20f,
+                        typeface
+                    )
+                )
+                setInt(
+                    R.id.imageData,
+                    "setColorFilter",
+                    CommonUtils.getAccentColor(applicationContext)
+                )
+            }
+            manager.updateAppWidget(appWidgetId, views)
         }
+    }
 
-        val notificationIntent = Intent(this, SpeedWidgetProvider::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, notificationIntent,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+    private fun createNotification(): Notification {
+        val channelId = "SPEED_WIDGET_CHANNEL"
+
+        val channel = NotificationChannel(
+            channelId,
+            "Speed Widget Updates",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
+            channel
         )
 
-        val notification = NotificationCompat.Builder(this, notificationChannelId)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, Intent(this, SpeedWidgetProvider::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, channelId)
             .setContentTitle("Speed Widget Running")
             .setContentText("Monitoring network speed")
             .setContentIntent(pendingIntent)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
-
-        startForeground(4, notification)
     }
 }

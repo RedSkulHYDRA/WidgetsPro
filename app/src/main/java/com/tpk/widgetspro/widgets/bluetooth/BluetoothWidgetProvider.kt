@@ -13,6 +13,7 @@ import android.view.View
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseWidgetProvider
+import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.ImageLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -81,7 +82,7 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
         if (device != null && isConnected) {
             updateConnectedDeviceViews(context, appWidgetId, device, views, appWidgetManager)
         } else {
-            updateDisconnectedDeviceViews(views)
+            updateDisconnectedDeviceViews(context, views)
         }
     }
 
@@ -99,11 +100,12 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
         ImageLoader(context, appWidgetManager, appWidgetId, views).loadImageAsync(device)
     }
 
-    private fun updateDisconnectedDeviceViews(views: RemoteViews) {
+    private fun updateDisconnectedDeviceViews(context: Context,views: RemoteViews) {
         views.apply {
             setTextViewText(R.id.device_name, "Device not connected")
             setTextViewText(R.id.battery_percentage, "--%")
             setImageViewResource(R.id.device_image1, R.drawable.ic_bluetooth_placeholder)
+            setInt(R.id.device_image1, "setColorFilter", CommonUtils.getAccentColor(context))
         }
     }
 
@@ -189,6 +191,7 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                 setOnClickPendingIntent(R.id.battery_percentage, refreshPI)
                 setOnClickPendingIntent(R.id.device_image, bluetoothPI)
                 setOnClickPendingIntent(R.id.device_name, configPI)
+                setInt(R.id.device_image, "setColorFilter", CommonUtils.getAccentColor(context))
             }
         }
 

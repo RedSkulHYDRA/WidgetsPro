@@ -4,18 +4,21 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
-import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.base.BaseDottedGraphView
 import com.tpk.widgetspro.base.BaseMonitorService
-import com.tpk.widgetspro.utils.WidgetUtils
+import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.cpu.CpuMonitor
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.cpu.DottedGraphView
 import rikka.shizuku.Shizuku
 import java.util.LinkedList
+import kotlin.reflect.KClass
 
 class CpuMonitorService : BaseMonitorService() {
     override val notificationId = 1
@@ -43,9 +46,9 @@ class CpuMonitorService : BaseMonitorService() {
             val appWidgetManager = AppWidgetManager.getInstance(this)
             val componentName = ComponentName(this, CpuWidgetProvider::class.java)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            val typeface = ResourcesCompat.getFont(this, R.font.ndot)!!
-            val usageBitmap = WidgetUtils.createTextBitmap(this, "%.0f%%".format(cpuUsage), 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
-            val cpuBitmap = WidgetUtils.createTextBitmap(this, "CPU", 20f, ContextCompat.getColor(applicationContext, R.color.accent_color), typeface)
+            val typeface = CommonUtils.getTypeface(this)
+            val usageBitmap = CommonUtils.createTextBitmap(this, "%.0f%%".format(cpuUsage), 20f, typeface)
+            val cpuBitmap = CommonUtils.createTextBitmap(this, "CPU", 20f, typeface)
 
             dataPoints.addLast(cpuUsage)
             if (dataPoints.size > MAX_DATA_POINTS) dataPoints.removeFirst()
@@ -57,7 +60,7 @@ class CpuMonitorService : BaseMonitorService() {
                     setViewVisibility(R.id.setupView, View.GONE)
                     setTextViewText(R.id.cpuTempWidgetTextView, "%.1f°C".format(cpuTemperature))
                     setTextViewText(R.id.cpuModelWidgetTextView, getDeviceProcessorModel())
-                    setImageViewBitmap(R.id.graphWidgetImageView, WidgetUtils.createGraphBitmap(this@CpuMonitorService, dataPoints, DottedGraphView::class))
+                    setImageViewBitmap(R.id.graphWidgetImageView, createGraphBitmap(this@CpuMonitorService, dataPoints, DottedGraphView::class))
                 }
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }
@@ -70,6 +73,20 @@ class CpuMonitorService : BaseMonitorService() {
     private fun getDeviceProcessorModel(): String = when (android.os.Build.SOC_MODEL) {
         "SM8475" -> "8+ Gen 1"
         else -> android.os.Build.SOC_MODEL
+    }
+
+    private fun <T : BaseDottedGraphView> createGraphBitmap(context: Context, data: Any, viewClass: KClass<T>): Bitmap {
+        val graphView = viewClass.java.getConstructor(Context::class.java).newInstance(context)
+        when (data) {
+            is List<*> -> (graphView as? DottedGraphView)?.setDataPoints(data.filterIsInstance<Double>())
+        }
+        val widthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200f, context.resources.displayMetrics).toInt()
+        val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 80f, context.resources.displayMetrics).toInt()
+        graphView.measure(View.MeasureSpec.makeMeasureSpec(widthPx, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(heightPx, View.MeasureSpec.EXACTLY))
+        graphView.layout(0, 0, widthPx, heightPx)
+        val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
+        graphView.draw(Canvas(bitmap))
+        return bitmap
     }
 
     override fun onDestroy() {

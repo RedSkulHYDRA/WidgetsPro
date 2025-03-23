@@ -4,8 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -22,20 +20,21 @@ class DataUsageWidgetService : Service() {
 
     private val updateRunnable = object : Runnable {
         override fun run() {
-            updateWidgets()
+            DataUsageWidgetProvider.updateAllWidgets(this@DataUsageWidgetService)
             handler.postDelayed(this, updateInterval)
         }
     }
 
     override fun onCreate() {
         super.onCreate()
-        startForegroundServiceNotification()
+        startForeground(
+            5,
+            createNotification("data_usage_widget_service_channel", "Data Usage Widget Active")
+        )
         handler.post(updateRunnable)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
         handler.removeCallbacks(updateRunnable)
@@ -44,28 +43,21 @@ class DataUsageWidgetService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun updateWidgets() {
-        val appWidgetManager = AppWidgetManager.getInstance(this)
-        val componentName = ComponentName(this, DataUsageWidgetProvider::class.java)
-        val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
-        widgetIds.forEach { DataUsageWidgetProvider.updateAppWidget(this, appWidgetManager, it) }
-    }
+    private fun createNotification(channelId: String, title: String): Notification {
 
-    private fun startForegroundServiceNotification() {
-        val channelId = "data_usage_widget_service_channel"
-        val notificationId = 5
+        val channel = NotificationChannel(
+            channelId,
+            "Data Usage Widget Updater Service",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
+            channel
+        )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Data Usage Widget Updater Service", NotificationManager.IMPORTANCE_LOW)
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
-        }
-
-        val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Data Usage Widget Active")
+        return NotificationCompat.Builder(this, channelId)
+            .setContentTitle(title)
             .setContentText("Widget updater service is running")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
-
-        startForeground(notificationId, notification)
     }
 }

@@ -7,7 +7,7 @@ import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseWidgetProvider
 import com.tpk.widgetspro.services.CpuMonitorService
-import com.tpk.widgetspro.utils.PermissionUtils
+import rikka.shizuku.Shizuku
 
 class CpuWidgetProvider : BaseWidgetProvider() {
     override val layoutId = R.layout.cpu_widget_layout
@@ -33,7 +33,12 @@ class CpuWidgetProvider : BaseWidgetProvider() {
         startService(context)
     }
 
-    override fun hasRequiredPermissions(context: Context) = PermissionUtils.hasRootAccess() || PermissionUtils.hasShizukuAccess()
+    override fun hasRequiredPermissions(context: Context): Boolean =
+        try {
+            Runtime.getRuntime().exec(arrayOf("su", "-c", "cat /proc/version")).inputStream.bufferedReader().use { it.readLine() } != null
+        } catch (e: Exception) {
+            Shizuku.pingBinder() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
 
     private fun startService(context: Context) {
         context.startService(Intent(context, CpuMonitorService::class.java))

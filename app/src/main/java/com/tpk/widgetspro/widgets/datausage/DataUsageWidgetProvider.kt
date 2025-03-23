@@ -8,11 +8,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.TrafficStats
 import android.widget.RemoteViews
-import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.services.DataUsageWidgetService
-import com.tpk.widgetspro.utils.WidgetUtils
+import com.tpk.widgetspro.utils.CommonUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -36,15 +34,8 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
 
     private fun scheduleMidnightReset(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, DataUsageWidgetProvider::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val intent = Intent(context, DataUsageWidgetProvider::class.java).apply { action = AppWidgetManager.ACTION_APPWIDGET_UPDATE }
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
@@ -54,7 +45,6 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
-
         alarmManager.setExact(AlarmManager.RTC, calendar.timeInMillis, pendingIntent)
     }
 
@@ -74,62 +64,41 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             val savedDate = prefs.getString(KEY_DATE, null)
             val totalRx = TrafficStats.getTotalRxBytes()
             val mobileRx = TrafficStats.getMobileRxBytes()
-            val currentBytes = when {
-                totalRx.toInt() == TrafficStats.UNSUPPORTED || mobileRx.toInt() == TrafficStats.UNSUPPORTED -> 0L
-                else -> totalRx - mobileRx
-            }
+            val currentBytes = if (totalRx == TrafficStats.UNSUPPORTED.toLong() || mobileRx == TrafficStats.UNSUPPORTED.toLong()) 0L else totalRx - mobileRx
 
             if (savedDate != currentDate) {
                 initialBaseline = currentBytes
                 lastBaseline = currentBytes
                 accumulated = 0
-                prefs.edit().apply {
-                    putLong(KEY_INITIAL_BASELINE, initialBaseline)
-                    putLong(KEY_LAST_BASELINE, lastBaseline)
-                    putLong(KEY_ACCUMULATED, accumulated)
-                    putString(KEY_DATE, currentDate)
-                    apply()
-                }
+            } else if (initialBaseline == -1L || lastBaseline == -1L) {
+                initialBaseline = currentBytes
+                lastBaseline = currentBytes
+            } else if (currentBytes < lastBaseline) {
+                accumulated += lastBaseline - initialBaseline
+                initialBaseline = currentBytes
+                lastBaseline = currentBytes
             } else {
-                if (initialBaseline == -1L || lastBaseline == -1L) {
-                    initialBaseline = currentBytes
-                    lastBaseline = currentBytes
-                    prefs.edit().apply {
-                        putLong(KEY_INITIAL_BASELINE, initialBaseline)
-                        putLong(KEY_LAST_BASELINE, lastBaseline)
-                        apply()
-                    }
-                } else {
-                    if (currentBytes < lastBaseline) {
-                        accumulated += lastBaseline - initialBaseline
-                        initialBaseline = currentBytes
-                        lastBaseline = currentBytes
-                        prefs.edit().apply {
-                            putLong(KEY_INITIAL_BASELINE, initialBaseline)
-                            putLong(KEY_LAST_BASELINE, lastBaseline)
-                            putLong(KEY_ACCUMULATED, accumulated)
-                            apply()
-                        }
-                    } else {
-                        prefs.edit().putLong(KEY_LAST_BASELINE, currentBytes).apply()
-                        lastBaseline = currentBytes
-                    }
-                }
+                lastBaseline = currentBytes
+            }
+
+            prefs.edit().apply {
+                putLong(KEY_INITIAL_BASELINE, initialBaseline)
+                putLong(KEY_LAST_BASELINE, lastBaseline)
+                putLong(KEY_ACCUMULATED, accumulated)
+                putString(KEY_DATE, currentDate)
+                apply()
             }
 
             val totalUsage = accumulated + (currentBytes - initialBaseline)
-            val usageText = formatBytes(totalUsage)
-            val views = RemoteViews(context.packageName, R.layout.data_usage_widget)
-            val typeface = ResourcesCompat.getFont(context, R.font.ndot)!!
-            val setupBitmap = WidgetUtils.createTextBitmap(
-                context,
-                usageText,
-                20f,
-                ContextCompat.getColor(context, R.color.text_color),
-                typeface
-            )
-            views.setImageViewBitmap(R.id.data_text, setupBitmap)
+            val views = RemoteViews(context.packageName, R.layout.data_usage_widget).apply {
+                setImageViewBitmap(R.id.data_text, CommonUtils.createTextAlternateBitmap(context, formatBytes(totalUsage), 20f, CommonUtils.getTypeface(context)))
+                setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(context))
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
+        }
+
+        fun updateAllWidgets(context: Context) {
+            CommonUtils.updateAllWidgets(context, DataUsageWidgetProvider::class.java)
         }
 
         private fun formatBytes(bytes: Long): String {
