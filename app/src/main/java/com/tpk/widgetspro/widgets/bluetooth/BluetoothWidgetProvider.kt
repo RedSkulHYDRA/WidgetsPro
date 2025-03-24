@@ -191,7 +191,6 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                 setOnClickPendingIntent(R.id.battery_percentage, refreshPI)
                 setOnClickPendingIntent(R.id.device_image, bluetoothPI)
                 setOnClickPendingIntent(R.id.device_name, configPI)
-                setInt(R.id.device_image, "setColorFilter", CommonUtils.getAccentColor(context))
             }
         }
 
