@@ -34,8 +34,12 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
 
     private fun scheduleMidnightReset(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, SimDataUsageWidgetProvider::class.java).apply { action = AppWidgetManager.ACTION_APPWIDGET_UPDATE }
-        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val intent = Intent(context, SimDataUsageWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
             add(Calendar.DAY_OF_YEAR, 1)
@@ -54,45 +58,58 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
         private const val KEY_ACCUMULATED = "accumulated"
         private const val KEY_DATE = "baseline_date"
 
+        private val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val currentDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-            var initialBaseline = prefs.getLong(KEY_INITIAL_BASELINE, -1)
-            var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1)
-            var accumulated = prefs.getLong(KEY_ACCUMULATED, 0)
+            val currentDate = synchronized(dateFormat) { dateFormat.format(Date()) }
+            var initialBaseline = prefs.getLong(KEY_INITIAL_BASELINE, -1L)
+            var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1L)
+            var accumulated = prefs.getLong(KEY_ACCUMULATED, 0L)
             val savedDate = prefs.getString(KEY_DATE, null)
             val currentRxBytes = TrafficStats.getMobileRxBytes()
             val currentTxBytes = TrafficStats.getMobileTxBytes()
-            val totalBytes = currentRxBytes+currentTxBytes
+            val totalBytes = currentRxBytes + currentTxBytes
 
-            if (savedDate != currentDate) {
-                initialBaseline = totalBytes
-                lastBaseline = totalBytes
-                accumulated = 0
-            } else if (initialBaseline == -1L || lastBaseline == -1L) {
-                initialBaseline = totalBytes
-                lastBaseline = totalBytes
-            } else if (totalBytes < lastBaseline) {
-                accumulated += lastBaseline - initialBaseline
-                initialBaseline = totalBytes
-                lastBaseline = totalBytes
+            val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget)
+
+            if (currentRxBytes == TrafficStats.UNSUPPORTED.toLong() || currentTxBytes == TrafficStats.UNSUPPORTED.toLong()) {
+                views.setImageViewBitmap(
+                    R.id.sim_data_text,
+                    CommonUtils.createTextAlternateBitmap(context, "Unsupported", 20f, CommonUtils.getTypeface(context))
+                )
             } else {
-                lastBaseline = totalBytes
+                if (savedDate != currentDate) {
+                    initialBaseline = totalBytes
+                    lastBaseline = totalBytes
+                    accumulated = 0L
+                } else if (initialBaseline == -1L || lastBaseline == -1L) {
+                    initialBaseline = totalBytes
+                    lastBaseline = totalBytes
+                } else if (totalBytes < lastBaseline) {
+                    accumulated += lastBaseline - initialBaseline
+                    initialBaseline = totalBytes
+                    lastBaseline = totalBytes
+                } else {
+                    lastBaseline = totalBytes
+                }
+
+                prefs.edit().apply {
+                    putLong(KEY_INITIAL_BASELINE, initialBaseline)
+                    putLong(KEY_LAST_BASELINE, lastBaseline)
+                    putLong(KEY_ACCUMULATED, accumulated)
+                    putString(KEY_DATE, currentDate)
+                    apply()
+                }
+
+                val totalUsage = accumulated + (totalBytes - initialBaseline)
+                views.setImageViewBitmap(
+                    R.id.sim_data_text,
+                    CommonUtils.createTextAlternateBitmap(context, formatBytes(totalUsage), 20f, CommonUtils.getTypeface(context))
+                )
             }
 
-            prefs.edit().apply {
-                putLong(KEY_INITIAL_BASELINE, initialBaseline)
-                putLong(KEY_LAST_BASELINE, lastBaseline)
-                putLong(KEY_ACCUMULATED, accumulated)
-                putString(KEY_DATE, currentDate)
-                apply()
-            }
-
-            val totalUsage = accumulated + (totalBytes - initialBaseline)
-            val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
-                setImageViewBitmap(R.id.sim_data_text, CommonUtils.createTextAlternateBitmap(context, formatBytes(totalUsage), 20f, CommonUtils.getTypeface(context)))
-                setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(context))
-            }
+            views.setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(context))
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
@@ -103,7 +120,7 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
         private fun formatBytes(bytes: Long): String {
             val unit = 1024
             if (bytes < unit) return "$bytes B"
-            val exp = (Math.log(bytes.toDouble()) / Math.log(unit.toDouble())).toInt()
+            val exp = minOf((Math.log(bytes.toDouble()) / Math.log(unit.toDouble())).toInt(), 5)
             val pre = "KMGTPE"[exp - 1]
             val value = bytes / Math.pow(unit.toDouble(), exp.toDouble())
             return String.format("%.1f %sB", value, pre)

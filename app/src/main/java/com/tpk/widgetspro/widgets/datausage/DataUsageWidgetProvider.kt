@@ -34,8 +34,13 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
 
     private fun scheduleMidnightReset(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, DataUsageWidgetProvider::class.java).apply { action = AppWidgetManager.ACTION_APPWIDGET_UPDATE }
-        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val intent = Intent(context, DataUsageWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
             add(Calendar.DAY_OF_YEAR, 1)
@@ -57,10 +62,11 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val currentDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-            var initialBaseline = prefs.getLong(KEY_INITIAL_BASELINE, -1)
-            var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1)
-            var accumulated = prefs.getLong(KEY_ACCUMULATED, 0)
+            var initialBaseline = prefs.getLong(KEY_INITIAL_BASELINE, -1L)
+            var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1L)
+            var accumulated = prefs.getLong(KEY_ACCUMULATED, 0L)
             val savedDate = prefs.getString(KEY_DATE, null)
+
             val totalRx = TrafficStats.getTotalRxBytes()
             val totalTx = TrafficStats.getTotalTxBytes()
             val mobileRx = TrafficStats.getMobileRxBytes()
@@ -71,20 +77,21 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
                 mobileTx == TrafficStats.UNSUPPORTED.toLong()) {
                 0L
             } else {
-                maxOf(0L, (totalRx - mobileRx) + (totalTx - mobileTx))
+                val wifiRx = if (totalRx >= mobileRx) totalRx - mobileRx else 0L
+                val wifiTx = if (totalTx >= mobileTx) totalTx - mobileTx else 0L
+                wifiRx + wifiTx
             }
-
 
             if (savedDate != currentDate) {
                 initialBaseline = wifiBytes
                 lastBaseline = wifiBytes
-                accumulated = 0
+                accumulated = 0L
             } else if (initialBaseline == -1L || lastBaseline == -1L) {
                 initialBaseline = wifiBytes
                 lastBaseline = wifiBytes
             } else if (wifiBytes < lastBaseline) {
                 accumulated += lastBaseline - initialBaseline
-                initialBaseline = wifiBytes
+                initialBaseline = 0L
                 lastBaseline = wifiBytes
             } else {
                 lastBaseline = wifiBytes
@@ -99,8 +106,14 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             }
 
             val totalUsage = accumulated + (wifiBytes - initialBaseline)
+
             val views = RemoteViews(context.packageName, R.layout.data_usage_widget).apply {
-                setImageViewBitmap(R.id.data_text, CommonUtils.createTextAlternateBitmap(context, formatBytes(totalUsage), 20f, CommonUtils.getTypeface(context)))
+                setImageViewBitmap(
+                    R.id.data_text,
+                    CommonUtils.createTextAlternateBitmap(
+                        context, formatBytes(totalUsage), 20f, CommonUtils.getTypeface(context)
+                    )
+                )
                 setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(context))
             }
             appWidgetManager.updateAppWidget(appWidgetId, views)
