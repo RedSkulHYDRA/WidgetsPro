@@ -1,5 +1,6 @@
 package com.tpk.widgetspro.utils
 
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -16,6 +17,7 @@ import android.util.TypedValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.tpk.widgetspro.R
+import java.util.Calendar
 
 object CommonUtils {
     fun getAccentColor(context: Context): Int {
@@ -99,6 +101,25 @@ object CommonUtils {
             }
             context.sendBroadcast(intent)
         }
+    }
+    fun scheduleMidnightReset(context: Context, requestCode: Int, action: String, providerClass: Class<*>) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, providerClass).apply { this.action = action }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        alarmManager.setExact(AlarmManager.RTC, calendar.timeInMillis, pendingIntent)
     }
 
     fun getTypeface(context: Context): Typeface = ResourcesCompat.getFont(context, R.font.ndot)!!
