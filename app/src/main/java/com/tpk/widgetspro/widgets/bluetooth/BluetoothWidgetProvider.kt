@@ -124,6 +124,8 @@ class BluetoothWidgetProvider : BaseWidgetProvider() {
                     setTextViewText(R.id.device_name, "No device selected")
                     setImageViewResource(R.id.device_image, R.drawable.ic_bluetooth_placeholder)
                     setTextViewText(R.id.battery_percentage, "--%")
+                    views.setViewVisibility(R.id.device_image1, View.VISIBLE)
+                    setInt(R.id.device_image1, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
             }
             setupCommonComponents(context, appWidgetId, views)
