@@ -61,21 +61,23 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
             var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1)
             var accumulated = prefs.getLong(KEY_ACCUMULATED, 0)
             val savedDate = prefs.getString(KEY_DATE, null)
-            val currentBytes = TrafficStats.getMobileRxBytes()
+            val currentRxBytes = TrafficStats.getMobileRxBytes()
+            val currentTxBytes = TrafficStats.getMobileTxBytes()
+            val totalBytes = currentRxBytes+currentTxBytes
 
             if (savedDate != currentDate) {
-                initialBaseline = currentBytes
-                lastBaseline = currentBytes
+                initialBaseline = totalBytes
+                lastBaseline = totalBytes
                 accumulated = 0
             } else if (initialBaseline == -1L || lastBaseline == -1L) {
-                initialBaseline = currentBytes
-                lastBaseline = currentBytes
-            } else if (currentBytes < lastBaseline) {
+                initialBaseline = totalBytes
+                lastBaseline = totalBytes
+            } else if (totalBytes < lastBaseline) {
                 accumulated += lastBaseline - initialBaseline
-                initialBaseline = currentBytes
-                lastBaseline = currentBytes
+                initialBaseline = totalBytes
+                lastBaseline = totalBytes
             } else {
-                lastBaseline = currentBytes
+                lastBaseline = totalBytes
             }
 
             prefs.edit().apply {
@@ -86,7 +88,7 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
                 apply()
             }
 
-            val totalUsage = accumulated + (currentBytes - initialBaseline)
+            val totalUsage = accumulated + (totalBytes - initialBaseline)
             val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
                 setImageViewBitmap(R.id.sim_data_text, CommonUtils.createTextAlternateBitmap(context, formatBytes(totalUsage), 20f, CommonUtils.getTypeface(context)))
                 setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(context))

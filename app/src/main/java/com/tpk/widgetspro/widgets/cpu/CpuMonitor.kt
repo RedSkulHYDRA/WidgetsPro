@@ -3,26 +3,53 @@ package com.tpk.widgetspro.widgets.cpu
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
-class CpuMonitor(private val useRoot: Boolean, private val callback: (cpuUsage: Double, cpuTemperature: Double) -> Unit) {
+class CpuMonitor(private val useRoot: Boolean, private val callback: (Double, Double) -> Unit) {
     private var prevIdleTime: Long = 0
     private var prevNonIdleTime: Long = 0
     private var prevTotalTime: Long = 0
     private var isFirstReading = true
-    private val executorService = Executors.newSingleThreadScheduledExecutor()
+    private var executorService: ScheduledExecutorService? = null
+    private var scheduledFuture: ScheduledFuture<*>? = null
+    private var currentInterval = 60
     private var cpuThermalZone: String? = null
 
-    fun startMonitoring(intervalSeconds: Int) {
-        executorService.scheduleAtFixedRate({
-            val cpuUsage = calculateCpuUsage()
-            val cpuTemperature = readCpuTemperature()
-            callback(cpuUsage, cpuTemperature)
-        }, 0, intervalSeconds.toLong(), TimeUnit.SECONDS)
+    fun startMonitoring(initialInterval: Int) {
+        currentInterval = initialInterval
+        executorService = Executors.newSingleThreadScheduledExecutor()
+        executorService?.execute {
+            performMonitoring()
+            scheduleNextRun()
+        }
+    }
+
+    private fun performMonitoring() {
+        val cpuUsage = calculateCpuUsage()
+        val cpuTemperature = readCpuTemperature()
+        callback(cpuUsage, cpuTemperature)
+    }
+
+    private fun scheduleNextRun() {
+        scheduledFuture = executorService?.schedule({
+            performMonitoring()
+            scheduleNextRun()
+        }, currentInterval.toLong(), TimeUnit.SECONDS)
+    }
+
+    fun updateInterval(newInterval: Int) {
+        currentInterval = newInterval.coerceAtLeast(1)
+        scheduledFuture?.cancel(false)
+        scheduleNextRun()
     }
 
     fun stopMonitoring() {
-        executorService.shutdown()
+        scheduledFuture?.cancel(false)
+        executorService?.shutdown()
+        executorService = null
+        scheduledFuture = null
     }
 
     private fun calculateCpuUsage(): Double {
@@ -64,9 +91,7 @@ class CpuMonitor(private val useRoot: Boolean, private val callback: (cpuUsage: 
 
     private fun readProcStat(): String? {
         val process = executeCommand(arrayOf("cat", "/proc/stat")) ?: return null
-        val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
-        process.destroy()
-        return output
+        return BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }.also { process.destroy() }
     }
 
     private fun readCpuTemperature(): Double {
@@ -84,22 +109,16 @@ class CpuMonitor(private val useRoot: Boolean, private val callback: (cpuUsage: 
 
     private fun getThermalZones(): List<String> {
         val process = executeCommand(arrayOf("ls", "/sys/class/thermal/")) ?: return emptyList()
-        val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
-        process.destroy()
-        return output.lines().filter { it.startsWith("thermal_zone") }
+        return BufferedReader(InputStreamReader(process.inputStream)).use { it.readText().lines().filter { line -> line.startsWith("thermal_zone") } }.also { process.destroy() }
     }
 
     private fun readThermalZoneType(zone: String): String? {
         val process = executeCommand(arrayOf("cat", "/sys/class/thermal/$zone/type")) ?: return null
-        val type = BufferedReader(InputStreamReader(process.inputStream)).use { it.readLine() }
-        process.destroy()
-        return type
+        return BufferedReader(InputStreamReader(process.inputStream)).use { it.readLine() }.also { process.destroy() }
     }
 
     private fun readThermalZoneTemp(zone: String): Double? {
         val process = executeCommand(arrayOf("cat", "/sys/class/thermal/$zone/temp")) ?: return null
-        val tempStr = BufferedReader(InputStreamReader(process.inputStream)).use { it.readLine() }
-        process.destroy()
-        return tempStr?.toDoubleOrNull()
+        return BufferedReader(InputStreamReader(process.inputStream)).use { it.readLine()?.toDoubleOrNull() }.also { process.destroy() }
     }
 }

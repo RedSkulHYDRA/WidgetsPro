@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.util.TypedValue
@@ -24,6 +25,7 @@ class BatteryMonitorService : BaseMonitorService() {
     override val notificationText = "Monitoring battery status"
 
     private lateinit var batteryMonitor: BatteryMonitor
+    private var prefs: SharedPreferences? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!::batteryMonitor.isInitialized) initializeMonitoring()
@@ -51,26 +53,31 @@ class BatteryMonitorService : BaseMonitorService() {
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }
         }
-        val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-        val interval = prefs.getInt("battery_interval", 60).coerceAtLeast(1)
+        prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+        prefs?.registerOnSharedPreferenceChangeListener(preferenceListener)
+        val interval = prefs?.getInt("battery_interval", 60)?.coerceAtLeast(1) ?: 60
         batteryMonitor.startMonitoring(interval)
+    }
+
+    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "battery_interval") {
+            val newInterval = prefs?.getInt(key, 60)?.coerceAtLeast(1) ?: 60
+            batteryMonitor.updateInterval(newInterval)
+        }
     }
 
     private fun <T : BaseDottedGraphView> createGraphBitmap(context: Context, data: Any, viewClass: KClass<T>): Bitmap {
         val graphView = viewClass.java.getConstructor(Context::class.java).newInstance(context)
-        when (data) {
-            is Int -> (graphView as? BatteryDottedView)?.updatePercentage(data)
-        }
+        (graphView as? BatteryDottedView)?.updatePercentage(data as Int)
         val widthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200f, context.resources.displayMetrics).toInt()
         val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 80f, context.resources.displayMetrics).toInt()
         graphView.measure(View.MeasureSpec.makeMeasureSpec(widthPx, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(heightPx, View.MeasureSpec.EXACTLY))
         graphView.layout(0, 0, widthPx, heightPx)
-        val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
-        graphView.draw(Canvas(bitmap))
-        return bitmap
+        return Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888).apply { graphView.draw(Canvas(this)) }
     }
 
     override fun onDestroy() {
+        prefs?.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         if (::batteryMonitor.isInitialized) batteryMonitor.stopMonitoring()
         super.onDestroy()
     }
