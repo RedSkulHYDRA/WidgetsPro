@@ -1,23 +1,34 @@
 package com.tpk.widgetspro.utils
 
-import android.content.pm.PackageManager
+import java.io.File
 import rikka.shizuku.Shizuku
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 object PermissionUtils {
-    fun hasRootAccess(): Boolean = try {
-        val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "cat /proc/version"))
-        val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readLine() }
-        process.destroy()
-        output != null
-    } catch (e: Exception) {
-        false
+    private var hasRoot: Boolean? = null
+
+    fun hasRootAccess(): Boolean {
+        if (hasRoot == null) {
+            hasRoot = checkSuBinary()
+        }
+        return hasRoot!!
     }
 
-    fun hasShizukuAccess(): Boolean = try {
-        Shizuku.pingBinder() && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-    } catch (e: Exception) {
-        false
+    private fun checkSuBinary(): Boolean {
+        val paths = arrayOf(
+            "/system/bin/su",
+            "/system/xbin/su",
+            "/sbin/su",
+            "/vendor/bin/su"
+        )
+        return paths.any { File(it).exists() }
+    }
+
+    fun hasShizukuPermission(): Boolean {
+        return try {
+            Shizuku.pingBinder() &&
+                    Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } catch (e: Exception) {
+            false
+        }
     }
 }

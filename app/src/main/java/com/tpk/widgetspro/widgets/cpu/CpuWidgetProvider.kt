@@ -7,7 +7,7 @@ import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseWidgetProvider
 import com.tpk.widgetspro.services.CpuMonitorService
-import rikka.shizuku.Shizuku
+import com.tpk.widgetspro.utils.PermissionUtils
 
 class CpuWidgetProvider : BaseWidgetProvider() {
     override val layoutId = R.layout.cpu_widget_layout
@@ -19,7 +19,11 @@ class CpuWidgetProvider : BaseWidgetProvider() {
         if (hasRequiredPermissions(context)) startService(context)
     }
 
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         if (hasRequiredPermissions(context)) startService(context)
     }
@@ -29,16 +33,17 @@ class CpuWidgetProvider : BaseWidgetProvider() {
         context.stopService(Intent(context, CpuMonitorService::class.java))
     }
 
-    override fun updateNormalWidgetView(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
+    override fun updateNormalWidgetView(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int
+    ) {
         startService(context)
     }
 
-    override fun hasRequiredPermissions(context: Context): Boolean =
-        try {
-            Runtime.getRuntime().exec(arrayOf("su", "-c", "cat /proc/version")).inputStream.bufferedReader().use { it.readLine() } != null
-        } catch (e: Exception) {
-            Shizuku.pingBinder() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
-        }
+    override fun hasRequiredPermissions(context: Context): Boolean {
+        return PermissionUtils.hasRootAccess() || PermissionUtils.hasShizukuPermission()
+    }
 
     private fun startService(context: Context) {
         context.startService(Intent(context, CpuMonitorService::class.java))

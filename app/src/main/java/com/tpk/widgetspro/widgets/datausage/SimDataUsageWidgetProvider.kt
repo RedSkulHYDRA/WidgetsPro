@@ -36,7 +36,6 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, SimDataUsageWidgetProvider::class.java).apply { action = AppWidgetManager.ACTION_APPWIDGET_UPDATE }
         val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
         val calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
             add(Calendar.DAY_OF_YEAR, 1)

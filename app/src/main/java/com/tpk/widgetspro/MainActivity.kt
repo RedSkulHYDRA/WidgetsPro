@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
@@ -57,8 +58,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var seekBarCpu: SeekBar
     private lateinit var seekBarBattery: SeekBar
+    private lateinit var seekBarSim: SeekBar
+    private lateinit var seekBarWifi: SeekBar
     private lateinit var tvCpuValue: TextView
     private lateinit var tvBatteryValue: TextView
+    private lateinit var tvWifiValue: TextView
+    private lateinit var tvSimValue: TextView
     private lateinit var enumInputLayout: TextInputLayout
     private lateinit var chipGroup: ChipGroup
     private lateinit var locationAutoComplete: AutoCompleteTextView
@@ -92,8 +97,12 @@ class MainActivity : AppCompatActivity() {
     private fun setupUI() {
         seekBarCpu = findViewById(R.id.seekBarCpu)
         seekBarBattery = findViewById(R.id.seekBarBattery)
+        seekBarWifi = findViewById(R.id.seekBarWifi)
+        seekBarSim = findViewById(R.id.seekBarSim)
         tvCpuValue = findViewById(R.id.tvCpuValue)
         tvBatteryValue = findViewById(R.id.tvBatteryValue)
+        tvWifiValue = findViewById(R.id.tvWifiValue)
+        tvSimValue = findViewById(R.id.tvSimValue)
         enumInputLayout = findViewById(R.id.enum_input_layout)
         chipGroup = findViewById(R.id.chip_group)
         locationAutoComplete = findViewById(R.id.location_auto_complete)
@@ -102,8 +111,12 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("widget_prefs", MODE_PRIVATE)
         seekBarCpu.progress = prefs.getInt("cpu_interval", 60)
         seekBarBattery.progress = prefs.getInt("battery_interval", 60)
+        seekBarWifi.progress = prefs.getInt("data_interval", 60)
+        seekBarSim.progress = prefs.getInt("sim_data_interval", 60)
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
+        tvWifiValue.text = seekBarWifi.progress.toString()
+        tvSimValue.text = seekBarSim.progress.toString()
 
         setupSeekBarListeners(prefs)
         enumInputLayout.setOnClickListener { showEnumSelectionDialog() }
@@ -251,6 +264,24 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("battery_interval", seekBar?.progress ?: 60).apply()
+            }
+        })
+        seekBarWifi.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                tvWifiValue.text = progress.toString()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                prefs.edit().putInt("data_interval", seekBar?.progress ?: 60).apply()
+            }
+        })
+        seekBarSim.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                tvSimValue.text = progress.toString()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                prefs.edit().putInt("sim_data_interval", seekBar?.progress ?: 60).apply()
             }
         })
     }

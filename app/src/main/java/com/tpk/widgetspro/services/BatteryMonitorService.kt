@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.util.TypedValue
@@ -24,6 +25,14 @@ class BatteryMonitorService : BaseMonitorService() {
     override val notificationText = "Monitoring battery status"
 
     private lateinit var batteryMonitor: BatteryMonitor
+    private lateinit var prefs: SharedPreferences
+
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "battery_interval" && ::batteryMonitor.isInitialized) {
+            val newInterval = prefs.getInt("battery_interval", 60).coerceAtLeast(1)
+            batteryMonitor.startMonitoring(newInterval)
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!::batteryMonitor.isInitialized) initializeMonitoring()
@@ -31,6 +40,8 @@ class BatteryMonitorService : BaseMonitorService() {
     }
 
     private fun initializeMonitoring() {
+        prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+
         batteryMonitor = BatteryMonitor(this) { percentage, health ->
             val appWidgetManager = AppWidgetManager.getInstance(this)
             val componentName = ComponentName(this, BatteryWidgetProvider::class.java)
@@ -51,9 +62,11 @@ class BatteryMonitorService : BaseMonitorService() {
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }
         }
-        val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+
         val interval = prefs.getInt("battery_interval", 60).coerceAtLeast(1)
         batteryMonitor.startMonitoring(interval)
+
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
     }
 
     private fun <T : BaseDottedGraphView> createGraphBitmap(context: Context, data: Any, viewClass: KClass<T>): Bitmap {
@@ -71,7 +84,10 @@ class BatteryMonitorService : BaseMonitorService() {
     }
 
     override fun onDestroy() {
-        if (::batteryMonitor.isInitialized) batteryMonitor.stopMonitoring()
+        if (::batteryMonitor.isInitialized) {
+            batteryMonitor.stopMonitoring()
+            prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
+        }
         super.onDestroy()
     }
 }

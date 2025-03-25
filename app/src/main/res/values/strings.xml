@@ -51,7 +51,10 @@
     <string name="set_location">Set Location</string>
     <string name="data_usage_description">WiFi Data Usage Widget</string>
     <string name="sim_data_usage_description">Sim Data Usage Widget</string>
-    <string name="add_data_widget">Add Data Usage Widget</string>
+    <string name="add_data_widget">Add Wifi Data Usage Widget</string>
     <string name="add_sim_data_widget">Add Sim Data Usage Widget</string>
     <string name="switch_to_red_accent">Switch to Red Accent</string>
+    <string name="wifi_update_interval_seconds">Wifi Update Interval (minutes)</string>
+    <string name="sim_update_interval_seconds">Sim Data Update Interval (minutes)</string>
+    <string name="_3600">3600</string>
 </resources>
