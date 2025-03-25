@@ -62,22 +62,32 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             var accumulated = prefs.getLong(KEY_ACCUMULATED, 0)
             val savedDate = prefs.getString(KEY_DATE, null)
             val totalRx = TrafficStats.getTotalRxBytes()
+            val totalTx = TrafficStats.getTotalTxBytes()
             val mobileRx = TrafficStats.getMobileRxBytes()
-            val currentBytes = if (totalRx == TrafficStats.UNSUPPORTED.toLong() || mobileRx == TrafficStats.UNSUPPORTED.toLong()) 0L else totalRx - mobileRx
+            val mobileTx = TrafficStats.getMobileTxBytes()
+            val wifiBytes = if (totalRx == TrafficStats.UNSUPPORTED.toLong() ||
+                totalTx == TrafficStats.UNSUPPORTED.toLong() ||
+                mobileRx == TrafficStats.UNSUPPORTED.toLong() ||
+                mobileTx == TrafficStats.UNSUPPORTED.toLong()) {
+                0L
+            } else {
+                maxOf(0L, (totalRx - mobileRx) + (totalTx - mobileTx))
+            }
+
 
             if (savedDate != currentDate) {
-                initialBaseline = currentBytes
-                lastBaseline = currentBytes
+                initialBaseline = wifiBytes
+                lastBaseline = wifiBytes
                 accumulated = 0
             } else if (initialBaseline == -1L || lastBaseline == -1L) {
-                initialBaseline = currentBytes
-                lastBaseline = currentBytes
-            } else if (currentBytes < lastBaseline) {
+                initialBaseline = wifiBytes
+                lastBaseline = wifiBytes
+            } else if (wifiBytes < lastBaseline) {
                 accumulated += lastBaseline - initialBaseline
-                initialBaseline = currentBytes
-                lastBaseline = currentBytes
+                initialBaseline = wifiBytes
+                lastBaseline = wifiBytes
             } else {
-                lastBaseline = currentBytes
+                lastBaseline = wifiBytes
             }
 
             prefs.edit().apply {
@@ -88,7 +98,7 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
                 apply()
             }
 
-            val totalUsage = accumulated + (currentBytes - initialBaseline)
+            val totalUsage = accumulated + (wifiBytes - initialBaseline)
             val views = RemoteViews(context.packageName, R.layout.data_usage_widget).apply {
                 setImageViewBitmap(R.id.data_text, CommonUtils.createTextAlternateBitmap(context, formatBytes(totalUsage), 20f, CommonUtils.getTypeface(context)))
                 setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(context))

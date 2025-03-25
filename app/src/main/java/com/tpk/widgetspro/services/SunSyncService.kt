@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
 import com.tpk.widgetspro.base.BaseMonitorService
@@ -28,16 +29,19 @@ class SunSyncService : BaseMonitorService() {
     private val handler = Handler(Looper.getMainLooper())
     private val client = OkHttpClient()
     private val scope = CoroutineScope(Dispatchers.IO)
+    private var prefs: SharedPreferences? = null
+    private var currentInterval = 60
 
     private val updateRunnable = object : Runnable {
         override fun run() {
-            val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-            val lastFetchDate = prefs.getString("last_fetch_date", null)
+            prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+            currentInterval = prefs?.getInt("sun_interval", 60)?.coerceAtLeast(1) ?: 60
+            val lastFetchDate = prefs?.getString("last_fetch_date", null)
             val today = LocalDate.now().toString()
             if (lastFetchDate != today) fetchSunriseSunsetData()
             fetchWeatherData()
             updateWidgets()
-            handler.postDelayed(this, 60 * 1000L)
+            handler.postDelayed(this, currentInterval * 1000L)
         }
     }
 
@@ -121,6 +125,9 @@ class SunSyncService : BaseMonitorService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+        prefs?.registerOnSharedPreferenceChangeListener(preferenceListener)
+        currentInterval = prefs?.getInt("sun_interval", 60)?.coerceAtLeast(1) ?: 60
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val componentName = ComponentName(this, SunTrackerWidget::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
@@ -131,8 +138,17 @@ class SunSyncService : BaseMonitorService() {
         return START_STICKY
     }
 
+    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "sun_interval") {
+            handler.removeCallbacks(updateRunnable)
+            currentInterval = prefs?.getInt(key, 60)?.coerceAtLeast(1) ?: 60
+            handler.post(updateRunnable)
+        }
+    }
+
     override fun onDestroy() {
         handler.removeCallbacks(updateRunnable)
+        prefs?.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         super.onDestroy()
     }
 
