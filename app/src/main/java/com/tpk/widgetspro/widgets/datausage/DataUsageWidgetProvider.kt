@@ -54,10 +54,10 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val PREFS_NAME = "DataUsagePrefs"
-        private const val KEY_INITIAL_BASELINE = "initial_baseline"
-        private const val KEY_LAST_BASELINE = "last_baseline"
-        private const val KEY_ACCUMULATED = "accumulated"
-        private const val KEY_DATE = "baseline_date"
+        private const val KEY_INITIAL_BASELINE = "wifi_initial_baseline"
+        private const val KEY_LAST_BASELINE = "wifi_last_baseline"
+        private const val KEY_ACCUMULATED = "wifi_accumulated"
+        private const val KEY_DATE = "wifi_baseline_date"
 
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

@@ -53,10 +53,10 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val PREFS_NAME = "SimDataUsagePrefs"
-        private const val KEY_INITIAL_BASELINE = "initial_baseline"
-        private const val KEY_LAST_BASELINE = "last_baseline"
-        private const val KEY_ACCUMULATED = "accumulated"
-        private const val KEY_DATE = "baseline_date"
+        private const val KEY_INITIAL_BASELINE = "sim_initial_baseline"
+        private const val KEY_LAST_BASELINE = "sim_last_baseline"
+        private const val KEY_ACCUMULATED = "sim_accumulated"
+        private const val KEY_DATE = "sim_baseline_date"
 
         private val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
 
