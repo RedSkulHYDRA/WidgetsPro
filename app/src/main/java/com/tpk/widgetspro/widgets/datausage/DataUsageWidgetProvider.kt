@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.TrafficStats
@@ -17,6 +18,18 @@ import java.util.Date
 import java.util.Locale
 
 class DataUsageWidgetProvider : AppWidgetProvider() {
+
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        if (intent.action == ACTION_MIDNIGHT_RESET) {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, DataUsageWidgetProvider::class.java)
+            )
+            onUpdate(context, appWidgetManager, appWidgetIds)
+        }
+    }
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         appWidgetIds.forEach { updateAppWidget(context, appWidgetManager, it) }
         scheduleMidnightReset(context)
@@ -35,10 +48,12 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
     private fun scheduleMidnightReset(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, DataUsageWidgetProvider::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+            action = ACTION_MIDNIGHT_RESET
         }
         val pendingIntent = PendingIntent.getBroadcast(
-            context, 0, intent,
+            context,
+            DATA_USAGE_REQUEST_CODE,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val calendar = Calendar.getInstance().apply {
@@ -58,6 +73,9 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
         private const val KEY_LAST_BASELINE = "wifi_last_baseline"
         private const val KEY_ACCUMULATED = "wifi_accumulated"
         private const val KEY_DATE = "wifi_baseline_date"
+        private const val KEY_LAST_UPDATE_TIME = "wifi_last_update_time"
+        private const val ACTION_MIDNIGHT_RESET = "com.tpk.widgetspro.ACTION_DATA_USAGE_RESET"
+        private const val DATA_USAGE_REQUEST_CODE = 1001
 
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -66,6 +84,8 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
             var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1L)
             var accumulated = prefs.getLong(KEY_ACCUMULATED, 0L)
             val savedDate = prefs.getString(KEY_DATE, null)
+            val lastUpdateTime = prefs.getLong(KEY_LAST_UPDATE_TIME, 0L)
+            val currentTime = System.currentTimeMillis()
 
             val totalRx = TrafficStats.getTotalRxBytes()
             val totalTx = TrafficStats.getTotalTxBytes()
@@ -82,7 +102,10 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
                 wifiRx + wifiTx
             }
 
-            if (savedDate != currentDate) {
+            val timeSinceLastUpdate = currentTime - lastUpdateTime
+            val possibleReboot = timeSinceLastUpdate > 5 * 60 * 1000 && lastBaseline > wifiBytes
+
+            if (savedDate != currentDate || possibleReboot) {
                 initialBaseline = wifiBytes
                 lastBaseline = wifiBytes
                 accumulated = 0L
@@ -91,7 +114,7 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
                 lastBaseline = wifiBytes
             } else if (wifiBytes < lastBaseline) {
                 accumulated += lastBaseline - initialBaseline
-                initialBaseline = 0L
+                initialBaseline = wifiBytes
                 lastBaseline = wifiBytes
             } else {
                 lastBaseline = wifiBytes
@@ -102,6 +125,7 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
                 putLong(KEY_LAST_BASELINE, lastBaseline)
                 putLong(KEY_ACCUMULATED, accumulated)
                 putString(KEY_DATE, currentDate)
+                putLong(KEY_LAST_UPDATE_TIME, currentTime)
                 apply()
             }
 
@@ -109,12 +133,12 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
 
             val views = RemoteViews(context.packageName, R.layout.data_usage_widget).apply {
                 setImageViewBitmap(
-                    R.id.data_text,
+                    R.id.wifi_data_text,
                     CommonUtils.createTextAlternateBitmap(
                         context, formatBytes(totalUsage), 20f, CommonUtils.getTypeface(context)
                     )
                 )
-                setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(context))
+                setInt(R.id.wifiImageData, "setColorFilter", CommonUtils.getAccentColor(context))
             }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

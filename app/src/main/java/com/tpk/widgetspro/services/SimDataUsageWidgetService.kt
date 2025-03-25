@@ -67,7 +67,7 @@ class SimDataUsageWidgetService : Service() {
                     SimDataUsageWidgetProvider.updateAppWidget(applicationContext, appWidgetManager, appWidgetId)
                 }
             }
-        }, 0, intervalMinutes.toLong(), TimeUnit.MINUTES)
+        }, 1, intervalMinutes.toLong(), TimeUnit.MINUTES)
     }
 
     private fun createNotification(): Notification {

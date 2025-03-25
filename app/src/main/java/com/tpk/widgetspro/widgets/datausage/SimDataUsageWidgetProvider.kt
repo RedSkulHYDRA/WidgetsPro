@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.TrafficStats
@@ -17,6 +18,18 @@ import java.util.Date
 import java.util.Locale
 
 class SimDataUsageWidgetProvider : AppWidgetProvider() {
+
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        if (intent.action == ACTION_MIDNIGHT_RESET) {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, SimDataUsageWidgetProvider::class.java)
+            )
+            onUpdate(context, appWidgetManager, appWidgetIds)
+        }
+    }
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         appWidgetIds.forEach { updateAppWidget(context, appWidgetManager, it) }
         scheduleMidnightReset(context)
@@ -35,10 +48,13 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
     private fun scheduleMidnightReset(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, SimDataUsageWidgetProvider::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+            action = ACTION_MIDNIGHT_RESET
         }
         val pendingIntent = PendingIntent.getBroadcast(
-            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context,
+            SIM_DATA_USAGE_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
@@ -57,6 +73,9 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
         private const val KEY_LAST_BASELINE = "sim_last_baseline"
         private const val KEY_ACCUMULATED = "sim_accumulated"
         private const val KEY_DATE = "sim_baseline_date"
+        private const val KEY_LAST_UPDATE_TIME = "sim_last_update_time"
+        private const val ACTION_MIDNIGHT_RESET = "com.tpk.widgetspro.ACTION_SIM_DATA_USAGE_RESET"
+        private const val SIM_DATA_USAGE_REQUEST_CODE = 1002
 
         private val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
 
@@ -67,19 +86,25 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
             var lastBaseline = prefs.getLong(KEY_LAST_BASELINE, -1L)
             var accumulated = prefs.getLong(KEY_ACCUMULATED, 0L)
             val savedDate = prefs.getString(KEY_DATE, null)
-            val currentRxBytes = TrafficStats.getMobileRxBytes()
-            val currentTxBytes = TrafficStats.getMobileTxBytes()
-            val totalBytes = currentRxBytes + currentTxBytes
+            val lastUpdateTime = prefs.getLong(KEY_LAST_UPDATE_TIME, 0L)
+            val currentTime = System.currentTimeMillis()
+
+            val mobileRx = TrafficStats.getMobileRxBytes()
+            val mobileTx = TrafficStats.getMobileTxBytes()
+            val totalBytes = mobileRx + mobileTx
 
             val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget)
 
-            if (currentRxBytes == TrafficStats.UNSUPPORTED.toLong() || currentTxBytes == TrafficStats.UNSUPPORTED.toLong()) {
+            if (mobileRx == TrafficStats.UNSUPPORTED.toLong() || mobileTx == TrafficStats.UNSUPPORTED.toLong()) {
                 views.setImageViewBitmap(
                     R.id.sim_data_text,
                     CommonUtils.createTextAlternateBitmap(context, "Unsupported", 20f, CommonUtils.getTypeface(context))
                 )
             } else {
-                if (savedDate != currentDate) {
+                val timeSinceLastUpdate = currentTime - lastUpdateTime
+                val possibleReboot = timeSinceLastUpdate > 5 * 60 * 1000 && lastBaseline > totalBytes
+
+                if (savedDate != currentDate || possibleReboot) {
                     initialBaseline = totalBytes
                     lastBaseline = totalBytes
                     accumulated = 0L
@@ -99,6 +124,7 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
                     putLong(KEY_LAST_BASELINE, lastBaseline)
                     putLong(KEY_ACCUMULATED, accumulated)
                     putString(KEY_DATE, currentDate)
+                    putLong(KEY_LAST_UPDATE_TIME, currentTime)
                     apply()
                 }
 
@@ -109,7 +135,7 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
                 )
             }
 
-            views.setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(context))
+            views.setInt(R.id.simImageData, "setColorFilter", CommonUtils.getAccentColor(context))
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
