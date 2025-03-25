@@ -70,7 +70,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var setLocationButton: Button
     private lateinit var suggestionsAdapter: ArrayAdapter<String>
 
-    private val enumOptions = arrayOf("black", "blue", "white", "silver", "transparent", "case", "fullproduct", "product", "withcase", "headphones", "headset")
+    private val enumOptions = arrayOf(
+        "black",
+        "blue",
+        "white",
+        "silver",
+        "transparent",
+        "case",
+        "fullproduct",
+        "product",
+        "withcase",
+        "headphones",
+        "headset"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,12 +98,14 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
         val isDarkTheme = prefs.getBoolean("dark_theme", false)
         val isRedAccent = prefs.getBoolean("red_accent", false)
-        setTheme(when {
-            isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
-            isDarkTheme -> R.style.Theme_WidgetsPro
-            isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
-            else -> R.style.Theme_WidgetsPro
-        })
+        setTheme(
+            when {
+                isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
+                isDarkTheme -> R.style.Theme_WidgetsPro
+                isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
+                else -> R.style.Theme_WidgetsPro
+            }
+        )
     }
 
     private fun setupUI() {
@@ -123,21 +137,53 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.title_main).setTextColor(CommonUtils.getAccentColor(this))
         findViewById<Button>(R.id.button1).setOnClickListener {
-            if (hasCpuPermissions()) requestWidgetInstallation(CpuWidgetProvider::class.java) else Toast.makeText(this, "Provide Root/Shizuku access", Toast.LENGTH_SHORT).show()
+            if (hasCpuPermissions()) requestWidgetInstallation(CpuWidgetProvider::class.java) else Toast.makeText(
+                this,
+                "Provide Root/Shizuku access",
+                Toast.LENGTH_SHORT
+            ).show()
         }
-        findViewById<Button>(R.id.button2).setOnClickListener { requestWidgetInstallation(BatteryWidgetProvider::class.java) }
+        findViewById<Button>(R.id.button2).setOnClickListener {
+            requestWidgetInstallation(
+                BatteryWidgetProvider::class.java
+            )
+        }
         findViewById<ImageView>(R.id.imageViewButton).setOnClickListener { checkPermissions() }
-        findViewById<Button>(R.id.button3).setOnClickListener { requestWidgetInstallation(CaffeineWidget::class.java) }
+        findViewById<Button>(R.id.button3).setOnClickListener {
+            requestWidgetInstallation(
+                CaffeineWidget::class.java
+            )
+        }
         findViewById<Button>(R.id.button4).setOnClickListener {
             if (hasBluetoothPermission()) requestWidgetInstallation(BluetoothWidgetProvider::class.java)
-            else ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT), REQUEST_BLUETOOTH_PERMISSIONS)
+            else ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT),
+                REQUEST_BLUETOOTH_PERMISSIONS
+            )
         }
-        findViewById<Button>(R.id.button5).setOnClickListener { requestWidgetInstallation(SunTrackerWidget::class.java) }
-        findViewById<Button>(R.id.button6).setOnClickListener { requestWidgetInstallation(SpeedWidgetProvider::class.java) }
-        findViewById<Button>(R.id.button7).setOnClickListener { requestWidgetInstallation(DataUsageWidgetProvider::class.java) }
-        findViewById<Button>(R.id.button8).setOnClickListener { requestWidgetInstallation(SimDataUsageWidgetProvider::class.java) }
+        findViewById<Button>(R.id.button5).setOnClickListener {
+            requestWidgetInstallation(
+                SunTrackerWidget::class.java
+            )
+        }
+        findViewById<Button>(R.id.button6).setOnClickListener {
+            requestWidgetInstallation(
+                SpeedWidgetProvider::class.java
+            )
+        }
+        findViewById<Button>(R.id.button7).setOnClickListener {
+            requestWidgetInstallation(
+                DataUsageWidgetProvider::class.java
+            )
+        }
+        findViewById<Button>(R.id.button8).setOnClickListener {
+            requestWidgetInstallation(
+                SimDataUsageWidgetProvider::class.java
+            )
+        }
         findViewById<Button>(R.id.button9).setOnClickListener { switchTheme() }
-        findViewById<Button>(R.id.reset_image_button).setOnClickListener {resetBluetoothImage()}
+        findViewById<Button>(R.id.reset_image_button).setOnClickListener { resetBluetoothImage() }
         suggestionsAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line)
         locationAutoComplete.setAdapter(suggestionsAdapter)
         locationAutoComplete.addTextChangedListener(object : TextWatcher {
@@ -173,7 +219,8 @@ class MainActivity : AppCompatActivity() {
                     resetImageForDevice(this, it.name, appWidgetId)
                     clearCustomQueryForDevice(this, it.name, appWidgetId)
                     setCustomQueryForDevice(this, it.name, getSelectedItemsAsString(), appWidgetId)
-                    Toast.makeText(this, "Reset image and query for ${it.name}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Reset image and query for ${it.name}", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }
@@ -198,38 +245,57 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hasCpuPermissions(): Boolean = try {
-        Runtime.getRuntime().exec(arrayOf("su", "-c", "cat /proc/version")).inputStream.bufferedReader().use { it.readLine() } != null
+        Runtime.getRuntime()
+            .exec(arrayOf("su", "-c", "cat /proc/version")).inputStream.bufferedReader()
+            .use { it.readLine() } != null
     } catch (e: Exception) {
         Shizuku.pingBinder() && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
     }
 
     private fun hasBluetoothPermission(): Boolean =
-        ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.BLUETOOTH_CONNECT
+        ) == PackageManager.PERMISSION_GRANTED
 
     private fun checkPermissions() {
         when {
             hasCpuPermissions() -> startServiceAndFinish(true)
-            Shizuku.pingBinder() -> if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) startServiceAndFinish(false) else Shizuku.requestPermission(SHIZUKU_REQUEST_CODE)
+            Shizuku.pingBinder() -> if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) startServiceAndFinish(
+                false
+            ) else Shizuku.requestPermission(SHIZUKU_REQUEST_CODE)
+
             else -> showPermissionDialog()
         }
     }
 
     private fun startServiceAndFinish(useRoot: Boolean) {
-        startForegroundService(Intent(this, CpuMonitorService::class.java).putExtra("use_root", useRoot))
+        startForegroundService(
+            Intent(this, CpuMonitorService::class.java).putExtra(
+                "use_root",
+                useRoot
+            )
+        )
     }
 
     private fun showPermissionDialog() {
-        AlertDialog.Builder(this, R.style.CustomDialogTheme)
-            .setTitle(R.string.permission_required_title)
-            .setMessage(R.string.permission_required_message)
-            .setPositiveButton("Open Shizuku") { _, _ ->
-                if (isShizukuInstalled()) checkPermissions() else startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://shizuku.rikka.app/")))
-                finish()
-            }
-            .setNegativeButton("Exit") { _, _ -> finish() }
-            .setCancelable(false)
-            .create()
-            .show()
+        val builder = AlertDialog.Builder(this, R.style.CustomDialogTheme)
+        builder.setTitle(R.string.permission_required_title)
+        builder.setMessage(R.string.permission_required_message)
+        builder.setPositiveButton("Open Shizuku") { _, _ ->
+            if (isShizukuInstalled()) checkPermissions() else startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://shizuku.rikka.app/")
+                )
+            )
+            finish()
+        }
+        builder.setNegativeButton("Exit") { _, _ -> finish() }
+        builder.setCancelable(false)
+        builder.create()
+        builder.show()
+        builder.show().applyDialogTheme()
     }
 
     private fun isShizukuInstalled(): Boolean = try {
@@ -239,11 +305,20 @@ class MainActivity : AppCompatActivity() {
         false
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            SHIZUKU_REQUEST_CODE -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) startServiceAndFinish(false) else Toast.makeText(this, "Shizuku permission denied", Toast.LENGTH_SHORT).show()
-            REQUEST_BLUETOOTH_PERMISSIONS -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) requestWidgetInstallation(BluetoothWidgetProvider::class.java) else Toast.makeText(this, "Bluetooth permission denied", Toast.LENGTH_SHORT).show()
+            SHIZUKU_REQUEST_CODE -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) startServiceAndFinish(
+                false
+            ) else Toast.makeText(this, "Shizuku permission denied", Toast.LENGTH_SHORT).show()
+
+            REQUEST_BLUETOOTH_PERMISSIONS -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) requestWidgetInstallation(
+                BluetoothWidgetProvider::class.java
+            ) else Toast.makeText(this, "Bluetooth permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -252,6 +327,7 @@ class MainActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvCpuValue.text = progress.toString()
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("cpu_interval", seekBar?.progress ?: 60).apply()
@@ -261,6 +337,7 @@ class MainActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvBatteryValue.text = progress.toString()
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("battery_interval", seekBar?.progress ?: 60).apply()
@@ -270,6 +347,7 @@ class MainActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvWifiValue.text = progress.toString()
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("data_interval", seekBar?.progress ?: 60).apply()
@@ -279,6 +357,7 @@ class MainActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvSimValue.text = progress.toString()
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("sim_data_interval", seekBar?.progress ?: 60).apply()
@@ -327,7 +406,12 @@ class MainActivity : AppCompatActivity() {
         updateWidget(context, appWidgetId)
     }
 
-    private fun setCustomQueryForDevice(context: Context, deviceName: String, query: String, appWidgetId: Int) {
+    private fun setCustomQueryForDevice(
+        context: Context,
+        deviceName: String,
+        query: String,
+        appWidgetId: Int
+    ) {
         ImageApiClient.setCustomQuery(context, deviceName, query)
         resetImageForDevice(context, deviceName, appWidgetId)
         resetUpdateWidget(context, appWidgetId)
@@ -360,7 +444,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun getBluetoothWidgetIds(context: Context): IntArray {
         val appWidgetManager = AppWidgetManager.getInstance(context)
-        return appWidgetManager.getAppWidgetIds(ComponentName(context, BluetoothWidgetProvider::class.java))
+        return appWidgetManager.getAppWidgetIds(
+            ComponentName(
+                context,
+                BluetoothWidgetProvider::class.java
+            )
+        )
     }
 
     private fun getSelectedDeviceAddress(context: Context, appWidgetId: Int): String? {
@@ -482,7 +571,11 @@ class MainActivity : AppCompatActivity() {
             if (powerManager.isIgnoringBatteryOptimizations(packageName)) {
                 Toast.makeText(this, "Battery optimizations disabled", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Please disable battery optimizations for better performance", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this,
+                    "Please disable battery optimizations for better performance",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }

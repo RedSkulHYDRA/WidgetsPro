@@ -50,22 +50,22 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
                 val usage = NetworkStatsHelper.getDeviceMobileDataUsage(context, NetworkStatsHelper.SESSION_TODAY)
                 val totalBytes = usage[2]
                 val formattedUsage = formatBytes(totalBytes)
-                val views = RemoteViews(context.packageName, R.layout.data_usage_widget).apply {
+                val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
                     setImageViewBitmap(
-                        R.id.wifi_data_text,
+                        R.id.sim_data_text,
                         CommonUtils.createTextAlternateBitmap(context, formattedUsage, 20f, CommonUtils.getTypeface(context))
                     )
-                    setInt(R.id.wifiImageData, "setColorFilter", CommonUtils.getAccentColor(context))
+                    setInt(R.id.simImageData, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
                 Log.e("SimDataUsageWidget", "Error getting SIM data usage", e)
-                val views = RemoteViews(context.packageName, R.layout.data_usage_widget).apply {
+                val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
                     setImageViewBitmap(
-                        R.id.wifi_data_text,
+                        R.id.sim_data_text,
                         CommonUtils.createTextAlternateBitmap(context, "Error", 20f, CommonUtils.getTypeface(context))
                     )
-                    setInt(R.id.wifiImageData, "setColorFilter", CommonUtils.getAccentColor(context))
+                    setInt(R.id.simImageData, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }
