@@ -183,18 +183,18 @@
         </receiver>
 
         <receiver
-            android:name=".widgets.datausage.DataUsageWidgetProvider"
+            android:name=".widgets.networkusage.WifiDataUsageWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/data_usage_widget_info" />
+                android:resource="@xml/wifi_data_usage_widget_info" />
         </receiver>
 
         <receiver
-            android:name=".widgets.datausage.SimDataUsageWidgetProvider"
+            android:name=".widgets.networkusage.SimDataUsageWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -205,7 +205,7 @@
         </receiver>
 
         <service
-            android:name=".services.DataUsageWidgetService"
+            android:name=".services.WifiDataUsageWidgetService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 

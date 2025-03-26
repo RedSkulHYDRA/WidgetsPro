@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.widgets.datausage
+package com.tpk.widgetspro.widgets.networkusage
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -8,16 +8,16 @@ import android.content.Intent
 import android.util.Log
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.services.DataUsageWidgetService
+import com.tpk.widgetspro.services.SimDataUsageWidgetService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.NetworkStatsHelper
 
-class DataUsageWidgetProvider : AppWidgetProvider() {
+class SimDataUsageWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_MIDNIGHT_RESET) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, DataUsageWidgetProvider::class.java))
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, SimDataUsageWidgetProvider::class.java))
             onUpdate(context, appWidgetManager, appWidgetIds)
         }
     }
@@ -29,43 +29,43 @@ class DataUsageWidgetProvider : AppWidgetProvider() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        context.startForegroundService(Intent(context, DataUsageWidgetService::class.java))
+        context.startForegroundService(Intent(context, SimDataUsageWidgetService::class.java))
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        context.stopService(Intent(context, DataUsageWidgetService::class.java))
+        context.stopService(Intent(context, SimDataUsageWidgetService::class.java))
     }
 
     private fun scheduleMidnightReset(context: Context) {
-        CommonUtils.scheduleMidnightReset(context, DATA_USAGE_REQUEST_CODE, ACTION_MIDNIGHT_RESET, DataUsageWidgetProvider::class.java)
+        CommonUtils.scheduleMidnightReset(context, SIM_DATA_USAGE_REQUEST_CODE, ACTION_MIDNIGHT_RESET, SimDataUsageWidgetProvider::class.java)
     }
 
     companion object {
-        private const val ACTION_MIDNIGHT_RESET = "com.tpk.widgetspro.ACTION_DATA_USAGE_RESET"
-        private const val DATA_USAGE_REQUEST_CODE = 1001
+        private const val ACTION_MIDNIGHT_RESET = "com.tpk.widgetspro.ACTION_SIM_DATA_USAGE_RESET"
+        private const val SIM_DATA_USAGE_REQUEST_CODE = 1002
 
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             try {
-                val usage = NetworkStatsHelper.getDeviceWifiDataUsage(context, NetworkStatsHelper.SESSION_TODAY)
+                val usage = NetworkStatsHelper.getSimDataUsage(context, NetworkStatsHelper.SESSION_TODAY)
                 val totalBytes = usage[2]
                 val formattedUsage = formatBytes(totalBytes)
-                val views = RemoteViews(context.packageName, R.layout.data_usage_widget).apply {
+                val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
                     setImageViewBitmap(
-                        R.id.wifi_data_text,
+                        R.id.sim_data_usage_text,
                         CommonUtils.createTextAlternateBitmap(context, formattedUsage, 20f, CommonUtils.getTypeface(context))
                     )
-                    setInt(R.id.wifiImageData, "setColorFilter", CommonUtils.getAccentColor(context))
+                    setInt(R.id.sim_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
-                Log.e("DataUsageWidget", "Error getting WiFi data usage", e)
-                val views = RemoteViews(context.packageName, R.layout.data_usage_widget).apply {
+                Log.e("SimDataUsageWidget", "Error getting SIM data usage", e)
+                val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
                     setImageViewBitmap(
-                        R.id.wifi_data_text,
+                        R.id.sim_data_usage_text,
                         CommonUtils.createTextAlternateBitmap(context, "Error", 20f, CommonUtils.getTypeface(context))
                     )
-                    setInt(R.id.wifiImageData, "setColorFilter", CommonUtils.getAccentColor(context))
+                    setInt(R.id.sim_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }

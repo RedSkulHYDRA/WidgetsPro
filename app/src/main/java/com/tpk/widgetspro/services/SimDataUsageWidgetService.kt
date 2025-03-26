@@ -3,10 +3,10 @@ package com.tpk.widgetspro.services
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.util.Log
-import com.tpk.widgetspro.widgets.datausage.SimDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProvider
 
 class SimDataUsageWidgetService : WidgetUpdateService() {
-    override val intervalKey = "sim_data_interval"
+    override val intervalKey = "sim_data_usage_interval"
     override val notificationId = 5
     override val notificationChannelId = "SIM_DATA_USAGE_CHANNEL"
     override val notificationTitle = "SIM Data Usage Updates"
@@ -18,7 +18,7 @@ class SimDataUsageWidgetService : WidgetUpdateService() {
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
         val thisWidget = ComponentName(applicationContext, widgetProviderClass)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
-        Log.d(TAG, "Updating ${appWidgetIds.size} SIM data widgets")
+        Log.d(TAG, "Updating ${appWidgetIds.size} SIM data usage widget")
         appWidgetIds.forEach { appWidgetId ->
             SimDataUsageWidgetProvider.updateAppWidget(applicationContext, appWidgetManager, appWidgetId)
         }

@@ -8,14 +8,14 @@
     android:padding="8dp">
 
     <ImageView
-        android:id="@+id/wifiImageData"
+        android:id="@+id/wifi_data_usage_image"
         android:layout_marginEnd="8dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/wifi_usage"/>
+        android:src="@drawable/wifi_data_usage"/>
 
     <ImageView
-        android:id="@+id/wifi_data_text"
+        android:id="@+id/wifi_data_usage_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="0.00 MB/s"
