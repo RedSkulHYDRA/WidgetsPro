@@ -90,14 +90,14 @@
             style="@style/CustomTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/add_data_widget" />
+            android:text="@string/add_wifi_data_usage_widget" />
 
         <Button
             android:id="@+id/button8"
             style="@style/CustomTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/add_sim_data_widget" />
+            android:text="@string/add_sim_data_usage_widget" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -223,7 +223,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                android:text="@string/wifi_update_interval_seconds" />
+                android:text="@string/wifi_data_usage_interval" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -253,7 +253,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                android:text="@string/sim_update_interval_seconds" />
+                android:text="@string/sim_data_usage_interval" />
 
             <LinearLayout
                 android:layout_width="match_parent"

@@ -3,7 +3,7 @@
     android:width="15dp"
     android:height="15dp"
     android:tint="?attr/colorOnSurface"
-    android:viewportWidth="21"
+    android:viewportWidth="15"
     android:viewportHeight="15">
     <path
         android:fillColor="@color/accent_color"

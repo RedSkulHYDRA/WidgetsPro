@@ -8,14 +8,14 @@
     android:padding="8dp">
 
     <ImageView
-        android:id="@+id/simImageData"
+        android:id="@+id/sim_data_usage_image"
         android:layout_marginEnd="8dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/data_usage"/>
+        android:src="@drawable/sim_data_usage"/>
 
     <ImageView
-        android:id="@+id/sim_data_text"
+        android:id="@+id/sim_data_usage_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="0.00 MB/s"

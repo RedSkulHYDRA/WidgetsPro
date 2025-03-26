@@ -12,7 +12,7 @@ object NetworkStatsHelper {
     const val SESSION_MONTHLY = 1
 
     @Throws(RemoteException::class)
-    fun getDeviceMobileDataUsage(context: Context, session: Int): LongArray {
+    fun getSimDataUsage(context: Context, session: Int): LongArray {
         val (startTime, endTime) = getTimeRange(context, session, -1)
         val networkStatsManager = context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
         val bucket = networkStatsManager.querySummaryForDevice(
@@ -28,7 +28,7 @@ object NetworkStatsHelper {
     }
 
     @Throws(RemoteException::class)
-    fun getDeviceWifiDataUsage(context: Context, session: Int): LongArray {
+    fun getWifiDataUsage(context: Context, session: Int): LongArray {
         val (startTime, endTime) = getTimeRange(context, session, -1)
         val networkStatsManager = context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
         val bucket = networkStatsManager.querySummaryForDevice(

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
@@ -44,8 +43,8 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.datausage.DataUsageWidgetProvider
-import com.tpk.widgetspro.widgets.datausage.SimDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
@@ -125,8 +124,8 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("widget_prefs", MODE_PRIVATE)
         seekBarCpu.progress = prefs.getInt("cpu_interval", 60)
         seekBarBattery.progress = prefs.getInt("battery_interval", 60)
-        seekBarWifi.progress = prefs.getInt("data_interval", 60)
-        seekBarSim.progress = prefs.getInt("sim_data_interval", 60)
+        seekBarWifi.progress = prefs.getInt("wifi_data_usage_interval", 60)
+        seekBarSim.progress = prefs.getInt("sim_data_usage_interval", 60)
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
         tvWifiValue.text = seekBarWifi.progress.toString()
@@ -174,7 +173,7 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.button7).setOnClickListener {
             requestWidgetInstallation(
-                DataUsageWidgetProvider::class.java
+                WifiDataUsageWidgetProvider::class.java
             )
         }
         findViewById<Button>(R.id.button8).setOnClickListener {
@@ -350,7 +349,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                prefs.edit().putInt("data_interval", seekBar?.progress ?: 60).apply()
+                prefs.edit().putInt("wifi_data_usage_interval", seekBar?.progress ?: 60).apply()
             }
         })
         seekBarSim.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -360,7 +359,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                prefs.edit().putInt("sim_data_interval", seekBar?.progress ?: 60).apply()
+                prefs.edit().putInt("sim_data_usage_interval", seekBar?.progress ?: 60).apply()
             }
         })
     }
@@ -382,7 +381,7 @@ class MainActivity : AppCompatActivity() {
             CaffeineWidget::class.java,
             SunTrackerWidget::class.java,
             SpeedWidgetProvider::class.java,
-            DataUsageWidgetProvider::class.java,
+            WifiDataUsageWidgetProvider::class.java,
             SimDataUsageWidgetProvider::class.java
         )
 
