@@ -58,6 +58,19 @@ class WifiDataUsageWidgetProvider : AppWidgetProvider() {
                         CommonUtils.createTextAlternateBitmap(context, formattedUsage, 20f, CommonUtils.getTypeface(context))
                     )
                     setInt(R.id.wifi_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
+
+                    // Add click listener to open WiFi settings
+                    val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+                    // Ensure the intent can be handled by the system
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val pendingIntent = PendingIntent.getActivity(
+                        context,
+                        0, // Request code (can be 0 since we're not expecting a result)
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    // Set the click listener on the root layout of the widget
+                    setOnClickPendingIntent(R.id.wifi_data_usage_widget_root, pendingIntent)
                 }
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
@@ -65,21 +78,21 @@ class WifiDataUsageWidgetProvider : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, R.layout.wifi_data_usage_widget).apply {
                     setImageViewBitmap(
                         R.id.wifi_data_usage_text,
-                        CommonUtils.createTextAlternateBitmap(context, "Click here", 20f, CommonUtils.getTypeface(context))
+                        CommonUtils.createTextAlternateBitmap(context, "Error", 20f, CommonUtils.getTypeface(context))
                     )
                     setInt(R.id.wifi_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
+
+                    // Add click listener to open WiFi settings even in error state
+                    val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val pendingIntent = PendingIntent.getActivity(
+                        context,
+                        0,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    setOnClickPendingIntent(R.id.wifi_data_usage_widget_root, pendingIntent)
                 }
-                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                val pendingIntent = PendingIntent.getActivity(
-                    context,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(
-                    R.id.wifi_data_usage,
-                    pendingIntent
-                )
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }
         }
