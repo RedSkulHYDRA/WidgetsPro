@@ -48,40 +48,40 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
         private const val SIM_DATA_USAGE_REQUEST_CODE = 1002
 
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-            val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget)
-
-            // Set up the PendingIntent for the root layout to open SIM settings
-            val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.sim_data_usage, pendingIntent)
-
             try {
                 val usage = NetworkStatsHelper.getSimDataUsage(context, NetworkStatsHelper.SESSION_TODAY)
                 val totalBytes = usage[2]
                 val formattedUsage = formatBytes(totalBytes)
-                views.apply {
+                val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
                     setImageViewBitmap(
                         R.id.sim_data_usage_text,
                         CommonUtils.createTextAlternateBitmap(context, formattedUsage, 20f, CommonUtils.getTypeface(context))
                     )
                     setInt(R.id.sim_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
+                appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
                 Log.e("SimDataUsageWidget", "Error getting SIM data usage", e)
-                views.apply {
+                val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
                     setImageViewBitmap(
                         R.id.sim_data_usage_text,
                         CommonUtils.createTextAlternateBitmap(context, "Click here", 20f, CommonUtils.getTypeface(context))
                     )
                     setInt(R.id.sim_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
+                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                val pendingIntent = PendingIntent.getActivity(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(
+                    R.id.sim_data_usage,
+                    pendingIntent
+                )
+                appWidgetManager.updateAppWidget(appWidgetId, views)
             }
-            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
         private fun formatBytes(bytes: Long): String {
