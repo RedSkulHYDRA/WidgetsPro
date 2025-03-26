@@ -25,8 +25,8 @@
     <string name="bluetooth_battery_name">Bluetooth Widget</string>
     <string name="battery_monitor_title">Battery Monitor</string>
     <string name="battery_monitor_text">Battery Monitor</string>
-    <string name="battery_update_interval_seconds">Battery Update Interval (seconds)</string>
-    <string name="cpu_update_interval_seconds">CPU Update Interval (seconds)</string>
+    <string name="battery_update_interval">Battery Update Interval (minutes)</string>
+    <string name="cpu_update_interval">CPU Update Interval (seconds)</string>
     <string name="add_bluetooth_widget">Add Bluetooth Widget</string>
     <string name="add_caffeine_widget">Add Caffeine Widget</string>
     <string name="add_battery_widget">Add Battery Widget</string>

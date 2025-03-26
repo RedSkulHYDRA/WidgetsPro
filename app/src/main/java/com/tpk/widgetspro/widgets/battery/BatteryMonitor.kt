@@ -36,7 +36,7 @@ class BatteryMonitor(
         scheduledFuture = executorService?.schedule({
             performMonitoring()
             scheduleNextRun()
-        }, currentInterval.toLong(), TimeUnit.SECONDS)
+        }, currentInterval.toLong(), TimeUnit.MINUTES)
     }
 
     fun updateInterval(newInterval: Int) {

@@ -1,10 +1,12 @@
 package com.tpk.widgetspro.widgets.networkusage
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import android.util.Log
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
@@ -63,10 +65,21 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, R.layout.sim_data_usage_widget).apply {
                     setImageViewBitmap(
                         R.id.sim_data_usage_text,
-                        CommonUtils.createTextAlternateBitmap(context, "Error", 20f, CommonUtils.getTypeface(context))
+                        CommonUtils.createTextAlternateBitmap(context, "Click here", 20f, CommonUtils.getTypeface(context))
                     )
                     setInt(R.id.sim_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
+                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                val pendingIntent = PendingIntent.getActivity(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(
+                    R.id.sim_data_usage,
+                    pendingIntent
+                )
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }
         }

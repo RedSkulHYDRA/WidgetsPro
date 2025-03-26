@@ -1,6 +1,7 @@
 package com.tpk.widgetspro.utils
 
 import android.app.AlarmManager
+import android.app.AppOpsManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -120,6 +121,15 @@ object CommonUtils {
             set(Calendar.MILLISECOND, 0)
         }
         alarmManager.setExact(AlarmManager.RTC, calendar.timeInMillis, pendingIntent)
+    }
+    fun hasUsageAccessPermission(context: Context): Boolean {
+        val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOpsManager.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            context.packageName
+        )
+        return mode == AppOpsManager.MODE_ALLOWED
     }
 
     fun getTypeface(context: Context): Typeface = ResourcesCompat.getFont(context, R.font.ndot)!!
