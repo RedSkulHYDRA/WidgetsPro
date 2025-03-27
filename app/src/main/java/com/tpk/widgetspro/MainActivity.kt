@@ -45,6 +45,7 @@ import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
@@ -179,6 +180,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.button8).setOnClickListener {
             requestWidgetInstallation(
                 SimDataUsageWidgetProvider::class.java
+            )
+        }
+        findViewById<Button>(R.id.button10).setOnClickListener {
+            requestWidgetInstallation(
+                NoteWidgetProvider::class.java
             )
         }
         findViewById<Button>(R.id.button9).setOnClickListener { switchTheme() }
@@ -384,7 +390,8 @@ class MainActivity : AppCompatActivity() {
             SunTrackerWidget::class.java,
             SpeedWidgetProvider::class.java,
             WifiDataUsageWidgetProvider::class.java,
-            SimDataUsageWidgetProvider::class.java
+            SimDataUsageWidgetProvider::class.java,
+            NoteWidgetProvider::class.java
         )
 
         providers.forEach { provider ->
@@ -482,7 +489,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
         builder.setNegativeButton("Cancel", null)
-        builder.show().applyDialogTheme()
+        val dialog = builder.create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        dialog.applyDialogTheme()
     }
 
     private fun addChipToGroup(enumText: String) {

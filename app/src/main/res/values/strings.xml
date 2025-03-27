@@ -57,4 +57,6 @@
     <string name="wifi_data_usage_interval">Wifi Data Usage Update Interval (minutes)</string>
     <string name="sim_data_usage_interval">Sim Data Usage Update Interval (minutes)</string>
     <string name="_3600">3600</string>
+    <string name="widget_notes_name">Notes Widget</string>
+    <string name="add_notes_widget">Add Notes Widget</string>
 </resources>

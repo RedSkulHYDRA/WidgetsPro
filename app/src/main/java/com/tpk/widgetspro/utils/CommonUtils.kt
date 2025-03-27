@@ -83,6 +83,46 @@ object CommonUtils {
         return bitmap
     }
 
+    fun createTextNotesWidgetBitmap(
+        context: Context,
+        text: String,
+        textSizeSp: Float,
+        typeface: Typeface
+    ): Bitmap {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_SP,
+                textSizeSp,
+                context.resources.displayMetrics
+            )
+            color = ContextCompat.getColor(context, R.color.text_color)
+            this.typeface = typeface
+            textAlign = Paint.Align.LEFT
+        }
+
+        val lines = text.split("\n")
+
+        if (lines.isEmpty()) {
+            return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        }
+
+        val lineHeight = paint.getFontSpacing()
+        val maxWidth = lines.maxOf { paint.measureText(it) }
+        val bitmapWidth = (maxWidth + 0.5f).toInt()
+        val bitmapHeight = (lines.size * lineHeight + 0.5f).toInt()
+        val bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val fm = paint.fontMetrics
+        val baselineOffset = -fm.ascent
+
+        lines.forEachIndexed { index, line ->
+            val y = index * lineHeight + baselineOffset
+            canvas.drawText(line, 0f, y, paint)
+        }
+
+        return bitmap
+    }
+
     fun getPendingIntent(context: Context, appWidgetId: Int, destination: Class<*>): PendingIntent =
         PendingIntent.getActivity(
             context,
