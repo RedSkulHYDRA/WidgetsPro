@@ -122,6 +122,8 @@
 
         <receiver
             android:name=".widgets.bluetooth.BluetoothReceiver"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />

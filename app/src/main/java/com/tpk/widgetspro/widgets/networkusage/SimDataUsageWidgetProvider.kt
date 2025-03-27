@@ -92,6 +92,10 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
             }
         }
 
+        fun updateAllWidgets(context: Context) {
+            CommonUtils.updateAllWidgets(context, SimDataUsageWidgetProvider::class.java)
+        }
+
         private fun formatBytes(bytes: Long): String {
             val unit = 1024
             if (bytes < unit) return "$bytes B"

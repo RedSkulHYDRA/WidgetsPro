@@ -350,6 +350,7 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("wifi_data_usage_interval", seekBar?.progress ?: 60).apply()
+                WifiDataUsageWidgetProvider.updateAllWidgets(applicationContext)
             }
         })
         seekBarSim.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -360,6 +361,7 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("sim_data_usage_interval", seekBar?.progress ?: 60).apply()
+                SimDataUsageWidgetProvider.updateAllWidgets(applicationContext)
             }
         })
     }
