@@ -59,6 +59,14 @@ class SimDataUsageWidgetProvider : AppWidgetProvider() {
                     )
                     setInt(R.id.sim_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
+                val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                val pendingIntent = PendingIntent.getActivity(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.sim_data_usage, pendingIntent)
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
                 Log.e("SimDataUsageWidget", "Error getting SIM data usage", e)

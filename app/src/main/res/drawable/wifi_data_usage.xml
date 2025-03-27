@@ -6,7 +6,6 @@
     android:viewportWidth="18"
     android:viewportHeight="18">
     <group android:translateX="0" android:translateY="2">
-        <!-- New base row: 4 dots (y = -0.59) -->
         <path
             android:fillColor="@color/accent_color"
             android:pathData="M2,-0.59 A1.5,1.5 0 1 0 2,2.41 A1.5,1.5 0 1 0 2,-0.59 Z" />
@@ -19,7 +18,6 @@
         <path
             android:fillColor="@color/accent_color"
             android:pathData="M16.01,-0.59 A1.5,1.5 0 1 0 16.01,2.41 A1.5,1.5 0 1 0 16.01,-0.59 Z" />
-        <!-- New second row: 3 dots (y = 3.45) -->
         <path
             android:fillColor="@color/accent_color"
             android:pathData="M4.335,3.45 A1.5,1.5 0 1 0 4.335,6.45 A1.5,1.5 0 1 0 4.335,3.45 Z" />
@@ -29,14 +27,12 @@
         <path
             android:fillColor="@color/accent_color"
             android:pathData="M13.675,3.45 A1.5,1.5 0 1 0 13.675,6.45 A1.5,1.5 0 1 0 13.675,3.45 Z" />
-        <!-- New third row: 2 dots (y = 7.49) -->
         <path
             android:fillColor="@color/accent_color"
             android:pathData="M6.67,7.49 A1.5,1.5 0 1 0 6.67,10.49 A1.5,1.5 0 1 0 6.67,7.49 Z" />
         <path
             android:fillColor="@color/accent_color"
             android:pathData="M11.34,7.49 A1.5,1.5 0 1 0 11.34,10.49 A1.5,1.5 0 1 0 11.34,7.49 Z" />
-        <!-- New apex: 1 dot (y = 11.53) -->
         <path
             android:fillColor="@color/accent_color"
             android:pathData="M9.005,11.53 A1.5,1.5 0 1 0 9.005,14.53 A1.5,1.5 0 1 0 9.005,11.53 Z" />

@@ -59,6 +59,15 @@ class WifiDataUsageWidgetProvider : AppWidgetProvider() {
                     )
                     setInt(R.id.wifi_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
                 }
+                val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                val pendingIntent = PendingIntent.getActivity(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.wifi_data_usage, pendingIntent)
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
                 Log.e("DataUsageWidget", "Error getting WiFi data usage", e)
