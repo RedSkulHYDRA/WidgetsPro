@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="18dp"
+    android:height="18dp"
+    android:tint="?attr/colorOnSurface"
+    android:viewportWidth="35"
+    android:viewportHeight="35">
+    <group android:translateX="8.5" android:translateY="20">
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M2,-0.59 A1.5,1.5 0 1 0 2,2.41 A1.5,1.5 0 1 0 2,-0.59 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M6.67,-0.59 A1.5,1.5 0 1 0 6.67,2.41 A1.5,1.5 0 1 0 6.67,-0.59 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M11.34,-0.59 A1.5,1.5 0 1 0 11.34,2.41 A1.5,1.5 0 1 0 11.34,-0.59 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M16.01,-0.59 A1.5,1.5 0 1 0 16.01,2.41 A1.5,1.5 0 1 0 16.01,-0.59 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M4.335,3.45 A1.5,1.5 0 1 0 4.335,6.45 A1.5,1.5 0 1 0 4.335,3.45 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M9.005,3.45 A1.5,1.5 0 1 0 9.005,6.45 A1.5,1.5 0 1 0 9.005,3.45 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M13.675,3.45 A1.5,1.5 0 1 0 13.675,6.45 A1.5,1.5 0 1 0 13.675,3.45 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M6.67,7.49 A1.5,1.5 0 1 0 6.67,10.49 A1.5,1.5 0 1 0 6.67,7.49 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M11.34,7.49 A1.5,1.5 0 1 0 11.34,10.49 A1.5,1.5 0 1 0 11.34,7.49 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M9.005,11.53 A1.5,1.5 0 1 0 9.005,14.53 A1.5,1.5 0 1 0 9.005,11.53 Z" />
+    </group>
+
+    <group android:translateX="8.5" android:translateY="1">
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M2,14.53 A1.5,1.5 0 1 0 2,11.53 A1.5,1.5 0 1 0 2,14.53 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M6.67,14.53 A1.5,1.5 0 1 0 6.67,11.53 A1.5,1.5 0 1 0 6.67,14.53 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M11.34,14.53 A1.5,1.5 0 1 0 11.34,11.53 A1.5,1.5 0 1 0 11.34,14.53 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M16.01,14.53 A1.5,1.5 0 1 0 16.01,11.53 A1.5,1.5 0 1 0 16.01,14.53 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M4.335,10.49 A1.5,1.5 0 1 0 4.335,7.49 A1.5,1.5 0 1 0 4.335,10.49 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M9.005,10.49 A1.5,1.5 0 1 0 9.005,7.49 A1.5,1.5 0 1 0 9.005,10.49 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M13.675,10.49 A1.5,1.5 0 1 0 13.675,7.49 A1.5,1.5 0 1 0 13.675,10.49 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M6.67,6.45 A1.5,1.5 0 1 0 6.67,3.45 A1.5,1.5 0 1 0 6.67,6.45 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M11.34,6.45 A1.5,1.5 0 1 0 11.34,3.45 A1.5,1.5 0 1 0 11.34,6.45 Z" />
+        <path
+            android:fillColor="@color/accent_color"
+            android:pathData="M9.005,2.41 A1.5,1.5 0 1 0 9.005,-0.59 A1.5,1.5 0 1 0 9.005,2.41 Z" />
+    </group>
+
+</vector>

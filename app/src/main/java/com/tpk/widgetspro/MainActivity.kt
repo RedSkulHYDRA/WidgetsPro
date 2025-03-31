@@ -46,7 +46,7 @@ import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
-import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
 import java.util.Locale
@@ -169,7 +169,7 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.button6).setOnClickListener {
             requestWidgetInstallation(
-                SpeedWidgetProvider::class.java
+                NetworkSpeedProvider::class.java
             )
         }
         findViewById<Button>(R.id.button7).setOnClickListener {
@@ -388,7 +388,7 @@ class MainActivity : AppCompatActivity() {
             BluetoothWidgetProvider::class.java,
             CaffeineWidget::class.java,
             SunTrackerWidget::class.java,
-            SpeedWidgetProvider::class.java,
+            NetworkSpeedProvider::class.java,
             WifiDataUsageWidgetProvider::class.java,
             SimDataUsageWidgetProvider::class.java,
             NoteWidgetProvider::class.java

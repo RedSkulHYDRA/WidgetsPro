@@ -14,7 +14,6 @@ import android.graphics.Canvas
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.net.TrafficStats
-import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -22,9 +21,9 @@ import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.utils.CommonUtils
-import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedProvider
 
-class SpeedUpdateService : Service() {
+class NetworkSpeedService : Service() {
     private var previousBytes: Long = 0
     private val handler = Handler(Looper.getMainLooper())
     private val UPDATE_INTERVAL_MS = 1000L
@@ -56,7 +55,7 @@ class SpeedUpdateService : Service() {
     private fun updateSpeed() {
         val currentBytes = TrafficStats.getTotalRxBytes()
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
-        val thisWidget = ComponentName(applicationContext, SpeedWidgetProvider::class.java)
+        val thisWidget = ComponentName(applicationContext, NetworkSpeedProvider::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
         val typeface = CommonUtils.getTypeface(applicationContext)
 
@@ -92,8 +91,8 @@ class SpeedUpdateService : Service() {
             val isCircular = maxDimension / minDimension <= 1.5
 
             val views = if (isCircular) {
-                RemoteViews(packageName, R.layout.speed_widget_layout_circle).apply {
-                    val iconDrawable = applicationContext.getDrawable(R.drawable.network_updown)
+                RemoteViews(packageName, R.layout.network_speed_widget_circle).apply {
+                    val iconDrawable = applicationContext.getDrawable(R.drawable.network_speed)
                     val scaledIcon = scaleDrawable(iconDrawable, 0.9f)
                     setImageViewBitmap(R.id.imageData, scaledIcon)
                     setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(applicationContext))
@@ -103,8 +102,8 @@ class SpeedUpdateService : Service() {
                     )
                 }
             } else {
-                RemoteViews(packageName, R.layout.speed_widget_layout).apply {
-                    val iconDrawable = applicationContext.getDrawable(R.drawable.network_updown)
+                RemoteViews(packageName, R.layout.network_speed_widget).apply {
+                    val iconDrawable = applicationContext.getDrawable(R.drawable.network_speed)
                     setImageViewBitmap(R.id.imageData, drawableToBitmap(iconDrawable))
                     setInt(R.id.imageData, "setColorFilter", CommonUtils.getAccentColor(applicationContext))
                     setImageViewBitmap(
@@ -128,7 +127,7 @@ class SpeedUpdateService : Service() {
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, Intent(this, SpeedWidgetProvider::class.java),
+            this, 0, Intent(this, NetworkSpeedProvider::class.java),
             PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(this, channelId)

@@ -3,7 +3,7 @@
     android:targetCellHeight="1"
     android:targetCellWidth="2"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/speed_widget_layout"
+    android:initialLayout="@layout/network_speed_widget"
     android:resizeMode="horizontal|vertical"
     android:description="@string/speed_test_description"
     android:widgetCategory="home_screen" />

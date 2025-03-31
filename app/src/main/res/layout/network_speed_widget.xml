@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginEnd="8dp"
-            android:src="@drawable/network_updown"/>
+            android:src="@drawable/network_speed"/>
 
         <ImageView
             android:id="@+id/speed_text"
