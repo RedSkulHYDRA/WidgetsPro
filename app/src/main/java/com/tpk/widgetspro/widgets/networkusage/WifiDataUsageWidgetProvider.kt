@@ -9,6 +9,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.widget.RemoteViews
@@ -18,11 +19,14 @@ import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.NetworkStatsHelper
 
 class WifiDataUsageWidgetProvider : AppWidgetProvider() {
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_MIDNIGHT_RESET) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, WifiDataUsageWidgetProvider::class.java))
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, WifiDataUsageWidgetProvider::class.java)
+            )
             onUpdate(context, appWidgetManager, appWidgetIds)
         }
     }
@@ -42,8 +46,20 @@ class WifiDataUsageWidgetProvider : AppWidgetProvider() {
         context.stopService(Intent(context, WifiDataUsageWidgetService::class.java))
     }
 
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        updateAppWidget(context, appWidgetManager, appWidgetId) // Force immediate update on resize
+    }
+
     private fun scheduleMidnightReset(context: Context) {
-        CommonUtils.scheduleMidnightReset(context, WIFI_DATA_USAGE_REQUEST_CODE, ACTION_MIDNIGHT_RESET, WifiDataUsageWidgetProvider::class.java)
+        CommonUtils.scheduleMidnightReset(
+            context, WIFI_DATA_USAGE_REQUEST_CODE, ACTION_MIDNIGHT_RESET, WifiDataUsageWidgetProvider::class.java
+        )
     }
 
     companion object {
@@ -57,11 +73,9 @@ class WifiDataUsageWidgetProvider : AppWidgetProvider() {
                 val formattedUsage = formatBytes(totalBytes)
 
                 val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                val minDimension = minOf(options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH),
-                    options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT))
-                val maxDimension = maxOf(options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH),
-                    options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT))
-                val isCircular = maxDimension / minDimension <= 1.5
+                val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+                val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+                val isCircular = width > 0 && height > 0 && (maxOf(width, height) / minOf(width, height).toFloat()) <= 1.5
 
                 val views = if (isCircular) {
                     RemoteViews(context.packageName, R.layout.wifi_data_usage_widget_circle).apply {
@@ -84,38 +98,39 @@ class WifiDataUsageWidgetProvider : AppWidgetProvider() {
                     }
                 }
 
-                val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                val intent = Intent(Settings.ACTION_WIFI_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
                 val pendingIntent = PendingIntent.getActivity(
-                    context,
-                    0,
-                    intent,
+                    context, 0, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 views.setOnClickPendingIntent(if (isCircular) R.id.wifi_data_usage_circle else R.id.wifi_data_usage, pendingIntent)
+
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
-                Log.e("DataUsageWidget", "Error getting WiFi data usage", e)
-                val views = RemoteViews(context.packageName, R.layout.wifi_data_usage_widget).apply {
-                    setImageViewBitmap(
-                        R.id.wifi_data_usage_text,
-                        CommonUtils.createTextAlternateBitmap(context, "Click here", 20f, CommonUtils.getTypeface(context))
-                    )
-                    setInt(R.id.wifi_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
-                }
-                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                val pendingIntent = PendingIntent.getActivity(
-                    context,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(
-                    R.id.wifi_data_usage,
-                    pendingIntent
-                )
-                appWidgetManager.updateAppWidget(appWidgetId, views)
+                Log.e("WifiDataUsageWidget", "Error getting WiFi data usage", e)
+                showErrorState(context, appWidgetManager, appWidgetId)
             }
+        }
+
+        private fun showErrorState(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
+            val views = RemoteViews(context.packageName, R.layout.wifi_data_usage_widget).apply {
+                setImageViewBitmap(
+                    R.id.wifi_data_usage_text,
+                    CommonUtils.createTextAlternateBitmap(context, "Click here", 20f, CommonUtils.getTypeface(context))
+                )
+                setInt(R.id.wifi_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
+            }
+
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            val pendingIntent = PendingIntent.getActivity(
+                context, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.wifi_data_usage, pendingIntent)
+
+            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
         fun updateAllWidgets(context: Context) {
