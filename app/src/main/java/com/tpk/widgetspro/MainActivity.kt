@@ -43,8 +43,10 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.speedtest.SpeedWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
@@ -173,9 +175,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
         findViewById<Button>(R.id.button7).setOnClickListener {
-            requestWidgetInstallation(
-                WifiDataUsageWidgetProvider::class.java
-            )
+            showWifiWidgetSizeSelectionDialog()
         }
         findViewById<Button>(R.id.button8).setOnClickListener {
             requestWidgetInstallation(
@@ -283,6 +283,22 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+
+    private fun showWifiWidgetSizeSelectionDialog() {
+        val builder = AlertDialog.Builder(this, R.style.CustomDialogTheme)
+        builder.setTitle("Select widget size")
+        val sizes = arrayOf("1x1", "1x2")
+        builder.setItems(sizes) { _, which ->
+            val providerClass = when (which) {
+                0 -> WifiDataUsageWidgetProviderCircle::class.java
+                1 -> WifiDataUsageWidgetProviderPill::class.java
+                else -> null
+            }
+            providerClass?.let { requestWidgetInstallation(it) }
+        }
+        builder.show().applyDialogTheme()
+    }
+
     private fun showPermissionDialog() {
         val builder = AlertDialog.Builder(this, R.style.CustomDialogTheme)
         builder.setTitle(R.string.permission_required_title)
@@ -356,7 +372,8 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("wifi_data_usage_interval", seekBar?.progress ?: 60).apply()
-                WifiDataUsageWidgetProvider.updateAllWidgets(applicationContext)
+                BaseWifiDataUsageWidgetProvider.updateAllWidgets(applicationContext, WifiDataUsageWidgetProviderCircle::class.java)
+                BaseWifiDataUsageWidgetProvider.updateAllWidgets(applicationContext, WifiDataUsageWidgetProviderPill::class.java)
             }
         })
         seekBarSim.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -389,7 +406,7 @@ class MainActivity : AppCompatActivity() {
             CaffeineWidget::class.java,
             SunTrackerWidget::class.java,
             SpeedWidgetProvider::class.java,
-            WifiDataUsageWidgetProvider::class.java,
+            WifiDataUsageWidgetProviderPill::class.java,
             SimDataUsageWidgetProvider::class.java,
             NoteWidgetProvider::class.java
         )

@@ -3,7 +3,7 @@
     android:targetCellHeight="1"
     android:targetCellWidth="2"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/sim_data_usage_widget"
-    android:description="@string/sim_data_usage_description"
+    android:initialLayout="@layout/wifi_data_usage_widget_pill"
+    android:description="@string/wifi_data_usage_description"
     android:resizeMode="none"
     android:widgetCategory="home_screen" />

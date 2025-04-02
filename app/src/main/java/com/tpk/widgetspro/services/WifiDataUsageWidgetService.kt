@@ -1,9 +1,8 @@
 package com.tpk.widgetspro.services
 
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
-import android.util.Log
-import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
+import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 
 class WifiDataUsageWidgetService : WidgetUpdateService() {
     override val intervalKey = "wifi_data_usage_interval"
@@ -11,16 +10,11 @@ class WifiDataUsageWidgetService : WidgetUpdateService() {
     override val notificationChannelId = "WIFI_DATA_USAGE_CHANNEL"
     override val notificationTitle = "Wifi Data Usage Updates"
     override val notificationText = "Monitoring Wifi data usage"
-    override val widgetProviderClass = WifiDataUsageWidgetProvider::class.java
+    override val widgetProviderClass = WifiDataUsageWidgetProviderPill::class.java
     private val TAG = "WifiDataUsageService"
 
     override fun updateWidgets() {
-        val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
-        val thisWidget = ComponentName(applicationContext, widgetProviderClass)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
-        Log.d(TAG, "Updating ${appWidgetIds.size} WiFi data usage widget")
-        appWidgetIds.forEach { appWidgetId ->
-            WifiDataUsageWidgetProvider.updateAppWidget(applicationContext, appWidgetManager, appWidgetId)
-        }
+        BaseWifiDataUsageWidgetProvider.updateAllWidgets(applicationContext, WifiDataUsageWidgetProviderCircle::class.java)
+        BaseWifiDataUsageWidgetProvider.updateAllWidgets(applicationContext, WifiDataUsageWidgetProviderPill::class.java)
     }
 }

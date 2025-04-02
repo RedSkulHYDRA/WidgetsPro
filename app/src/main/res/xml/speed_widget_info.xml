@@ -4,6 +4,6 @@
     android:targetCellWidth="2"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/speed_widget_layout"
-    android:resizeMode="horizontal|vertical"
     android:description="@string/speed_test_description"
+    android:resizeMode="none"
     android:widgetCategory="home_screen" />
