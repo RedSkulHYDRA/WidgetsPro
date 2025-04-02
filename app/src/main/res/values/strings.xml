@@ -59,4 +59,7 @@
     <string name="_3600">3600</string>
     <string name="widget_notes_name">Notes Widget</string>
     <string name="add_notes_widget">Add Notes Widget</string>
+    <string name="widget_size_selection_title">Select widget size</string>
+    <string name="widget_size_circle">Circle</string>
+    <string name="widget_size_pill">Pill</string>
 </resources>

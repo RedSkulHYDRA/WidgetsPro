@@ -13,7 +13,7 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.services.WifiDataUsageWidgetService
+import com.tpk.widgetspro.services.BaseWifiDataUsageWidgetService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.NetworkStatsHelper
 
@@ -40,7 +40,7 @@ abstract class BaseWifiDataUsageWidgetProvider : AppWidgetProvider() {
         val activeProviders = prefs.getStringSet("active_wifi_data_usage_providers", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         activeProviders.add(this::class.java.name)
         prefs.edit().putStringSet("active_wifi_data_usage_providers", activeProviders).apply()
-        context.startForegroundService(Intent(context, WifiDataUsageWidgetService::class.java))
+        context.startForegroundService(Intent(context, BaseWifiDataUsageWidgetService::class.java))
     }
 
     override fun onDisabled(context: Context) {
@@ -50,7 +50,7 @@ abstract class BaseWifiDataUsageWidgetProvider : AppWidgetProvider() {
         activeProviders.remove(this::class.java.name)
         prefs.edit().putStringSet("active_wifi_data_usage_providers", activeProviders).apply()
         if (activeProviders.isEmpty()) {
-            context.stopService(Intent(context, WifiDataUsageWidgetService::class.java))
+            context.stopService(Intent(context, BaseWifiDataUsageWidgetService::class.java))
         }
     }
 
@@ -70,7 +70,7 @@ abstract class BaseWifiDataUsageWidgetProvider : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, layoutResId).apply {
                     // Apply scaling only if the circle layout is used
                     if (layoutResId == R.layout.wifi_data_usage_widget_circle) {
-                        val iconDrawable = context.getDrawable(R.drawable.wifi_data_usage)
+                        val iconDrawable = context.getDrawable(R.drawable.wifi_data_usage_icon)
                         val scaledIcon = scaleDrawable(iconDrawable, 0.9f)
                         setImageViewBitmap(R.id.wifi_data_usage_image, scaledIcon)
                         setInt(R.id.wifi_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))
@@ -107,7 +107,7 @@ abstract class BaseWifiDataUsageWidgetProvider : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, layoutResId).apply {
                     // Apply scaling only if the circle layout is used
                     if (layoutResId == R.layout.wifi_data_usage_widget_circle) {
-                        val iconDrawable = context.getDrawable(R.drawable.wifi_data_usage)
+                        val iconDrawable = context.getDrawable(R.drawable.wifi_data_usage_icon)
                         val scaledIcon = scaleDrawable(iconDrawable, 0.9f)
                         setImageViewBitmap(R.id.wifi_data_usage_image, scaledIcon)
                         setInt(R.id.wifi_data_usage_image, "setColorFilter", CommonUtils.getAccentColor(context))

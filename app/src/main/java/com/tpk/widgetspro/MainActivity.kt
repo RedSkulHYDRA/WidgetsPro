@@ -283,11 +283,13 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-
     private fun showWifiWidgetSizeSelectionDialog() {
         val builder = AlertDialog.Builder(this, R.style.CustomDialogTheme)
-        builder.setTitle("Select widget size")
-        val sizes = arrayOf("1x1", "1x2")
+        builder.setTitle(this.getString(R.string.widget_size_selection_title))
+        val sizes = arrayOf(
+            this.getString(R.string.widget_size_circle),
+            this.getString(R.string.widget_size_pill)
+        )
         builder.setItems(sizes) { _, which ->
             val providerClass = when (which) {
                 0 -> WifiDataUsageWidgetProviderCircle::class.java
@@ -372,8 +374,8 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("wifi_data_usage_interval", seekBar?.progress ?: 60).apply()
-                BaseWifiDataUsageWidgetProvider.updateAllWidgets(applicationContext, WifiDataUsageWidgetProviderCircle::class.java)
-                BaseWifiDataUsageWidgetProvider.updateAllWidgets(applicationContext, WifiDataUsageWidgetProviderPill::class.java)
+                BaseWifiDataUsageWidgetProvider.updateAllWidgets(this@MainActivity.applicationContext, WifiDataUsageWidgetProviderCircle::class.java)
+                BaseWifiDataUsageWidgetProvider.updateAllWidgets(this@MainActivity.applicationContext, WifiDataUsageWidgetProviderPill::class.java)
             }
         })
         seekBarSim.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -384,7 +386,7 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("sim_data_usage_interval", seekBar?.progress ?: 60).apply()
-                SimDataUsageWidgetProvider.updateAllWidgets(applicationContext)
+                SimDataUsageWidgetProvider.updateAllWidgets(this@MainActivity.applicationContext)
             }
         })
     }
@@ -533,7 +535,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun AlertDialog.applyDialogTheme() {
-        val textColor = ContextCompat.getColor(context, R.color.text_color)
+        val textColor = ContextCompat.getColor(this@MainActivity, R.color.text_color)
         findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
         findViewById<TextView>(android.R.id.message)?.setTextColor(textColor)
         getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)

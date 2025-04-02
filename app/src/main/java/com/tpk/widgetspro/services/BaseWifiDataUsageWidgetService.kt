@@ -4,7 +4,7 @@ import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 
-class WifiDataUsageWidgetService : WidgetUpdateService() {
+class BaseWifiDataUsageWidgetService : WidgetUpdateService() {
     override val intervalKey = "wifi_data_usage_interval"
     override val notificationId = 6
     override val notificationChannelId = "WIFI_DATA_USAGE_CHANNEL"

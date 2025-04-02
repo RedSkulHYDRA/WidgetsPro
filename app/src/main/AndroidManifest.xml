@@ -216,7 +216,7 @@
         </receiver>
 
         <service
-            android:name=".services.WifiDataUsageWidgetService"
+            android:name=".services.BaseWifiDataUsageWidgetService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
