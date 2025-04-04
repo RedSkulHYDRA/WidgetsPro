@@ -4,10 +4,12 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.TimePickerDialog
 import android.appwidget.AppWidgetManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
@@ -29,6 +31,7 @@ import com.tpk.widgetspro.services.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.ImageLoader
+import com.tpk.widgetspro.utils.NetworkStatsHelper
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.BaseSimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
@@ -64,6 +67,14 @@ class SettingsFragment : Fragment() {
         "headphones", "headset"
     )
 
+    private val timeTickReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_TIME_TICK) {
+                updateNextResetTime()
+            }
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -94,18 +105,13 @@ class SettingsFragment : Fragment() {
         seekBarBattery.progress = prefs.getInt("battery_interval", 60)
         seekBarWifi.progress = prefs.getInt("wifi_data_usage_interval", 60)
         seekBarSim.progress = prefs.getInt("sim_data_usage_interval", 60)
-        val startTime = prefs.getLong("data_usage_start_time", -1L)
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
         tvWifiValue.text = seekBarWifi.progress.toString()
         tvSimValue.text = seekBarSim.progress.toString()
 
-        tvStartTime.text = if (startTime != -1L) {
-            "Start: ${dateFormat.format(Date(startTime))}"
-        } else {
-            "Start: Default (Today)"
-        }
+        updateNextResetTime()
+        requireContext().registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
 
         val frequency = prefs.getString("data_usage_frequency", "daily") ?: "daily"
         when (frequency) {
@@ -157,6 +163,11 @@ class SettingsFragment : Fragment() {
         view.findViewById<TextView>(R.id.title_main)?.setTextColor(CommonUtils.getAccentColor(requireContext()))
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        requireContext().unregisterReceiver(timeTickReceiver)
+    }
+
     private fun showTimePicker(calendar: Calendar) {
         val timePicker = TimePickerDialog(
             requireContext(),
@@ -167,10 +178,9 @@ class SettingsFragment : Fragment() {
                 calendar.set(Calendar.SECOND, 0)
                 calendar.set(Calendar.MILLISECOND, 0)
                 val selectedTime = calendar.timeInMillis
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                 val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
                 prefs.edit().putLong("data_usage_start_time", selectedTime).apply()
-                tvStartTime.text = "Start: ${dateFormat.format(Date(selectedTime))}"
+                updateNextResetTime()
             },
             calendar.get(Calendar.HOUR_OF_DAY),
             calendar.get(Calendar.MINUTE),
@@ -188,18 +198,30 @@ class SettingsFragment : Fragment() {
     private fun handleFrequencyChange(frequency: String) {
         val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         prefs.edit().putString("data_usage_frequency", frequency).apply()
-        updateCustomTimeDisplay()
+        updateNextResetTime()
     }
 
-    private fun updateCustomTimeDisplay() {
+    private fun updateNextResetTime() {
         val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-        val startTime = prefs.getLong("data_usage_start_time", -1L)
-        tvStartTime.text = if (startTime != -1L) {
-            "Start: ${dateFormat.format(Date(startTime))}"
-        } else {
-            "Start: Not set"
+        val frequency = prefs.getString("data_usage_frequency", "daily") ?: "daily"
+        val (startTime, _) = NetworkStatsHelper.getTimeRange(requireContext())
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = startTime
+            when (frequency) {
+                "daily" -> add(Calendar.DAY_OF_MONTH, 1) // Next midnight
+                "monthly" -> {
+                    set(Calendar.DAY_OF_MONTH, 1) // Reset to 1st
+                    add(Calendar.MONTH, 1) // Next month
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+            }
         }
+        val nextResetTime = calendar.timeInMillis
+        tvStartTime.text = "Next Reset: ${dateFormat.format(Date(nextResetTime))}"
     }
 
     private fun setupSeekBarListeners(prefs: android.content.SharedPreferences) {
@@ -228,7 +250,6 @@ class SettingsFragment : Fragment() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("wifi_data_usage_interval", seekBar?.progress ?: 60).apply()
-                // Update Wi-Fi widgets if needed.
                 BaseWifiDataUsageWidgetProvider.updateAllWidgets(
                     requireContext(),
                     WifiDataUsageWidgetProviderCircle::class.java
@@ -246,7 +267,6 @@ class SettingsFragment : Fragment() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("sim_data_usage_interval", seekBar?.progress ?: 60).apply()
-                // Update SIM widgets if needed.
                 BaseSimDataUsageWidgetProvider.updateAllWidgets(
                     requireContext(),
                     SimDataUsageWidgetProviderCircle::class.java
