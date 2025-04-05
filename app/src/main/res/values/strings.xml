@@ -68,6 +68,7 @@
     <string name="widget_size_1x2">Pill</string>
     <string name="data_usage_period">Data Usage Period</string>
     <string name="daily">Daily</string>
+    <string name="weekly">Weekly</string>
     <string name="monthly">Monthly</string>
     <string name="start_not_set">Start: Not set</string>
     <string name="set_start_time">Set Start Time</string>

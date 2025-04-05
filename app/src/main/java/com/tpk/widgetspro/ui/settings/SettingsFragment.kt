@@ -116,11 +116,13 @@ class SettingsFragment : Fragment() {
         val frequency = prefs.getString("data_usage_frequency", "daily") ?: "daily"
         when (frequency) {
             "daily" -> radioGroupFrequency.check(R.id.radio_daily)
+            "weekly" -> radioGroupFrequency.check(R.id.radio_weekly)
             "monthly" -> radioGroupFrequency.check(R.id.radio_monthly)
         }
         radioGroupFrequency.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 R.id.radio_daily -> handleFrequencyChange("daily")
+                R.id.radio_weekly -> handleFrequencyChange("weekly")
                 R.id.radio_monthly -> handleFrequencyChange("monthly")
             }
         }
@@ -199,6 +201,10 @@ class SettingsFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         prefs.edit().putString("data_usage_frequency", frequency).apply()
         updateNextResetTime()
+        BaseWifiDataUsageWidgetProvider.updateAllWidgets(requireContext(), WifiDataUsageWidgetProviderCircle::class.java)
+        BaseWifiDataUsageWidgetProvider.updateAllWidgets(requireContext(), WifiDataUsageWidgetProviderPill::class.java)
+        BaseSimDataUsageWidgetProvider.updateAllWidgets(requireContext(), SimDataUsageWidgetProviderCircle::class.java)
+        BaseSimDataUsageWidgetProvider.updateAllWidgets(requireContext(), SimDataUsageWidgetProviderPill::class.java)
     }
 
     private fun updateNextResetTime() {
@@ -210,6 +216,14 @@ class SettingsFragment : Fragment() {
             timeInMillis = startTime
             when (frequency) {
                 "daily" -> add(Calendar.DAY_OF_MONTH, 1) // Next midnight
+                "weekly" -> {
+                    set(Calendar.DAY_OF_WEEK, Calendar.MONDAY) // Reset to Monday
+                    add(Calendar.WEEK_OF_YEAR, 1) // Next week
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
                 "monthly" -> {
                     set(Calendar.DAY_OF_MONTH, 1) // Reset to 1st
                     add(Calendar.MONTH, 1) // Next month

@@ -226,6 +226,12 @@
                     android:text="@string/daily" />
 
                 <RadioButton
+                    android:id="@+id/radio_weekly"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/weekly"/>
+
+                <RadioButton
                     android:id="@+id/radio_monthly"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
