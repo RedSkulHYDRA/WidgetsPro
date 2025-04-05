@@ -48,7 +48,7 @@ object NetworkStatsHelper {
             "daily" -> getCustomDayRange(prefs)
             "weekly" -> getCustomWeekRange(prefs)
             "monthly" -> getCustomMonthRange(prefs)
-            else -> getCustomDayRange(prefs) // Fallback to daily
+            else -> getCustomDayRange(prefs)
         }
     }
 
@@ -60,13 +60,13 @@ object NetworkStatsHelper {
         }
         val defaultStart = calendar.timeInMillis
         val startTime = prefs.getLong("data_usage_start_time", defaultStart)
-        val endTime = System.currentTimeMillis() // Dynamic end time for daily
+        val endTime = System.currentTimeMillis()
         return Pair(startTime, endTime)
     }
 
     private fun getCustomWeekRange(prefs: SharedPreferences): Pair<Long, Long> {
         val calendar = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY) // Start of week set to Monday
+            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
@@ -74,7 +74,7 @@ object NetworkStatsHelper {
         }
         val defaultStart = calendar.timeInMillis
         val startTime = prefs.getLong("data_usage_start_time", defaultStart)
-        val endTime = System.currentTimeMillis() // Dynamic end time for weekly
+        val endTime = System.currentTimeMillis()
         return Pair(startTime, endTime)
     }
 
@@ -88,7 +88,7 @@ object NetworkStatsHelper {
         }
         val defaultStart = calendar.timeInMillis
         val startTime = prefs.getLong("data_usage_start_time", defaultStart)
-        val endTime = System.currentTimeMillis() // Dynamic end time for monthly
+        val endTime = System.currentTimeMillis()
         return Pair(startTime, endTime)
     }
 }
