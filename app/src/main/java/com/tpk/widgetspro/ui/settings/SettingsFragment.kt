@@ -215,18 +215,18 @@ class SettingsFragment : Fragment() {
         val calendar = Calendar.getInstance().apply {
             timeInMillis = startTime
             when (frequency) {
-                "daily" -> add(Calendar.DAY_OF_MONTH, 1) // Next midnight
+                "daily" -> add(Calendar.DAY_OF_MONTH, 1)
                 "weekly" -> {
-                    set(Calendar.DAY_OF_WEEK, Calendar.MONDAY) // Reset to Monday
-                    add(Calendar.WEEK_OF_YEAR, 1) // Next week
+                    set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+                    add(Calendar.WEEK_OF_YEAR, 1)
                     set(Calendar.HOUR_OF_DAY, 0)
                     set(Calendar.MINUTE, 0)
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
                 }
                 "monthly" -> {
-                    set(Calendar.DAY_OF_MONTH, 1) // Reset to 1st
-                    add(Calendar.MONTH, 1) // Next month
+                    set(Calendar.DAY_OF_MONTH, 1)
+                    add(Calendar.MONTH, 1)
                     set(Calendar.HOUR_OF_DAY, 0)
                     set(Calendar.MINUTE, 0)
                     set(Calendar.SECOND, 0)
@@ -235,7 +235,8 @@ class SettingsFragment : Fragment() {
             }
         }
         val nextResetTime = calendar.timeInMillis
-        tvStartTime.text = "Next Reset: ${dateFormat.format(Date(nextResetTime))}"
+        val formattedDate = dateFormat.format(Date(nextResetTime))
+        tvStartTime.text = getString(R.string.next_reset, formattedDate)
     }
 
     private fun setupSeekBarListeners(prefs: android.content.SharedPreferences) {
