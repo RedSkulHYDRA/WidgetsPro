@@ -2,7 +2,6 @@ package com.tpk.widgetspro.ui.settings
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.app.TimePickerDialog
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -36,7 +35,6 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
-import java.text.SimpleDateFormat
 import java.util.*
 
 class SettingsFragment : Fragment() {
@@ -49,9 +47,6 @@ class SettingsFragment : Fragment() {
     private lateinit var tvBatteryValue: TextView
     private lateinit var tvWifiValue: TextView
     private lateinit var tvSimValue: TextView
-    private lateinit var tvStartTime: TextView
-    private lateinit var btnSetStartTime: Button
-    private lateinit var radioGroupFrequency: RadioGroup
     private lateinit var enumInputLayout: TextInputLayout
     private lateinit var chipGroup: ChipGroup
     private lateinit var locationAutoComplete: AutoCompleteTextView
@@ -81,9 +76,6 @@ class SettingsFragment : Fragment() {
         tvBatteryValue = view.findViewById(R.id.tvBatteryValue)
         tvWifiValue = view.findViewById(R.id.tvWifiValue)
         tvSimValue = view.findViewById(R.id.tvSimValue)
-        tvStartTime = view.findViewById(R.id.tvStartTime)
-        btnSetStartTime = view.findViewById(R.id.btnSetStartTime)
-        radioGroupFrequency = view.findViewById(R.id.radio_group_frequency)
         enumInputLayout = view.findViewById(R.id.enum_input_layout)
         chipGroup = view.findViewById(R.id.chip_group)
         locationAutoComplete = view.findViewById(R.id.location_auto_complete)
@@ -94,30 +86,11 @@ class SettingsFragment : Fragment() {
         seekBarBattery.progress = prefs.getInt("battery_interval", 60)
         seekBarWifi.progress = prefs.getInt("wifi_data_usage_interval", 60)
         seekBarSim.progress = prefs.getInt("sim_data_usage_interval", 60)
-        val startTime = prefs.getLong("data_usage_start_time", -1L)
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
         tvWifiValue.text = seekBarWifi.progress.toString()
         tvSimValue.text = seekBarSim.progress.toString()
-
-        tvStartTime.text = if (startTime != -1L) {
-            "Start: ${dateFormat.format(Date(startTime))}"
-        } else {
-            "Start: Default (Today)"
-        }
-
-        val frequency = prefs.getString("data_usage_frequency", "daily") ?: "daily"
-        when (frequency) {
-            "daily" -> radioGroupFrequency.check(R.id.radio_daily)
-            "monthly" -> radioGroupFrequency.check(R.id.radio_monthly)
-        }
-        radioGroupFrequency.setOnCheckedChangeListener { _, checkedId ->
-            when (checkedId) {
-                R.id.radio_daily -> handleFrequencyChange("daily")
-                R.id.radio_monthly -> handleFrequencyChange("monthly")
-            }
-        }
 
         setupSeekBarListeners(prefs)
         enumInputLayout.setOnClickListener { showEnumSelectionDialog() }
@@ -141,10 +114,6 @@ class SettingsFragment : Fragment() {
                 Toast.makeText(requireContext(), "Please enter a location", Toast.LENGTH_SHORT).show()
             }
         }
-        btnSetStartTime.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            showTimePicker(calendar)
-        }
 
         view.findViewById<Button>(R.id.reset_image_button).setOnClickListener {
             resetBluetoothImage()
@@ -155,51 +124,6 @@ class SettingsFragment : Fragment() {
         }
 
         view.findViewById<TextView>(R.id.title_main)?.setTextColor(CommonUtils.getAccentColor(requireContext()))
-    }
-
-    private fun showTimePicker(calendar: Calendar) {
-        val timePicker = TimePickerDialog(
-            requireContext(),
-            R.style.CustomTimeTheme,
-            { _, hour, minute ->
-                calendar.set(Calendar.HOUR_OF_DAY, hour)
-                calendar.set(Calendar.MINUTE, minute)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
-                val selectedTime = calendar.timeInMillis
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-                prefs.edit().putLong("data_usage_start_time", selectedTime).apply()
-                tvStartTime.text = "Start: ${dateFormat.format(Date(selectedTime))}"
-            },
-            calendar.get(Calendar.HOUR_OF_DAY),
-            calendar.get(Calendar.MINUTE),
-            true
-        ).apply {
-            setOnShowListener {
-                val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
-                getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)
-                getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
-            }
-        }
-        timePicker.show()
-    }
-
-    private fun handleFrequencyChange(frequency: String) {
-        val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-        prefs.edit().putString("data_usage_frequency", frequency).apply()
-        updateCustomTimeDisplay()
-    }
-
-    private fun updateCustomTimeDisplay() {
-        val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-        val startTime = prefs.getLong("data_usage_start_time", -1L)
-        tvStartTime.text = if (startTime != -1L) {
-            "Start: ${dateFormat.format(Date(startTime))}"
-        } else {
-            "Start: Not set"
-        }
     }
 
     private fun setupSeekBarListeners(prefs: android.content.SharedPreferences) {
@@ -228,7 +152,6 @@ class SettingsFragment : Fragment() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("wifi_data_usage_interval", seekBar?.progress ?: 60).apply()
-                // Update Wi-Fi widgets if needed.
                 BaseWifiDataUsageWidgetProvider.updateAllWidgets(
                     requireContext(),
                     WifiDataUsageWidgetProviderCircle::class.java
@@ -246,7 +169,6 @@ class SettingsFragment : Fragment() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("sim_data_usage_interval", seekBar?.progress ?: 60).apply()
-                // Update SIM widgets if needed.
                 BaseSimDataUsageWidgetProvider.updateAllWidgets(
                     requireContext(),
                     SimDataUsageWidgetProviderCircle::class.java
