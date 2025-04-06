@@ -30,11 +30,12 @@ import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.ImageLoader
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.BaseSimDataUsageWidgetProvider
-import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
+import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
+import java.text.SimpleDateFormat
 import java.util.*
 
 class SettingsFragment : Fragment() {
@@ -52,6 +53,9 @@ class SettingsFragment : Fragment() {
     private lateinit var locationAutoComplete: AutoCompleteTextView
     private lateinit var setLocationButton: Button
     private lateinit var suggestionsAdapter: ArrayAdapter<String>
+    private lateinit var radioGroupResetMode: RadioGroup
+    private lateinit var btnResetNow: Button
+    private lateinit var tvNextReset: TextView
 
     private val enumOptions = arrayOf(
         "black", "blue", "white", "silver", "transparent",
@@ -80,6 +84,9 @@ class SettingsFragment : Fragment() {
         chipGroup = view.findViewById(R.id.chip_group)
         locationAutoComplete = view.findViewById(R.id.location_auto_complete)
         setLocationButton = view.findViewById(R.id.set_location_button)
+        radioGroupResetMode = view.findViewById(R.id.radio_group_reset_mode)
+        btnResetNow = view.findViewById(R.id.btn_reset_now)
+        tvNextReset = view.findViewById(R.id.tv_next_reset)
 
         val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         seekBarCpu.progress = prefs.getInt("cpu_interval", 60)
@@ -91,6 +98,21 @@ class SettingsFragment : Fragment() {
         tvBatteryValue.text = seekBarBattery.progress.toString()
         tvWifiValue.text = seekBarWifi.progress.toString()
         tvSimValue.text = seekBarSim.progress.toString()
+
+        // Initialize reset mode and next reset text
+        val resetMode = prefs.getString("data_usage_reset_mode", "daily") ?: "daily"
+        when (resetMode) {
+            "daily" -> {
+                radioGroupResetMode.check(R.id.radio_daily_reset)
+                btnResetNow.visibility = View.GONE
+                updateNextResetText("daily")
+            }
+            "manual" -> {
+                radioGroupResetMode.check(R.id.radio_manual_reset)
+                btnResetNow.visibility = View.VISIBLE
+                updateNextResetText("manual")
+            }
+        }
 
         setupSeekBarListeners(prefs)
         enumInputLayout.setOnClickListener { showEnumSelectionDialog() }
@@ -124,6 +146,73 @@ class SettingsFragment : Fragment() {
         }
 
         view.findViewById<TextView>(R.id.title_main)?.setTextColor(CommonUtils.getAccentColor(requireContext()))
+
+        // Handle reset mode selection
+        radioGroupResetMode.setOnCheckedChangeListener { _, checkedId ->
+            with(prefs.edit()) {
+                when (checkedId) {
+                    R.id.radio_daily_reset -> {
+                        putString("data_usage_reset_mode", "daily")
+                        btnResetNow.visibility = View.GONE
+                        updateNextResetText("daily")
+                    }
+                    R.id.radio_manual_reset -> {
+                        putString("data_usage_reset_mode", "manual")
+                        btnResetNow.visibility = View.VISIBLE
+                        updateNextResetText("manual")
+                    }
+                }
+                apply()
+            }
+        }
+
+        // Handle manual reset button click
+        btnResetNow.setOnClickListener {
+            resetDataUsageNow(prefs)
+            updateNextResetText("manual")
+            Toast.makeText(requireContext(), "Data usage reset", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateNextResetText(mode: String) {
+        val nextResetLabel = getString(R.string.next_reset_label)
+        if (mode == "daily") {
+            val calendar = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, 1) // Next midnight
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+            }
+            val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy • hh:mm a", Locale.getDefault())
+            tvNextReset.text = "$nextResetLabel ${dateFormat.format(calendar.time)}"
+        } else { // manual
+            tvNextReset.text = "$nextResetLabel ${getString(R.string.until_reset_now_pressed)}"
+        }
+    }
+
+    private fun resetDataUsageNow(prefs: android.content.SharedPreferences) {
+        val currentTime = System.currentTimeMillis()
+        with(prefs.edit()) {
+            putLong("manual_reset_time", currentTime)
+            apply()
+        }
+        // Force update all widgets
+        BaseWifiDataUsageWidgetProvider.updateAllWidgets(
+            requireContext(),
+            WifiDataUsageWidgetProviderCircle::class.java
+        )
+        BaseWifiDataUsageWidgetProvider.updateAllWidgets(
+            requireContext(),
+            WifiDataUsageWidgetProviderPill::class.java
+        )
+        BaseSimDataUsageWidgetProvider.updateAllWidgets(
+            requireContext(),
+            SimDataUsageWidgetProviderCircle::class.java
+        )
+        BaseSimDataUsageWidgetProvider.updateAllWidgets(
+            requireContext(),
+            SimDataUsageWidgetProviderPill::class.java
+        )
     }
 
     private fun setupSeekBarListeners(prefs: android.content.SharedPreferences) {
@@ -141,8 +230,8 @@ class SettingsFragment : Fragment() {
                 tvBatteryValue.text = progress.toString()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                prefs.edit().putInt("battery_interval", seekBar?.progress ?: 60).apply()
+            override fun onStopTrackingTouch(seakBar: SeekBar?) {
+                prefs.edit().putInt("battery_interval", seakBar?.progress ?: 60).apply()
             }
         })
         seekBarWifi.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {

@@ -197,6 +197,59 @@
                 style="@style/CustomTextView" />
         </LinearLayout>
 
+        <!-- Data Usage Reset Settings Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/round_layout_outline_bg"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/data_usage_reset_settings" />
+
+            <RadioGroup
+                android:id="@+id/radio_group_reset_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/radio_daily_reset"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/daily_reset" />
+
+                <RadioButton
+                    android:id="@+id/radio_manual_reset"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/manual_reset" />
+            </RadioGroup>
+
+            <TextView
+                android:id="@+id/tv_next_reset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/next_reset_placeholder" />
+
+            <Button
+                android:id="@+id/btn_reset_now"
+                style="@style/CustomTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/reset_now"
+                android:visibility="gone" />
+        </LinearLayout>
+
         <!-- Image Settings Section -->
         <LinearLayout
             android:layout_width="match_parent"
