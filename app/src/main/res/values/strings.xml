@@ -75,4 +75,7 @@
     <string name="next_reset_placeholder">Next Reset: Loading…</string>
     <string name="next_reset_label">Next Reset:</string>
     <string name="until_reset_now_pressed">Until Reset Now Is Pressed</string>
+    <string name="add_analog_1_clock_widget">Add Clock Widget</string>
+    <string name="analog_1_clock_widget_label">Analog 1 Clock</string>
+    <string name="analog_1_clock_widget_description">A simple analog clock with light and dark themes</string>
 </resources>
