@@ -21,10 +21,6 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import kotlin.reflect.KClass
 
 class BatteryMonitorService : BaseMonitorService() {
-    override val notificationId = 2
-    override val notificationTitle = "Battery Monitor"
-    override val notificationText = "Monitoring battery status"
-
     private lateinit var batteryMonitor: BatteryMonitor
     private var prefs: SharedPreferences? = null
 

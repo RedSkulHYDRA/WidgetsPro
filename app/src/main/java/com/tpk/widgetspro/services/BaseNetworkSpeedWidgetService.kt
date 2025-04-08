@@ -13,6 +13,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.TrafficStats
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -29,6 +30,11 @@ class BaseNetworkSpeedWidgetService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val UPDATE_INTERVAL_MS = 1000L
 
+    companion object {
+        private const val WIDGETS_PRO_NOTIFICATION_ID = 100
+        private const val CHANNEL_ID = "widgets_pro_channel"
+    }
+
     private val updateRunnable = object : Runnable {
         override fun run() {
             updateSpeed()
@@ -38,16 +44,17 @@ class BaseNetworkSpeedWidgetService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        startForeground(WIDGETS_PRO_NOTIFICATION_ID, createNotification())
         handler.post(updateRunnable)
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(updateRunnable)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(4, createNotification())
         return START_STICKY
     }
 
@@ -115,23 +122,28 @@ class BaseNetworkSpeedWidgetService : Service() {
     }
 
     private fun createNotification(): Notification {
-        val channelId = "SPEED_WIDGET_CHANNEL"
-        val channel = NotificationChannel(
-            channelId,
-            "Speed Widget Updates",
-            NotificationManager.IMPORTANCE_LOW
-        )
-        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Widgets Pro Channel",
+                NotificationManager.IMPORTANCE_MIN
+            ).apply {
+                description = "Channel for keeping Widgets Pro services running"
+            }
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+        }
 
         val pendingIntent = PendingIntent.getActivity(
             this, 0, Intent(this, NetworkSpeedWidgetProviderCircle::class.java),
             PendingIntent.FLAG_IMMUTABLE
         )
-        return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Speed Widget Running")
-            .setContentText("Monitoring network speed")
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.widgets_pro_running))
+            .setContentText(getString(R.string.widgets_pro_active_text))
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
     }
 

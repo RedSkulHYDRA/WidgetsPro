@@ -22,10 +22,6 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 
 class SunSyncService : BaseMonitorService() {
-    override val notificationId = 3
-    override val notificationTitle = "Sun Tracker Widget"
-    override val notificationText = "Monitoring sun position"
-
     private val handler = Handler(Looper.getMainLooper())
     private val client = OkHttpClient()
     private val scope = CoroutineScope(Dispatchers.IO)

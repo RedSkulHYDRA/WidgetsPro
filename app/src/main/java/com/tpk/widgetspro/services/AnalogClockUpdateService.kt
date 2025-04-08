@@ -20,8 +20,8 @@ import java.util.Calendar
 class AnalogClockUpdateService : Service() {
 
     private val updateInterval = 60000L // Update every minute
-    private val NOTIFICATION_ID = 7
-    private val CHANNEL_ID = "clock_channel"
+    private val WIDGETS_PRO_NOTIFICATION_ID = 100
+    private val CHANNEL_ID = "widgets_pro_channel"
     private lateinit var alarmManager: AlarmManager
     private lateinit var alarmIntent: PendingIntent
     private lateinit var notificationBuilder: NotificationCompat.Builder
@@ -34,23 +34,23 @@ class AnalogClockUpdateService : Service() {
 
     private fun startForegroundService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName = "Clock Service Channel"
-            val channel = NotificationChannel(CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Channel for keeping the analog clock widget updated"
+            val channelName = "Widgets Pro Channel"
+            val channel = NotificationChannel(CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_MIN).apply {
+                description = "Channel for keeping Widgets Pro services running"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
 
         notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Analog Clock Service")
-            .setContentText("Keeping clock widget updated")
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Ensure this icon exists
+            .setContentTitle(getString(R.string.widgets_pro_running))
+            .setContentText(getString(R.string.widgets_pro_active_text))
+            .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
 
         val notification = notificationBuilder.build()
-        startForeground(NOTIFICATION_ID, notification)
+        startForeground(WIDGETS_PRO_NOTIFICATION_ID, notification)
     }
 
     private fun setupAlarm() {
@@ -100,7 +100,7 @@ class AnalogClockUpdateService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        alarmManager.cancel(alarmIntent) // Stop updates when service is destroyed
+        alarmManager.cancel(alarmIntent)
         stopForeground(STOP_FOREGROUND_REMOVE)
         Log.d("AnalogClockService", "Service destroyed at ${System.currentTimeMillis()}")
         super.onDestroy()

@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Widgets Pro</string>
+    <string name="widgets_pro_running">Widgets Pro Running</string>
+    <string name="widgets_pro_active_text">Keeping your widgets active</string>
     <string name="widget_cpu_name">CPU Widget</string>
     <string name="widget_battery_name">Battery Widget</string>
     <string name="cpu_widget_needs_special_permissions_to_access_data_so_grant_shizuku_su_access_to_use_it">CPU Widget Needs Special Permissions To Access Data So Grant Shizuku/Su Access To Use It.</string>

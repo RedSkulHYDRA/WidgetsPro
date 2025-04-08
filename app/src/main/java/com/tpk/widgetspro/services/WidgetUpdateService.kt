@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -25,12 +26,13 @@ abstract class WidgetUpdateService : Service() {
     private var scheduledFuture: ScheduledFuture<*>? = null
     private lateinit var prefs: SharedPreferences
     protected abstract val intervalKey: String
-    protected abstract val notificationId: Int
-    protected abstract val notificationChannelId: String
-    protected abstract val notificationTitle: String
-    protected abstract val notificationText: String
     protected abstract val widgetProviderClass: Class<*>
     private val TAG = "WidgetUpdateService"
+
+    companion object {
+        private const val WIDGETS_PRO_NOTIFICATION_ID = 100
+        private const val CHANNEL_ID = "widgets_pro_channel"
+    }
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == intervalKey) {
@@ -42,7 +44,7 @@ abstract class WidgetUpdateService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(notificationId, createNotification())
+        startForeground(WIDGETS_PRO_NOTIFICATION_ID, createNotification())
         prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
         val interval = prefs.getInt(intervalKey, 60).coerceAtLeast(1)
@@ -78,21 +80,27 @@ abstract class WidgetUpdateService : Service() {
     protected abstract fun updateWidgets()
 
     private fun createNotification(): Notification {
-        val channel = NotificationChannel(
-            notificationChannelId,
-            notificationTitle,
-            NotificationManager.IMPORTANCE_LOW
-        )
-        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Widgets Pro Channel",
+                NotificationManager.IMPORTANCE_MIN
+            ).apply {
+                description = "Channel for keeping Widgets Pro services running"
+            }
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+        }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, Intent(this, widgetProviderClass),
             PendingIntent.FLAG_IMMUTABLE
         )
-        return NotificationCompat.Builder(this, notificationChannelId)
-            .setContentTitle(notificationTitle)
-            .setContentText(notificationText)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.widgets_pro_running))
+            .setContentText(getString(R.string.widgets_pro_active_text))
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
     }
 }
