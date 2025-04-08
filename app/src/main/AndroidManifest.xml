@@ -285,5 +285,24 @@
                 android:resource="@xml/analog_1_widget_info" />
         </receiver>
 
+        <service
+            android:name=".services.AnalogClockUpdateService_2"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="systemExempted"/>
+
+        <receiver
+            android:name=".widgets.analogclock.AnalogClockWidgetProvider_2"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="UPDATE_ANALOG_CLOCK_2" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/analog_2_widget_info" />
+        </receiver>
+
     </application>
 </manifest>

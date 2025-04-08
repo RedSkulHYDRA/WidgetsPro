@@ -93,13 +93,19 @@ class AnalogClockWidgetProvider : AppWidgetProvider() {
 
             updateClockHands(views, context)
 
-            val intent = Intent(context, AnalogClockWidgetProvider::class.java)
-            intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
-            val pendingIntent = PendingIntent.getBroadcast(
-                context, appWidgetId, intent,
+            // Intent to open the Google clock app (com.google.android.deskclock)
+            val clockIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                setComponent(ComponentName("com.google.android.deskclock", "com.android.deskclock.DeskClock"))
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            // Set the PendingIntent to launch the clock app directly
+            val pendingIntent = PendingIntent.getActivity(
+                context, appWidgetId, clockIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+
             views.setOnClickPendingIntent(R.id.analog_1_container, pendingIntent)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
@@ -108,11 +114,11 @@ class AnalogClockWidgetProvider : AppWidgetProvider() {
 
         private fun updateClockHands(views: RemoteViews, context: Context) {
             val calendar = Calendar.getInstance()
-            val hour = calendar.get(Calendar.HOUR)
+            val hour = calendar.get(Calendar.HOUR) // 12-hour format
             val minute = calendar.get(Calendar.MINUTE)
 
-            val hourRotation = (hour * 30 + minute / 2).toFloat()
-            val minuteRotation = (minute * 6).toFloat()
+            val hourRotation = (hour * 30 + minute / 2).toFloat() // 30° per hour + 0.5° per minute
+            val minuteRotation = (minute * 6).toFloat() // 6° per minute
 
             views.setFloat(R.id.analog_1_hour, "setRotation", hourRotation)
             views.setFloat(R.id.analog_1_minute, "setRotation", minuteRotation)
