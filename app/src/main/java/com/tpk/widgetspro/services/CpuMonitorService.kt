@@ -20,16 +20,9 @@ import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.cpu.DottedGraphView
 import rikka.shizuku.Shizuku
 import java.util.LinkedList
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 class CpuMonitorService : BaseMonitorService() {
-    override val notificationId = 1
-    override val notificationTitle = "CPU Monitor"
-    override val notificationText = "Monitoring CPU usage"
-
     private lateinit var cpuMonitor: CpuMonitor
     private val dataPoints = LinkedList<Double>()
     private val MAX_DATA_POINTS = 50

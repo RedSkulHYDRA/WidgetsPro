@@ -20,6 +20,9 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider
+import android.os.Build
+import com.tpk.widgetspro.services.AnalogClockUpdateService
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -37,6 +40,15 @@ class BootReceiver : BroadcastReceiver() {
             updateWidgets(context, appWidgetManager, SimDataUsageWidgetProviderCircle::class.java)
             updateWidgets(context, appWidgetManager, SimDataUsageWidgetProviderPill::class.java)
             updateWidgets(context, appWidgetManager, NoteWidgetProvider::class.java)
+            updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider::class.java)
+
+            // Start the foreground service for the clock
+            val serviceIntent = Intent(context, AnalogClockUpdateService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
         }
     }
 

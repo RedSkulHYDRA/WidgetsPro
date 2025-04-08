@@ -1,11 +1,9 @@
 package com.tpk.widgetspro.utils
 
-
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.RemoteException
 import android.app.usage.NetworkStatsManager
-import android.content.SharedPreferences
 import java.util.Calendar
 
 object NetworkStatsHelper {
@@ -44,37 +42,21 @@ object NetworkStatsHelper {
 
     private fun getTimeRange(context: Context): Pair<Long, Long> {
         val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-        val frequency = prefs.getString("data_usage_frequency", "daily") ?: "daily"
+        val resetMode = prefs.getString("data_usage_reset_mode", "daily") ?: "daily"
 
-        return when (frequency) {
-            "daily" -> getCustomDayRange(prefs)
-            else -> getCustomMonthRange(prefs)
+        return if (resetMode == "daily") {
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+            }
+            val startTime = calendar.timeInMillis
+            val endTime = startTime + 24 * 60 * 60 * 1000
+            Pair(startTime, endTime)
+        } else { // manual
+            val manualResetTime = prefs.getLong("manual_reset_time", System.currentTimeMillis())
+            val endTime = System.currentTimeMillis()
+            Pair(manualResetTime, endTime)
         }
-    }
-
-    private fun getCustomDayRange(prefs: SharedPreferences): Pair<Long, Long> {
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-        }
-        val defaultStart = calendar.timeInMillis
-        val startTime = prefs.getLong("data_usage_start_time", defaultStart)
-        val endTime = startTime + 24 * 60 * 60 * 1000
-
-        return Pair(startTime, endTime)
-    }
-    private fun getCustomMonthRange(prefs: SharedPreferences): Pair<Long, Long> {
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_MONTH, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-        }
-        val defaultStart = calendar.timeInMillis
-        val startTime = prefs.getLong("data_usage_start_time", defaultStart)
-        val endTime = startTime + 24 * 60 * 60 * 1000
-
-        return Pair(startTime, endTime)
     }
 }

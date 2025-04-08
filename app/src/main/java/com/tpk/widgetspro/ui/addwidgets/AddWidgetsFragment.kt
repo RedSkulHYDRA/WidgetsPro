@@ -38,6 +38,7 @@ import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.BaseSimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider
 import rikka.shizuku.Shizuku
 
 class AddWidgetsFragment : Fragment() {
@@ -91,6 +92,9 @@ class AddWidgetsFragment : Fragment() {
         }
         view.findViewById<Button>(R.id.button10).setOnClickListener {
             requestWidgetInstallation(NoteWidgetProvider::class.java)
+        }
+        view.findViewById<Button>(R.id.button11).setOnClickListener {
+            requestWidgetInstallation(AnalogClockWidgetProvider::class.java)
         }
     }
 

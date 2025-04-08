@@ -197,7 +197,7 @@
                 style="@style/CustomTextView" />
         </LinearLayout>
 
-        <!-- Data Usage Period Section -->
+        <!-- Data Usage Reset Settings Section -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -209,44 +209,45 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/data_usage_period" />
+                android:text="@string/data_usage_reset_settings" />
 
             <RadioGroup
-                android:id="@+id/radio_group_frequency"
+                android:id="@+id/radio_group_reset_mode"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
                 <RadioButton
-                    android:id="@+id/radio_daily"
+                    android:id="@+id/radio_daily_reset"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:text="@string/daily" />
+                    android:text="@string/daily_reset" />
 
                 <RadioButton
-                    android:id="@+id/radio_monthly"
+                    android:id="@+id/radio_manual_reset"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:text="@string/monthly" />
+                    android:text="@string/manual_reset" />
             </RadioGroup>
 
             <TextView
-                android:id="@+id/tvStartTime"
+                android:id="@+id/tv_next_reset"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/start_not_set" />
+                android:layout_marginTop="8dp"
+                android:text="@string/next_reset_placeholder" />
 
             <Button
-                android:id="@+id/btnSetStartTime"
+                android:id="@+id/btn_reset_now"
                 style="@style/CustomTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:text="@string/set_start_time" />
+                android:layout_marginTop="10dp"
+                android:text="@string/reset_now"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Image Settings Section -->

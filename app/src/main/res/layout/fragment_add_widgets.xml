@@ -105,5 +105,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/add_notes_widget" />
+
+        <Button
+            android:id="@+id/button11"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="@string/add_analog_1_clock_widget"/>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
