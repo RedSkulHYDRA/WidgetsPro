@@ -111,6 +111,6 @@
             style="@style/CustomTextView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="@string/add_analog_1_clock_widget"/>
+            android:text="@string/add_analog_clock_widget"/>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

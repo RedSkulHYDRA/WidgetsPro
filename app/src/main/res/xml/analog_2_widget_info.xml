@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="150dp"
+    android:minHeight="150dp"
+    android:updatePeriodMillis="1000"
+    android:label="@string/analog_2_clock_widget_label"
+    android:description="@string/analog_2_clock_widget_description">
+
+</appwidget-provider>
