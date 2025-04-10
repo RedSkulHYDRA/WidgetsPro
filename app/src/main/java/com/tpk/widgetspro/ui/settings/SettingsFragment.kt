@@ -69,22 +69,19 @@ class SettingsFragment : Fragment() {
 
     private val selectFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
-            // Save URI to SharedPreferences
             val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
             prefs.edit().putString("selected_file_uri", it.toString()).apply()
-            // Persist URI permission
             requireContext().contentResolver.takePersistableUriPermission(
                 it, Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
-            // Notify AnimationService to update the file
             val intent = Intent(requireContext(), AnimationService::class.java).apply {
                 putExtra("action", "UPDATE_FILE")
                 putExtra("file_uri", it.toString())
             }
             requireContext().startService(intent)
+            Toast.makeText(requireContext(), "GIF selected", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -122,7 +119,6 @@ class SettingsFragment : Fragment() {
         tvWifiValue.text = seekBarWifi.progress.toString()
         tvSimValue.text = seekBarSim.progress.toString()
 
-        // Initialize reset mode and next reset text
         val resetMode = prefs.getString("data_usage_reset_mode", "daily") ?: "daily"
         when (resetMode) {
             "daily" -> {
@@ -170,7 +166,6 @@ class SettingsFragment : Fragment() {
 
         view.findViewById<TextView>(R.id.title_main)?.setTextColor(CommonUtils.getAccentColor(requireContext()))
 
-        // Handle reset mode selection
         radioGroupResetMode.setOnCheckedChangeListener { _, checkedId ->
             with(prefs.edit()) {
                 when (checkedId) {
@@ -189,12 +184,12 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        // Handle manual reset button click
         btnResetNow.setOnClickListener {
             resetDataUsageNow(prefs)
             updateNextResetText("manual")
             Toast.makeText(requireContext(), "Data usage reset", Toast.LENGTH_SHORT).show()
         }
+
         view.findViewById<Button>(R.id.select_file_button).setOnClickListener {
             selectFileLauncher.launch(arrayOf("image/gif"))
             //selectFileLauncher.launch(arrayOf("image/gif", "video/*"))
@@ -205,14 +200,14 @@ class SettingsFragment : Fragment() {
         val nextResetLabel = getString(R.string.next_reset_label)
         if (mode == "daily") {
             val calendar = Calendar.getInstance().apply {
-                add(Calendar.DAY_OF_YEAR, 1) // Next midnight
+                add(Calendar.DAY_OF_YEAR, 1)
                 set(Calendar.HOUR_OF_DAY, 0)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
             }
             val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy • hh:mm a", Locale.getDefault())
             tvNextReset.text = "$nextResetLabel ${dateFormat.format(calendar.time)}"
-        } else { // manual
+        } else {
             tvNextReset.text = "$nextResetLabel ${getString(R.string.until_reset_now_pressed)}"
         }
     }
@@ -223,7 +218,6 @@ class SettingsFragment : Fragment() {
             putLong("manual_reset_time", currentTime)
             apply()
         }
-        // Force update all widgets
         BaseWifiDataUsageWidgetProvider.updateAllWidgets(
             requireContext(),
             WifiDataUsageWidgetProviderCircle::class.java
@@ -257,8 +251,8 @@ class SettingsFragment : Fragment() {
                 tvBatteryValue.text = progress.toString()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seakBar: SeekBar?) {
-                prefs.edit().putInt("battery_interval", seakBar?.progress ?: 60).apply()
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                prefs.edit().putInt("battery_interval", seekBar?.progress ?: 60).apply()
             }
         })
         seekBarWifi.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {

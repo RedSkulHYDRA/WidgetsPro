@@ -14,15 +14,15 @@ class GifAppWidgetProvider : AppWidgetProvider() {
     ) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val uriString = prefs.getString("selected_file_uri", null)
-        if (uriString != null) {
-            appWidgetIds.forEach { appWidgetId ->
-                val intent = Intent(context, AnimationService::class.java).apply {
-                    putExtra("action", "ADD_WIDGET")
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        appWidgetIds.forEach { appWidgetId ->
+            val intent = Intent(context, AnimationService::class.java).apply {
+                putExtra("action", "ADD_WIDGET")
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                if (uriString != null) {
                     putExtra("file_uri", uriString)
                 }
-                context.startService(intent)
             }
+            context.startService(intent)
         }
     }
 
