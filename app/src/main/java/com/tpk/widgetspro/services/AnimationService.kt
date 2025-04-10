@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.widgets.photo
+package com.tpk.widgetspro.services
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -17,6 +17,7 @@ import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
 import pl.droidsonroids.gif.GifDrawable
 import java.io.BufferedInputStream
 
@@ -32,10 +33,12 @@ class AnimationService : Service() {
         super.onCreate()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                "animation_service_channel",
-                "Animation Service",
+                "widgets_pro_channel", // Same as clock widgets
+                "Widgets Pro Channel",
                 NotificationManager.IMPORTANCE_LOW
-            )
+            ).apply {
+                description = "Channel for keeping Widgets Pro services running"
+            }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
@@ -105,13 +108,13 @@ class AnimationService : Service() {
     }
 
     private fun startForegroundService() {
-        val notification = NotificationCompat.Builder(this, "animation_service_channel")
+        val notification = NotificationCompat.Builder(this, "widgets_pro_channel") // Same as clock widgets
             .setContentTitle("Animation Service")
             .setContentText("Running animations for widgets")
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
-        startForeground(7, notification)
+        startForeground(7, notification) // Unique ID, different from clock services
     }
 
     private fun startAnimation() {

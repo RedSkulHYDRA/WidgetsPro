@@ -332,7 +332,7 @@
         </receiver>
 
         <service
-            android:name=".widgets.photo.AnimationService"
+            android:name=".services.AnimationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
