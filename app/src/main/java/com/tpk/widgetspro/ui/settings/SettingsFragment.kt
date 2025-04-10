@@ -27,6 +27,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.api.ImageApiClient
+import com.tpk.widgetspro.services.AnimationService
 import com.tpk.widgetspro.services.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.utils.CommonUtils
@@ -38,7 +39,6 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
-import com.tpk.widgetspro.widgets.photo.AnimationService
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -79,7 +79,7 @@ class SettingsFragment : Fragment() {
                 putExtra("file_uri", it.toString())
             }
             requireContext().startService(intent)
-            Toast.makeText(requireContext(), "GIF selected", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.gif_selected_message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -152,7 +152,7 @@ class SettingsFragment : Fragment() {
             if (location.isNotEmpty()) {
                 getCoordinatesFromLocation(location)
             } else {
-                Toast.makeText(requireContext(), "Please enter a location", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.enter_location_prompt, Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -187,7 +187,7 @@ class SettingsFragment : Fragment() {
         btnResetNow.setOnClickListener {
             resetDataUsageNow(prefs)
             updateNextResetText("manual")
-            Toast.makeText(requireContext(), "Data usage reset", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.data_usage_reset_message, Toast.LENGTH_SHORT).show()
         }
 
         view.findViewById<Button>(R.id.select_file_button).setOnClickListener {
@@ -348,13 +348,13 @@ class SettingsFragment : Fragment() {
                 val latitude = address.latitude
                 val longitude = address.longitude
                 saveLocationToPreferences(latitude, longitude)
-                Toast.makeText(requireContext(), "Location set to $location", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.location_set_message, location), Toast.LENGTH_SHORT).show()
                 SunSyncService.start(requireContext())
             } else {
-                Toast.makeText(requireContext(), "Location not found", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.location_not_found_message, Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error finding location: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.location_error_message, e.message), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -377,7 +377,7 @@ class SettingsFragment : Fragment() {
             suggestionsAdapter.notifyDataSetChanged()
             locationAutoComplete.showDropDown()
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error fetching suggestions", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.suggestions_error_message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -391,7 +391,7 @@ class SettingsFragment : Fragment() {
                     resetImageForDevice(requireContext(), btDevice.name, appWidgetId)
                     clearCustomQueryForDevice(requireContext(), btDevice.name, appWidgetId)
                     setCustomQueryForDevice(requireContext(), btDevice.name, getSelectedItemsAsString(), appWidgetId)
-                    Toast.makeText(requireContext(), "Reset image and query for ${btDevice.name}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.bluetooth_reset_message, btDevice.name), Toast.LENGTH_SHORT).show()
                 }
             }
         }

@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import androidx.preference.PreferenceManager
+import com.tpk.widgetspro.services.AnimationService
 
 class GifAppWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(

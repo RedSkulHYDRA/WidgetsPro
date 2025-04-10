@@ -87,4 +87,14 @@
     <string name="photo_widget">Gif Widget</string>
     <string name="select_gif">Select GIF</string>
     <string name="add_photo_widget">Add Gif Widget</string>
+    <string name="gif_selected_message">GIF selected</string>
+    <string name="animation_service_title">Animation Service</string>
+    <string name="animation_service_text">Running animations for widgets</string>
+    <string name="enter_location_prompt">Please enter a location</string>
+    <string name="data_usage_reset_message">Data usage reset</string>
+    <string name="location_set_message">Location set to %1$s</string>
+    <string name="location_not_found_message">Location not found</string>
+    <string name="location_error_message">Error finding location: %1$s</string>
+    <string name="suggestions_error_message">Error fetching suggestions</string>
+    <string name="bluetooth_reset_message">Reset image and query for %1$s</string>
 </resources>
