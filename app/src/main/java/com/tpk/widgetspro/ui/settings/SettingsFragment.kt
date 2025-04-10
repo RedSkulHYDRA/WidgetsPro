@@ -9,6 +9,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -16,8 +17,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputLayout
@@ -35,6 +38,7 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
+import com.tpk.widgetspro.widgets.photo.AnimationService
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -62,6 +66,25 @@ class SettingsFragment : Fragment() {
         "case", "fullproduct", "product", "withcase",
         "headphones", "headset"
     )
+
+    private val selectFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let {
+            // Save URI to SharedPreferences
+            val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            prefs.edit().putString("selected_file_uri", it.toString()).apply()
+            // Persist URI permission
+            requireContext().contentResolver.takePersistableUriPermission(
+                it, Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+            // Notify AnimationService to update the file
+            val intent = Intent(requireContext(), AnimationService::class.java).apply {
+                putExtra("action", "UPDATE_FILE")
+                putExtra("file_uri", it.toString())
+            }
+            requireContext().startService(intent)
+        }
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -171,6 +194,10 @@ class SettingsFragment : Fragment() {
             resetDataUsageNow(prefs)
             updateNextResetText("manual")
             Toast.makeText(requireContext(), "Data usage reset", Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById<Button>(R.id.select_file_button).setOnClickListener {
+            selectFileLauncher.launch(arrayOf("image/gif"))
+            //selectFileLauncher.launch(arrayOf("image/gif", "video/*"))
         }
     }
 

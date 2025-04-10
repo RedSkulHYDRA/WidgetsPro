@@ -83,5 +83,8 @@
     <string name="analog_2_clock_widget_description">Analog Clock (Minimalism)</string>
     <string name="analog_1_clock_widget_label">Speedometer</string>
     <string name="analog_2_clock_widget_label">Minimalism</string>
-
+    <string name="add_analog_1_clock_widget">Add Clock Widget</string>
+    <string name="photo_widget">Gif Widget</string>
+    <string name="select_gif">Select GIF</string>
+    <string name="add_photo_widget">Add Gif Widget</string>
 </resources>

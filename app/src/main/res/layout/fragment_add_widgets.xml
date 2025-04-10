@@ -112,5 +112,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:text="@string/add_analog_clock_widget"/>
+
+        <Button
+            android:id="@+id/button12"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="@string/add_photo_widget"/>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

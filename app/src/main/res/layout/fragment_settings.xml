@@ -325,5 +325,13 @@
             android:layout_marginTop="20dp"
             android:text="@string/switch_to_red_accent" />
 
+        <Button
+            android:id="@+id/select_file_button"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/select_gif" />
+
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

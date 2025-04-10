@@ -6,7 +6,8 @@
     <uses-permission android:name="dev.rikka.shizuku.permission.REQUEST_API_V23" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.BATTERY_STATS"
+    <uses-permission
+        android:name="android.permission.BATTERY_STATS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -16,15 +17,23 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_CACHE_FILESYSTEM"
+    <uses-permission
+        android:name="android.permission.ACCESS_CACHE_FILESYSTEM"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:ignore="SelectedPhotoAccess" />
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VIDEO"
+        tools:ignore="SelectedPhotoAccess" />
 
     <queries>
         <intent>
@@ -123,8 +132,8 @@
         <receiver
             android:name=".widgets.bluetooth.BluetoothReceiver"
             android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:exported="true">
+            android:exported="true"
+            android:noHistory="true">
             <intent-filter>
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
                 <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
@@ -195,7 +204,8 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".widgets.networkusage.WifiDataUsageWidgetProviderCircle"
+        <receiver
+            android:name=".widgets.networkusage.WifiDataUsageWidgetProviderCircle"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -205,7 +215,8 @@
                 android:resource="@xml/wifi_data_usage_widget_circle_info" />
         </receiver>
 
-        <receiver android:name=".widgets.networkusage.WifiDataUsageWidgetProviderPill"
+        <receiver
+            android:name=".widgets.networkusage.WifiDataUsageWidgetProviderPill"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -215,7 +226,8 @@
                 android:resource="@xml/wifi_data_usage_widget_pill_info" />
         </receiver>
 
-        <receiver android:name=".widgets.networkusage.SimDataUsageWidgetProviderCircle"
+        <receiver
+            android:name=".widgets.networkusage.SimDataUsageWidgetProviderCircle"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -225,7 +237,8 @@
                 android:resource="@xml/sim_data_usage_widget_circle_info" />
         </receiver>
 
-        <receiver android:name=".widgets.networkusage.SimDataUsageWidgetProviderPill"
+        <receiver
+            android:name=".widgets.networkusage.SimDataUsageWidgetProviderPill"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -245,7 +258,8 @@
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
-        <receiver android:name=".widgets.notes.NoteWidgetProvider"
+        <receiver
+            android:name=".widgets.notes.NoteWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -257,9 +271,8 @@
 
         <activity
             android:name=".widgets.notes.NoteInputActivity"
-            android:theme="@style/Theme.NotesWidget"
-            android:excludeFromRecents="true">
-        </activity>
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.NotesWidget"></activity>
 
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
@@ -269,19 +282,22 @@
             android:multiprocess="false"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
-        <service android:name=".services.AnalogClockUpdateService"
+        <service
+            android:name=".services.AnalogClockUpdateService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="systemExempted"/>
+            android:foregroundServiceType="systemExempted" />
 
-        <receiver android:name=".widgets.analogclock.AnalogClockWidgetProvider"
+        <receiver
+            android:name=".widgets.analogclock.AnalogClockWidgetProvider"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="UPDATE_ANALOG_CLOCK" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider"
+            <meta-data
+                android:name="android.appwidget.provider"
                 android:resource="@xml/analog_1_widget_info" />
         </receiver>
 
@@ -303,6 +319,23 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/analog_2_widget_info" />
         </receiver>
+
+        <receiver
+            android:name=".widgets.photo.GifAppWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/gif_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".widgets.photo.AnimationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="systemExempted" />
 
     </application>
 </manifest>

@@ -40,6 +40,7 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
+import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
 import rikka.shizuku.Shizuku
 
 class AddWidgetsFragment : Fragment() {
@@ -96,6 +97,9 @@ class AddWidgetsFragment : Fragment() {
         }
         view.findViewById<Button>(R.id.button11).setOnClickListener {
             showAnalogClockSizeSelectionDialog()
+        }
+        view.findViewById<Button>(R.id.button12).setOnClickListener {
+            requestWidgetInstallation(GifAppWidgetProvider::class.java)
         }
     }
 
@@ -208,7 +212,6 @@ class AddWidgetsFragment : Fragment() {
         }
         builder.show()
     }
-
     private fun showAnalogClockSizeSelectionDialog() {
         val builder = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
         builder.setTitle(R.string.select_analog_clock)
