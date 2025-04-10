@@ -7,9 +7,12 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Build
 import android.util.Log
+import android.view.ContextThemeWrapper
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.services.AnalogClockUpdateService
 import java.util.Calendar
@@ -82,14 +85,34 @@ class AnalogClockWidgetProvider : AppWidgetProvider() {
 
             views.setInt(R.id.analog_1_container, "setBackgroundResource", R.drawable.analog_1_bg)
 
-            val isDarkTheme = isSystemInDarkTheme(context)
-            val dialResource = if (isDarkTheme) R.drawable.analog_1_dial_dark else R.drawable.analog_1_dial_light
-            val hourResource = R.drawable.analog_1_hour
-            val minuteResource = R.drawable.analog_1_min
-
+            // Determine dial based solely on system theme
+            val dialResource = if (isSystemInDarkTheme(context)) R.drawable.analog_1_dial_dark else R.drawable.analog_1_dial_light
             views.setImageViewResource(R.id.analog_1_dial, dialResource)
-            views.setImageViewResource(R.id.analog_1_hour, hourResource)
-            views.setImageViewResource(R.id.analog_1_minute, minuteResource)
+
+            // Apply theme for hands based on app preferences (including red accent)
+            val prefs: SharedPreferences = context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+            val isDarkTheme = prefs.getBoolean("dark_theme", isSystemInDarkTheme(context)) // Fallback to system theme
+            val isRedAccent = prefs.getBoolean("red_accent", false)
+            val themeResId = when {
+                isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
+                isDarkTheme -> R.style.Theme_WidgetsPro
+                isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
+                else -> R.style.Theme_WidgetsPro
+            }
+            val themedContext = ContextThemeWrapper(context, themeResId)
+
+            // Load PNGs for hands
+            views.setImageViewResource(R.id.analog_1_hour, R.drawable.analog_1_hour)
+            views.setImageViewResource(R.id.analog_1_minute, R.drawable.analog_1_min)
+
+            // Apply Monet/accent color to hands
+            val accentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light) // Default fallback
+            val typedValue = android.util.TypedValue()
+            themedContext.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
+            val resolvedAccentColor = typedValue.data ?: accentColor // Use Monet accent color if available
+
+            views.setInt(R.id.analog_1_hour, "setColorFilter", resolvedAccentColor)
+            views.setInt(R.id.analog_1_minute, "setColorFilter", resolvedAccentColor)
 
             updateClockHands(views, context)
 
