@@ -15,6 +15,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import androidx.preference.PreferenceManager
 import com.tpk.widgetspro.R
 import pl.droidsonroids.gif.GifDrawable
 import java.io.BufferedInputStream
@@ -48,8 +49,14 @@ class AnimationService : Service() {
             )
             if (widgetIds.isNotEmpty()) {
                 activeWidgets.addAll(widgetIds.toList())
-                startAnimation()
-                startForegroundService()
+                val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+                val uriString = prefs.getString("selected_file_uri", null)
+                if (uriString != null) {
+                    val uri = Uri.parse(uriString)
+                    frames = getFrames(uri)
+                    startAnimation()
+                    startForegroundService()
+                }
             }
         } else {
             val action = intent.getStringExtra("action")
@@ -58,11 +65,11 @@ class AnimationService : Service() {
                     val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
                     if (appWidgetId != -1) {
                         activeWidgets.add(appWidgetId)
-                        if (activeWidgets.size == 1) {
-                            val uriString = intent.getStringExtra("file_uri")
-                            if (uriString != null) {
-                                val uri = Uri.parse(uriString)
-                                frames = getFrames(uri)
+                        val uriString = intent.getStringExtra("file_uri")
+                        if (uriString != null) {
+                            val uri = Uri.parse(uriString)
+                            frames = getFrames(uri)
+                            if (activeWidgets.size == 1) {
                                 startAnimation()
                                 startForegroundService()
                             }
