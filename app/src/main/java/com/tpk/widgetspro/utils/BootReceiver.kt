@@ -20,10 +20,10 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
-import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import android.os.Build
-import com.tpk.widgetspro.services.AnalogClockUpdateService
+import com.tpk.widgetspro.services.AnalogClockUpdateService_1
 import com.tpk.widgetspro.services.AnalogClockUpdateService_2
 
 class BootReceiver : BroadcastReceiver() {
@@ -42,10 +42,10 @@ class BootReceiver : BroadcastReceiver() {
             updateWidgets(context, appWidgetManager, SimDataUsageWidgetProviderCircle::class.java)
             updateWidgets(context, appWidgetManager, SimDataUsageWidgetProviderPill::class.java)
             updateWidgets(context, appWidgetManager, NoteWidgetProvider::class.java)
-            updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider::class.java)
+            updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_1::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_2::class.java)
 
-            val serviceIntent1 = Intent(context, AnalogClockUpdateService::class.java)
+            val serviceIntent1 = Intent(context, AnalogClockUpdateService_1::class.java)
             val serviceIntent2 = Intent(context, AnalogClockUpdateService_2::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent1)

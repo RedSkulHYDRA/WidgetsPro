@@ -38,7 +38,7 @@ import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.BaseSimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
-import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
 import rikka.shizuku.Shizuku
@@ -218,7 +218,7 @@ class AddWidgetsFragment : Fragment() {
         val sizes = arrayOf(getString(R.string.analog_1_clock_widget_label), getString(R.string.analog_2_clock_widget_label))
         builder.setItems(sizes) { _, which ->
             val providerClass = when (which) {
-                0 -> AnalogClockWidgetProvider::class.java
+                0 -> AnalogClockWidgetProvider_1::class.java
                 1 -> AnalogClockWidgetProvider_2::class.java
                 else -> null
             }

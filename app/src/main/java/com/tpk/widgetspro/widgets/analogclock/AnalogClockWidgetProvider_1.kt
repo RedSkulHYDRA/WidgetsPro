@@ -1,7 +1,5 @@
 package com.tpk.widgetspro.widgets.analogclock
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
@@ -14,68 +12,42 @@ import android.view.ContextThemeWrapper
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.services.AnalogClockUpdateService
+import com.tpk.widgetspro.services.AnalogClockUpdateService_1
 import java.util.Calendar
 
-class AnalogClockWidgetProvider : AppWidgetProvider() {
-
-    private val updateInterval = 60000L // Update every minute
+class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
+        startService(context) // Ensure service is running
     }
 
     override fun onEnabled(context: Context) {
-        val intent = Intent(context, AnalogClockUpdateService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
-        Log.d("AnalogClockProvider", "Widget enabled at ${System.currentTimeMillis()}")
+        startService(context)
+        Log.d("AnalogClockProvider_1", "Widget enabled at ${System.currentTimeMillis()}")
     }
 
     override fun onDisabled(context: Context) {
-        val intent = Intent(context, AnalogClockUpdateService::class.java)
-        context.stopService(intent)
-        Log.d("AnalogClockProvider", "Widget disabled at ${System.currentTimeMillis()}")
+        context.stopService(Intent(context, AnalogClockUpdateService_1::class.java))
+        Log.d("AnalogClockProvider_1", "Widget disabled at ${System.currentTimeMillis()}")
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        Log.d("AnalogClockProvider", "Received intent: ${intent.action} at ${System.currentTimeMillis()}")
-        if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE || intent.action == "UPDATE_ANALOG_CLOCK") {
-            val appWidgetManager = AppWidgetManager.getInstance(context)
-            val componentName = ComponentName(context, AnalogClockWidgetProvider::class.java)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        Log.d("AnalogClockProvider_1", "Received intent: ${intent.action} at ${System.currentTimeMillis()}")
+        if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
+            startService(context) // Ensure service is running on manual update
+        }
+    }
 
-            for (appWidgetId in appWidgetIds) {
-                updateAppWidget(context, appWidgetManager, appWidgetId)
-            }
-
-            // Reschedule the next update to align with the minute boundary
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val alarmIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                Intent(context, AnalogClockWidgetProvider::class.java).apply { action = "UPDATE_ANALOG_CLOCK" },
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val calendar = Calendar.getInstance().apply {
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                add(Calendar.MINUTE, 1)
-            }
-            val nextMinuteTime = calendar.timeInMillis
-
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                nextMinuteTime,
-                alarmIntent
-            )
-            Log.d("AnalogClockProvider", "Next alarm scheduled for $nextMinuteTime (${calendar.get(Calendar.HOUR_OF_DAY)}:${calendar.get(Calendar.MINUTE)})")
+    private fun startService(context: Context) {
+        val intent = Intent(context, AnalogClockUpdateService_1::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
         }
     }
 
@@ -103,7 +75,8 @@ class AnalogClockWidgetProvider : AppWidgetProvider() {
 
             // Load PNGs for hands
             views.setImageViewResource(R.id.analog_1_hour, R.drawable.analog_1_hour)
-            views.setImageViewResource(R.id.analog_1_minute, R.drawable.analog_1_min)
+            views.setImageViewResource(R.id.analog_1_min, R.drawable.analog_1_min)
+            views.setImageViewResource(R.id.analog_1_secs, R.drawable.analog_1_secs)
 
             // Apply Monet/accent color to hands
             val accentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light) // Default fallback
@@ -112,9 +85,10 @@ class AnalogClockWidgetProvider : AppWidgetProvider() {
             val resolvedAccentColor = typedValue.data ?: accentColor // Use Monet accent color if available
 
             views.setInt(R.id.analog_1_hour, "setColorFilter", resolvedAccentColor)
-            views.setInt(R.id.analog_1_minute, "setColorFilter", resolvedAccentColor)
+            views.setInt(R.id.analog_1_min, "setColorFilter", resolvedAccentColor)
+            views.setInt(R.id.analog_1_secs, "setColorFilter", resolvedAccentColor)
 
-            updateClockHands(views, context)
+            updateClockHands(views)
 
             // Intent to open the Google clock app (com.google.android.deskclock)
             val clockIntent = Intent(Intent.ACTION_MAIN).apply {
@@ -123,29 +97,30 @@ class AnalogClockWidgetProvider : AppWidgetProvider() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
 
-            // Set the PendingIntent to launch the clock app directly
-            val pendingIntent = PendingIntent.getActivity(
+            val pendingIntent = android.app.PendingIntent.getActivity(
                 context, appWidgetId, clockIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
-
             views.setOnClickPendingIntent(R.id.analog_1_container, pendingIntent)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
-            Log.d("AnalogClockProvider", "Widget updated at ${System.currentTimeMillis()}")
+            Log.d("AnalogClockProvider_1", "Widget updated at ${System.currentTimeMillis()}")
         }
 
-        private fun updateClockHands(views: RemoteViews, context: Context) {
+        private fun updateClockHands(views: RemoteViews) {
             val calendar = Calendar.getInstance()
             val hour = calendar.get(Calendar.HOUR) // 12-hour format
             val minute = calendar.get(Calendar.MINUTE)
+            val second = calendar.get(Calendar.SECOND)
 
             val hourRotation = (hour * 30 + minute / 2).toFloat() // 30° per hour + 0.5° per minute
-            val minuteRotation = (minute * 6).toFloat() // 6° per minute
+            val minuteRotation = (minute * 6 + second / 10).toFloat() // 6° per minute + 0.1° per second
+            val secondRotation = (second * 6).toFloat() // 6° per second
 
             views.setFloat(R.id.analog_1_hour, "setRotation", hourRotation)
-            views.setFloat(R.id.analog_1_minute, "setRotation", minuteRotation)
-            Log.d("AnalogClockProvider", "Hands updated: Hour=$hourRotation, Minute=$minuteRotation at ${System.currentTimeMillis()}")
+            views.setFloat(R.id.analog_1_min, "setRotation", minuteRotation)
+            views.setFloat(R.id.analog_1_secs, "setRotation", secondRotation)
+            Log.d("AnalogClockProvider_1", "Hands updated: Hour=$hourRotation, Minute=$minuteRotation, Second=$secondRotation at ${System.currentTimeMillis()}")
         }
 
         private fun isSystemInDarkTheme(context: Context): Boolean {

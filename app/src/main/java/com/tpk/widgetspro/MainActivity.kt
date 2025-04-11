@@ -30,7 +30,7 @@ import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
-import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import rikka.shizuku.Shizuku
 import java.text.SimpleDateFormat
@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
             SimDataUsageWidgetProviderCircle::class.java,
             SimDataUsageWidgetProviderPill::class.java,
             NoteWidgetProvider::class.java,
-            AnalogClockWidgetProvider::class.java,
+            AnalogClockWidgetProvider_1::class.java,
             AnalogClockWidgetProvider_2::class.java
         )
 
