@@ -41,9 +41,7 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
 
     private fun startService(context: Context) {
         val intent = Intent(context, AnalogClockUpdateService_1::class.java)
-
-            context.startForegroundService(intent)
-
+        context.startForegroundService(intent)
     }
 
     companion object {

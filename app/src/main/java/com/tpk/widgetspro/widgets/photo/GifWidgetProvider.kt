@@ -28,6 +28,7 @@ class GifAppWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
         appWidgetIds.forEach { appWidgetId ->
             val intent = Intent(context, AnimationService::class.java).apply {
                 putExtra("action", "REMOVE_WIDGET")
