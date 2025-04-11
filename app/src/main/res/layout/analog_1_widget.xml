@@ -17,9 +17,14 @@
         android:scaleType="centerInside"/>
 
     <ImageView
-        android:id="@+id/analog_1_minute"
+        android:id="@+id/analog_1_min"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerInside"/>
 
+    <ImageView
+        android:id="@+id/analog_1_secs"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerInside"/>
 </RelativeLayout>

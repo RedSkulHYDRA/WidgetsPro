@@ -283,13 +283,13 @@
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
         <service
-            android:name=".services.AnalogClockUpdateService"
+            android:name=".services.AnalogClockUpdateService_1"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
         <receiver
-            android:name=".widgets.analogclock.AnalogClockWidgetProvider"
+            android:name=".widgets.analogclock.AnalogClockWidgetProvider_1"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
