@@ -14,7 +14,6 @@ import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.services.SunSyncService
 import com.tpk.widgetspro.utils.CommonUtils
-import com.tpk.widgetspro.utils.NotificationUtils
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget.CelestialAnimator.Companion.dpToPx
 import java.time.Duration
 import java.time.LocalDateTime
@@ -32,7 +31,6 @@ class SunTrackerWidget : AppWidgetProvider() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        NotificationUtils.createChannel(context)
         SunSyncService.start(context)
     }
 

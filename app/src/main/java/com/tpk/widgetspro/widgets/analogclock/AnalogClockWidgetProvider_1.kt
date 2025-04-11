@@ -21,34 +21,29 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
-        startService(context) // Ensure service is running
+        startService(context)
     }
 
     override fun onEnabled(context: Context) {
         startService(context)
-        Log.d("AnalogClockProvider_1", "Widget enabled at ${System.currentTimeMillis()}")
     }
 
     override fun onDisabled(context: Context) {
         context.stopService(Intent(context, AnalogClockUpdateService_1::class.java))
-        Log.d("AnalogClockProvider_1", "Widget disabled at ${System.currentTimeMillis()}")
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        Log.d("AnalogClockProvider_1", "Received intent: ${intent.action} at ${System.currentTimeMillis()}")
         if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
-            startService(context) // Ensure service is running on manual update
+            startService(context)
         }
     }
 
     private fun startService(context: Context) {
         val intent = Intent(context, AnalogClockUpdateService_1::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
             context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
+
     }
 
     companion object {
@@ -57,11 +52,9 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
 
             views.setInt(R.id.analog_1_container, "setBackgroundResource", R.drawable.analog_1_bg)
 
-            // Determine dial based solely on system theme
             val dialResource = if (isSystemInDarkTheme(context)) R.drawable.analog_1_dial_dark else R.drawable.analog_1_dial_light
             views.setImageViewResource(R.id.analog_1_dial, dialResource)
 
-            // Apply theme for hands based on app preferences (including red accent)
             val prefs: SharedPreferences = context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
             val isDarkTheme = prefs.getBoolean("dark_theme", isSystemInDarkTheme(context)) // Fallback to system theme
             val isRedAccent = prefs.getBoolean("red_accent", false)
@@ -73,12 +66,10 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
             }
             val themedContext = ContextThemeWrapper(context, themeResId)
 
-            // Load PNGs for hands
             views.setImageViewResource(R.id.analog_1_hour, R.drawable.analog_1_hour)
             views.setImageViewResource(R.id.analog_1_min, R.drawable.analog_1_min)
             views.setImageViewResource(R.id.analog_1_secs, R.drawable.analog_1_secs)
 
-            // Apply Monet/accent color to hands
             val accentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light) // Default fallback
             val typedValue = android.util.TypedValue()
             themedContext.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
@@ -90,7 +81,6 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
 
             updateClockHands(views)
 
-            // Intent to open the Google clock app (com.google.android.deskclock)
             val clockIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_LAUNCHER)
                 setComponent(ComponentName("com.google.android.deskclock", "com.android.deskclock.DeskClock"))
@@ -104,7 +94,6 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
             views.setOnClickPendingIntent(R.id.analog_1_container, pendingIntent)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
-            Log.d("AnalogClockProvider_1", "Widget updated at ${System.currentTimeMillis()}")
         }
 
         private fun updateClockHands(views: RemoteViews) {
@@ -120,7 +109,6 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
             views.setFloat(R.id.analog_1_hour, "setRotation", hourRotation)
             views.setFloat(R.id.analog_1_min, "setRotation", minuteRotation)
             views.setFloat(R.id.analog_1_secs, "setRotation", secondRotation)
-            Log.d("AnalogClockProvider_1", "Hands updated: Hour=$hourRotation, Minute=$minuteRotation, Second=$secondRotation at ${System.currentTimeMillis()}")
         }
 
         private fun isSystemInDarkTheme(context: Context): Boolean {

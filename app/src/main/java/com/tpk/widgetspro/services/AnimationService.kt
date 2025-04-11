@@ -1,27 +1,22 @@
 package com.tpk.widgetspro.services
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.widget.RemoteViews
-import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
 import pl.droidsonroids.gif.GifDrawable
 import java.io.BufferedInputStream
 
-class AnimationService : Service() {
+class AnimationService : BaseMonitorService() {
     private val handler = Handler(Looper.getMainLooper())
     private var frames: List<Frame>? = null
     private var currentFrame = 0
@@ -31,17 +26,6 @@ class AnimationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "widgets_pro_channel", // Same as clock widgets
-                "Widgets Pro Channel",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Channel for keeping Widgets Pro services running"
-            }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,7 +42,6 @@ class AnimationService : Service() {
                     val uri = Uri.parse(uriString)
                     frames = getFrames(uri)
                     startAnimation()
-                    startForegroundService()
                 }
             }
         } else {
@@ -74,7 +57,6 @@ class AnimationService : Service() {
                             frames = getFrames(uri)
                             if (activeWidgets.size == 1) {
                                 startAnimation()
-                                startForegroundService()
                             }
                         }
                     }
@@ -104,17 +86,7 @@ class AnimationService : Service() {
                 }
             }
         }
-        return START_STICKY
-    }
-
-    private fun startForegroundService() {
-        val notification = NotificationCompat.Builder(this, "widgets_pro_channel") // Same as clock widgets
-            .setContentTitle("Animation Service")
-            .setContentText("Running animations for widgets")
-            .setSmallIcon(R.drawable.ic_notification)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
-        startForeground(7, notification) // Unique ID, different from clock services
+        return super.onStartCommand(intent, flags, startId)
     }
 
     private fun startAnimation() {

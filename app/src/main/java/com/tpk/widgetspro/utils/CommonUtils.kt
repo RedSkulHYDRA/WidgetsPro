@@ -192,15 +192,3 @@ object CommonUtils {
 
     fun getTypeface(context: Context): Typeface = ResourcesCompat.getFont(context, R.font.ndot)!!
 }
-
-object NotificationUtils {
-    const val CHANNEL_ID = "widget_monitor_channel"
-
-    fun createChannel(context: Context) {
-        val channel =
-            NotificationChannel(CHANNEL_ID, "Widget Monitor", NotificationManager.IMPORTANCE_LOW)
-                .apply { description = "System resource monitoring" }
-        context.getSystemService(NotificationManager::class.java)
-            ?.createNotificationChannel(channel)
-    }
-}

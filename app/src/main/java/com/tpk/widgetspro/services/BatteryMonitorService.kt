@@ -13,7 +13,6 @@ import android.view.View
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseDottedGraphView
-import com.tpk.widgetspro.base.BaseMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.battery.BatteryDottedView
 import com.tpk.widgetspro.widgets.battery.BatteryMonitor

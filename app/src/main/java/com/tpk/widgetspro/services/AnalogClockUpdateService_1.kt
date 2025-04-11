@@ -1,55 +1,25 @@
 package com.tpk.widgetspro.services
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+
+import android.content.Intent
+import android.os.IBinder
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
-import android.util.Log
-import androidx.core.app.NotificationCompat
-import com.tpk.widgetspro.R
-import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 
-class AnalogClockUpdateService_1 : Service() {
 
-    private val WIDGETS_PRO_NOTIFICATION_ID_1 = 101 // Unique ID to avoid conflict
-    private val CHANNEL_ID = "widgets_pro_channel" // Same as original service
-    private val updateInterval = 1000L // Update every second
+class AnalogClockUpdateService_1 : BaseMonitorService() {
+
     private lateinit var handler: Handler
     private lateinit var updateRunnable: Runnable
     private var isRunning = false
+    private val updateInterval = 1000L
 
     override fun onCreate() {
         super.onCreate()
-        startForegroundService()
         initializeMonitoring()
-    }
-
-    private fun startForegroundService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName = "Widgets Pro Channel"
-            val channel = NotificationChannel(CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_MIN).apply {
-                description = "Channel for keeping Widgets Pro services running"
-            }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-
-        val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.widgets_pro_running))
-            .setContentText(getString(R.string.widgets_pro_active_text))
-            .setSmallIcon(R.drawable.ic_notification)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-
-        val notification = notificationBuilder.build()
-        startForeground(WIDGETS_PRO_NOTIFICATION_ID_1, notification)
     }
 
     private fun initializeMonitoring() {
@@ -67,7 +37,6 @@ class AnalogClockUpdateService_1 : Service() {
         if (!isRunning) {
             isRunning = true
             handler.post(updateRunnable)
-            Log.d("AnalogClockService_1", "Started monitoring at ${System.currentTimeMillis()}")
         }
     }
 
@@ -75,12 +44,15 @@ class AnalogClockUpdateService_1 : Service() {
         if (isRunning) {
             isRunning = false
             handler.removeCallbacks(updateRunnable)
-            Log.d("AnalogClockService_1", "Stopped monitoring at ${System.currentTimeMillis()}")
         }
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!isRunning) startMonitoring()
+        return super.onStartCommand(intent, flags, startId)
+    }
+
     private fun updateWidgets() {
-        Log.d("AnalogClockService_1", "Updating widget at ${System.currentTimeMillis()}")
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val componentName = ComponentName(this, AnalogClockWidgetProvider_1::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
@@ -90,17 +62,10 @@ class AnalogClockUpdateService_1 : Service() {
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (!isRunning) startMonitoring()
-        return START_STICKY
-    }
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         stopMonitoring()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        Log.d("AnalogClockService_1", "Service destroyed at ${System.currentTimeMillis()}")
         super.onDestroy()
     }
 }

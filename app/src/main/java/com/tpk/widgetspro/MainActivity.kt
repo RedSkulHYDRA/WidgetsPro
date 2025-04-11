@@ -1,7 +1,5 @@
 package com.tpk.widgetspro
 
-import android.app.AlertDialog
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -11,13 +9,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.services.CpuMonitorService
 import com.tpk.widgetspro.utils.BitmapCacheManager
-import com.tpk.widgetspro.utils.NotificationUtils
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
@@ -32,9 +27,6 @@ import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
-import rikka.shizuku.Shizuku
-import java.text.SimpleDateFormat
-import java.util.*
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -50,7 +42,6 @@ class MainActivity : AppCompatActivity() {
         val navView: BottomNavigationView = findViewById(R.id.nav_view)
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
         navView.setupWithNavController(navController)
-        NotificationUtils.createChannel(this)
         checkBatteryOptimizations()
         BitmapCacheManager.clearExpiredCache(this)
     }

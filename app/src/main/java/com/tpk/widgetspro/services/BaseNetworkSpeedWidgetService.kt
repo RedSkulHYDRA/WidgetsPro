@@ -1,39 +1,25 @@
 package com.tpk.widgetspro.services
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.Service
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.TrafficStats
-import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
 import android.widget.RemoteViews
-import androidx.core.app.NotificationCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
 
-class BaseNetworkSpeedWidgetService : Service() {
+class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     private var previousBytes: Long = 0
     private val handler = Handler(Looper.getMainLooper())
     private val UPDATE_INTERVAL_MS = 1000L
-
-    companion object {
-        private const val WIDGETS_PRO_NOTIFICATION_ID = 100
-        private const val CHANNEL_ID = "widgets_pro_channel"
-    }
 
     private val updateRunnable = object : Runnable {
         override fun run() {
@@ -44,18 +30,16 @@ class BaseNetworkSpeedWidgetService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(WIDGETS_PRO_NOTIFICATION_ID, createNotification())
         handler.post(updateRunnable)
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(updateRunnable)
-        stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
+        return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -119,32 +103,6 @@ class BaseNetworkSpeedWidgetService : Service() {
         val canvas = Canvas(bitmap)
         drawable.draw(canvas)
         return bitmap
-    }
-
-    private fun createNotification(): Notification {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Widgets Pro Channel",
-                NotificationManager.IMPORTANCE_MIN
-            ).apply {
-                description = "Channel for keeping Widgets Pro services running"
-            }
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, Intent(this, NetworkSpeedWidgetProviderCircle::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.widgets_pro_running))
-            .setContentText(getString(R.string.widgets_pro_active_text))
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .build()
     }
 
     private fun formatSpeed(bytesPerSecond: Long): String {
