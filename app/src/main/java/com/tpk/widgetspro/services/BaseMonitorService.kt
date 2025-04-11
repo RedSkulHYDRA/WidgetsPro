@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.base
+package com.tpk.widgetspro.services
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -10,8 +10,6 @@ import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
-import android.os.Build
 
 abstract class BaseMonitorService : Service() {
     companion object {
@@ -25,14 +23,14 @@ abstract class BaseMonitorService : Service() {
     }
 
     private fun createNotification(): Notification {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName = "Widgets Pro Channel"
-            val channel = NotificationChannel(CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_MIN).apply {
+
+        val channelName = "Widgets Pro Channel"
+        val channel =
+            NotificationChannel(CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_MIN).apply {
                 description = "Channel for keeping Widgets Pro services running"
             }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
 
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

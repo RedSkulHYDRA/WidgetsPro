@@ -13,7 +13,6 @@ import android.view.View
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseDottedGraphView
-import com.tpk.widgetspro.base.BaseMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.cpu.CpuMonitor
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
@@ -68,7 +67,8 @@ class CpuMonitorService : BaseMonitorService() {
                     setImageViewBitmap(R.id.cpuUsageImageView, usageBitmap)
                     setImageViewBitmap(R.id.cpuImageView, cpuBitmap)
                     setImageViewBitmap(R.id.graphWidgetImageView, createGraphBitmap(themedContext, dataPoints, DottedGraphView::class))
-                    // ... rest of the updates
+                    setTextViewText(R.id.cpuTempWidgetTextView, "%.1f°C".format(cpuTemperature))
+                    setTextViewText(R.id.cpuModelWidgetTextView, getDeviceProcessorModel())
                 }
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }

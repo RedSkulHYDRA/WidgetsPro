@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
-import com.tpk.widgetspro.base.BaseMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import kotlinx.coroutines.CoroutineScope
@@ -131,7 +130,7 @@ class SunSyncService : BaseMonitorService() {
             handler.removeCallbacks(updateRunnable)
             handler.post(updateRunnable)
         }
-        return START_STICKY
+        return super.onStartCommand(intent, flags, startId)
     }
 
     private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->

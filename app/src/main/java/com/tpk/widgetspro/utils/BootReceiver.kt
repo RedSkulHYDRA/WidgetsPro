@@ -9,10 +9,7 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
-import com.tpk.widgetspro.widgets.networkusage.BaseSimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
-import com.tpk.widgetspro.widgets.networkusage.BaseNetworkSpeedWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
@@ -22,9 +19,9 @@ import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
-import android.os.Build
 import com.tpk.widgetspro.services.AnalogClockUpdateService_1
 import com.tpk.widgetspro.services.AnalogClockUpdateService_2
+import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -44,16 +41,14 @@ class BootReceiver : BroadcastReceiver() {
             updateWidgets(context, appWidgetManager, NoteWidgetProvider::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_1::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_2::class.java)
+            updateWidgets(context, appWidgetManager, GifAppWidgetProvider::class.java)
 
             val serviceIntent1 = Intent(context, AnalogClockUpdateService_1::class.java)
             val serviceIntent2 = Intent(context, AnalogClockUpdateService_2::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent1)
-                context.startForegroundService(serviceIntent2)
-            } else {
-                context.startService(serviceIntent1)
-                context.startService(serviceIntent2)
-            }
+
+            context.startForegroundService(serviceIntent1)
+            context.startForegroundService(serviceIntent2)
+
         }
     }
 
