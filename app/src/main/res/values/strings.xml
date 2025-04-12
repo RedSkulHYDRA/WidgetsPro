@@ -84,10 +84,13 @@
     <string name="analog_1_clock_widget_label">Speedometer</string>
     <string name="analog_2_clock_widget_label">Minimalism</string>
     <string name="add_analog_1_clock_widget">Add Clock Widget</string>
-    <string name="photo_widget">Gif Widget</string>
+    <string name="gif_widget">Gif Widget</string>
     <string name="select_gif">Select GIF</string>
-    <string name="add_photo_widget">Add Gif Widget</string>
+    <string name="add_gif_widget">Add Gif Widget</string>
     <string name="gif_selected_message">GIF selected</string>
+    <string name="no_gif_widgets_found">No GIF widgets found. Please add one first.</string>
+    <string name="gif_widget_name">GIF Widget %d</string>
+    <string name="select_gif_widget">Select GIF For:</string>
     <string name="animation_service_title">Animation Service</string>
     <string name="animation_service_text">Running animations for widgets</string>
     <string name="enter_location_prompt">Please enter a location</string>
@@ -97,4 +100,5 @@
     <string name="location_error_message">Error finding location: %1$s</string>
     <string name="suggestions_error_message">Error fetching suggestions</string>
     <string name="bluetooth_reset_message">Reset image and query for %1$s</string>
+    <string name="select_option">Select Option</string>
 </resources>

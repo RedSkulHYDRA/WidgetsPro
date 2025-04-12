@@ -10,19 +10,22 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.widget.RemoteViews
-import androidx.preference.PreferenceManager
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
+import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
 import pl.droidsonroids.gif.GifDrawable
 import java.io.BufferedInputStream
 
 class AnimationService : BaseMonitorService() {
     private val handler = Handler(Looper.getMainLooper())
-    private var frames: List<Frame>? = null
-    private var currentFrame = 0
-    private val activeWidgets = mutableSetOf<Int>()
+    private val widgetData = mutableMapOf<Int, WidgetAnimationData>()
 
     data class Frame(val bitmap: Bitmap, val duration: Int)
+    data class WidgetAnimationData(
+        var frames: List<Frame>? = null,
+        var currentFrame: Int = 0,
+        var uriString: String? = null,
+        var runnable: Runnable? = null
+    )
 
     override fun onCreate() {
         super.onCreate()
@@ -32,55 +35,37 @@ class AnimationService : BaseMonitorService() {
         if (intent == null) {
             val appWidgetManager = AppWidgetManager.getInstance(this)
             val widgetIds = appWidgetManager.getAppWidgetIds(
-                ComponentName(this, GifAppWidgetProvider::class.java)
+                ComponentName(this, GifWidgetProvider::class.java)
             )
-            if (widgetIds.isNotEmpty()) {
-                activeWidgets.addAll(widgetIds.toList())
-                val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-                val uriString = prefs.getString("selected_file_uri", null)
+            widgetIds.forEach { appWidgetId ->
+                val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
+                val uriString = prefs.getString("file_uri_$appWidgetId", null)
                 if (uriString != null) {
-                    val uri = Uri.parse(uriString)
-                    frames = getFrames(uri)
-                    startAnimation()
+                    handleAddWidget(appWidgetId, uriString)
                 }
             }
         } else {
             val action = intent.getStringExtra("action")
+            val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
             when (action) {
                 "ADD_WIDGET" -> {
-                    val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
                     if (appWidgetId != -1) {
-                        activeWidgets.add(appWidgetId)
                         val uriString = intent.getStringExtra("file_uri")
                         if (uriString != null) {
-                            val uri = Uri.parse(uriString)
-                            frames = getFrames(uri)
-                            if (activeWidgets.size == 1) {
-                                startAnimation()
-                            }
+                            handleAddWidget(appWidgetId, uriString)
                         }
                     }
                 }
                 "REMOVE_WIDGET" -> {
-                    val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
                     if (appWidgetId != -1) {
-                        activeWidgets.remove(appWidgetId)
-                        if (activeWidgets.isEmpty()) {
-                            stopAnimation()
-                            stopForeground(true)
-                            stopSelf()
-                        }
+                        handleRemoveWidget(appWidgetId)
                     }
                 }
                 "UPDATE_FILE" -> {
-                    val uriString = intent.getStringExtra("file_uri")
-                    if (uriString != null) {
-                        val uri = Uri.parse(uriString)
-                        frames = getFrames(uri)
-                        currentFrame = 0
-                        if (activeWidgets.isNotEmpty()) {
-                            stopAnimation()
-                            startAnimation()
+                    if (appWidgetId != -1) {
+                        val uriString = intent.getStringExtra("file_uri")
+                        if (uriString != null) {
+                            handleUpdateFile(appWidgetId, uriString)
                         }
                     }
                 }
@@ -89,26 +74,87 @@ class AnimationService : BaseMonitorService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun startAnimation() {
-        if (frames?.isNotEmpty() == true) {
-            updateAllWidgets()
+    private fun handleAddWidget(appWidgetId: Int, uriString: String) {
+        if (widgetData.containsKey(appWidgetId)) {
+            if (widgetData[appWidgetId]?.uriString != uriString) {
+                handleUpdateFile(appWidgetId, uriString)
+            }
+            return
+        }
+
+        val frames = getFrames(Uri.parse(uriString))
+        if (frames.isNotEmpty()) {
+            widgetData[appWidgetId] = WidgetAnimationData(
+                frames = frames,
+                uriString = uriString
+            )
+            startAnimation(appWidgetId)
         }
     }
 
-    private fun updateAllWidgets() {
-        val frame = frames!![currentFrame]
-        val appWidgetManager = AppWidgetManager.getInstance(this)
-        activeWidgets.forEach { appWidgetId ->
+    private fun handleRemoveWidget(appWidgetId: Int) {
+        widgetData[appWidgetId]?.let { data ->
+            stopAnimation(appWidgetId)
+            data.frames?.forEach { it.bitmap.recycle() }
+            widgetData.remove(appWidgetId)
+        }
+        if (widgetData.isEmpty()) {
+            stopForeground(true)
+            stopSelf()
+        }
+    }
+
+    private fun handleUpdateFile(appWidgetId: Int, uriString: String) {
+        widgetData[appWidgetId]?.let { data ->
+            stopAnimation(appWidgetId)
+            data.frames?.forEach { it.bitmap.recycle() }
+            val newFrames = getFrames(Uri.parse(uriString))
+            if (newFrames.isNotEmpty()) {
+                data.frames = newFrames
+                data.currentFrame = 0
+                data.uriString = uriString
+                startAnimation(appWidgetId)
+            } else {
+                widgetData.remove(appWidgetId)
+            }
+        } ?: run {
+            handleAddWidget(appWidgetId, uriString)
+        }
+    }
+
+    private fun startAnimation(appWidgetId: Int) {
+        widgetData[appWidgetId]?.let { data ->
+            if (data.frames?.isNotEmpty() == true) {
+                val runnable = object : Runnable {
+                    override fun run() {
+                        updateWidget(appWidgetId)
+                        data.runnable = this
+                        handler.postDelayed(this, data.frames!![data.currentFrame].duration.toLong())
+                    }
+                }
+                data.runnable = runnable
+                handler.post(runnable)
+            }
+        }
+    }
+
+    private fun updateWidget(appWidgetId: Int) {
+        widgetData[appWidgetId]?.let { data ->
+            val frames = data.frames ?: return
+            val frame = frames[data.currentFrame]
+            val appWidgetManager = AppWidgetManager.getInstance(this)
             val remoteViews = RemoteViews(packageName, R.layout.gif_widget_layout)
             remoteViews.setImageViewBitmap(R.id.imageView, frame.bitmap)
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+            data.currentFrame = (data.currentFrame + 1) % frames.size
         }
-        currentFrame = (currentFrame + 1) % frames!!.size
-        handler.postDelayed({ updateAllWidgets() }, frame.duration.toLong())
     }
 
-    private fun stopAnimation() {
-        handler.removeCallbacksAndMessages(null)
+    private fun stopAnimation(appWidgetId: Int) {
+        widgetData[appWidgetId]?.let { data ->
+            data.runnable?.let { handler.removeCallbacks(it) }
+            data.runnable = null
+        }
     }
 
     private fun getFrames(uri: Uri): List<Frame> {
@@ -148,15 +194,14 @@ class AnimationService : BaseMonitorService() {
         return frames
     }
 
-    private fun recycleFrames(frames: List<Frame>) {
-        frames.forEach { it.bitmap.recycle() }
-    }
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        stopAnimation()
-        frames?.let { recycleFrames(it) }
+        widgetData.forEach { (appWidgetId, data) ->
+            stopAnimation(appWidgetId)
+            data.frames?.forEach { it.bitmap.recycle() }
+        }
+        widgetData.clear()
         super.onDestroy()
     }
 }

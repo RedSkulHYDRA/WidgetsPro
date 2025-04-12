@@ -20,7 +20,6 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputLayout
@@ -61,6 +60,8 @@ class SettingsFragment : Fragment() {
     private lateinit var btnResetNow: Button
     private lateinit var tvNextReset: TextView
 
+    private var pendingAppWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
+
     private val enumOptions = arrayOf(
         "black", "blue", "white", "silver", "transparent",
         "case", "fullproduct", "product", "withcase",
@@ -69,17 +70,21 @@ class SettingsFragment : Fragment() {
 
     private val selectFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
-            val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-            prefs.edit().putString("selected_file_uri", it.toString()).apply()
-            requireContext().contentResolver.takePersistableUriPermission(
-                it, Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-            val intent = Intent(requireContext(), AnimationService::class.java).apply {
-                putExtra("action", "UPDATE_FILE")
-                putExtra("file_uri", it.toString())
+            if (pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                val prefs = requireContext().getSharedPreferences("gif_widget_prefs", Context.MODE_PRIVATE)
+                prefs.edit().putString("file_uri_$pendingAppWidgetId", it.toString()).apply()
+                requireContext().contentResolver.takePersistableUriPermission(
+                    it, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                val intent = Intent(requireContext(), AnimationService::class.java).apply {
+                    putExtra("action", "UPDATE_FILE")
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingAppWidgetId)
+                    putExtra("file_uri", it.toString())
+                }
+                requireContext().startService(intent)
+                Toast.makeText(requireContext(), R.string.gif_selected_message, Toast.LENGTH_SHORT).show()
+                pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID // Reset after use
             }
-            requireContext().startService(intent)
-            Toast.makeText(requireContext(), R.string.gif_selected_message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -116,7 +121,7 @@ class SettingsFragment : Fragment() {
 
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
-        tvWifiValue.text = seekBarWifi.progress.toString()
+        tvWifiValue.text = seekBarSim.progress.toString()
         tvSimValue.text = seekBarSim.progress.toString()
 
         val resetMode = prefs.getString("data_usage_reset_mode", "daily") ?: "daily"
@@ -191,9 +196,44 @@ class SettingsFragment : Fragment() {
         }
 
         view.findViewById<Button>(R.id.select_file_button).setOnClickListener {
-            selectFileLauncher.launch(arrayOf("image/gif"))
-            //selectFileLauncher.launch(arrayOf("image/gif", "video/*"))
+            showWidgetSelectionDialog()
         }
+    }
+
+    private fun showWidgetSelectionDialog() {
+        val appWidgetManager = AppWidgetManager.getInstance(requireContext())
+        val widgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(requireContext(), com.tpk.widgetspro.widgets.photo.GifWidgetProvider::class.java)
+        )
+        if (widgetIds.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.no_gif_widgets_found, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val prefs = requireContext().getSharedPreferences("gif_widget_prefs", Context.MODE_PRIVATE)
+        val items = widgetIds.map { appWidgetId ->
+            val index = prefs.getInt("widget_index_$appWidgetId", 0)
+            getString(R.string.gif_widget_name, index)
+        }.toTypedArray()
+        AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+            .setTitle(R.string.select_gif_widget)
+            .setItems(items) { _, which ->
+                pendingAppWidgetId = widgetIds[which]
+                selectFileLauncher.launch(arrayOf("image/gif", "video/*"))
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+            .apply {
+                setOnShowListener {
+                    window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+                    findViewById<TextView>(android.R.id.title)?.setTextColor(
+                        ContextCompat.getColor(requireContext(), R.color.text_color)
+                    )
+                    getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
+                        ContextCompat.getColor(requireContext(), R.color.text_color)
+                    )
+                }
+            }
+            .show()
     }
 
     private fun updateNextResetText(mode: String) {
@@ -293,7 +333,7 @@ class SettingsFragment : Fragment() {
 
     private fun showEnumSelectionDialog() {
         val builder = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
-        builder.setTitle("Select options")
+        builder.setTitle(R.string.select_option)
         builder.setMultiChoiceItems(enumOptions, null) { _, _, _ -> }
         builder.setPositiveButton("OK") { dialog, _ ->
             val checkedItems = (dialog as AlertDialog).listView.checkedItemPositions
