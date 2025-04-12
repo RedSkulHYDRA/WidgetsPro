@@ -55,7 +55,7 @@ abstract class BaseWifiDataUsageWidgetProvider : AppWidgetProvider() {
                 }
 
                 val usage = NetworkStatsHelper.getWifiDataUsage(context)
-                val totalBytes = usage[2] // Total bytes (tx + rx)
+                val totalBytes = usage[2]
                 val formattedUsage = formatBytes(totalBytes)
 
                 val views = RemoteViews(context.packageName, layoutResId).apply {

@@ -53,7 +53,7 @@ object NetworkStatsHelper {
             val startTime = calendar.timeInMillis
             val endTime = startTime + 24 * 60 * 60 * 1000
             Pair(startTime, endTime)
-        } else { // manual
+        } else {
             val manualResetTime = prefs.getLong("manual_reset_time", System.currentTimeMillis())
             val endTime = System.currentTimeMillis()
             Pair(manualResetTime, endTime)

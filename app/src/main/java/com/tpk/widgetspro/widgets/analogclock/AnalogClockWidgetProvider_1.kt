@@ -54,7 +54,7 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
             views.setImageViewResource(R.id.analog_1_dial, dialResource)
 
             val prefs: SharedPreferences = context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
-            val isDarkTheme = prefs.getBoolean("dark_theme", isSystemInDarkTheme(context)) // Fallback to system theme
+            val isDarkTheme = prefs.getBoolean("dark_theme", isSystemInDarkTheme(context))
             val isRedAccent = prefs.getBoolean("red_accent", false)
             val themeResId = when {
                 isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
@@ -68,10 +68,10 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
             views.setImageViewResource(R.id.analog_1_min, R.drawable.analog_1_min)
             views.setImageViewResource(R.id.analog_1_secs, R.drawable.analog_1_secs)
 
-            val accentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light) // Default fallback
+            val accentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light)
             val typedValue = android.util.TypedValue()
             themedContext.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
-            val resolvedAccentColor = typedValue.data ?: accentColor // Use Monet accent color if available
+            val resolvedAccentColor = typedValue.data ?: accentColor
 
             views.setInt(R.id.analog_1_hour, "setColorFilter", resolvedAccentColor)
             views.setInt(R.id.analog_1_min, "setColorFilter", resolvedAccentColor)
@@ -96,13 +96,13 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
 
         private fun updateClockHands(views: RemoteViews) {
             val calendar = Calendar.getInstance()
-            val hour = calendar.get(Calendar.HOUR) // 12-hour format
+            val hour = calendar.get(Calendar.HOUR)
             val minute = calendar.get(Calendar.MINUTE)
             val second = calendar.get(Calendar.SECOND)
 
-            val hourRotation = (hour * 30 + minute / 2).toFloat() // 30° per hour + 0.5° per minute
-            val minuteRotation = (minute * 6 + second / 10).toFloat() // 6° per minute + 0.1° per second
-            val secondRotation = (second * 6).toFloat() // 6° per second
+            val hourRotation = (hour * 30 + minute / 2).toFloat()
+            val minuteRotation = (minute * 6 + second / 10).toFloat()
+            val secondRotation = (second * 6).toFloat()
 
             views.setFloat(R.id.analog_1_hour, "setRotation", hourRotation)
             views.setFloat(R.id.analog_1_min, "setRotation", minuteRotation)

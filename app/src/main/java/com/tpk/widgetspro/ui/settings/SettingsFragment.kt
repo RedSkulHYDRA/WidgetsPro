@@ -83,7 +83,7 @@ class SettingsFragment : Fragment() {
                 }
                 requireContext().startService(intent)
                 Toast.makeText(requireContext(), R.string.gif_selected_message, Toast.LENGTH_SHORT).show()
-                pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID // Reset after use
+                pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
             }
         }
     }
@@ -121,7 +121,7 @@ class SettingsFragment : Fragment() {
 
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
-        tvWifiValue.text = seekBarSim.progress.toString()
+        tvWifiValue.text = seekBarWifi.progress.toString()
         tvSimValue.text = seekBarSim.progress.toString()
 
         val resetMode = prefs.getString("data_usage_reset_mode", "daily") ?: "daily"
@@ -198,6 +198,10 @@ class SettingsFragment : Fragment() {
         view.findViewById<Button>(R.id.select_file_button).setOnClickListener {
             showWidgetSelectionDialog()
         }
+
+        view.findViewById<Button>(R.id.sync_gif_widgets_button).setOnClickListener {
+            showSyncWidgetSelectionDialog()
+        }
     }
 
     private fun showWidgetSelectionDialog() {
@@ -234,6 +238,73 @@ class SettingsFragment : Fragment() {
                 }
             }
             .show()
+    }
+
+    private fun showSyncWidgetSelectionDialog() {
+        val appWidgetManager = AppWidgetManager.getInstance(requireContext())
+        val widgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(requireContext(), com.tpk.widgetspro.widgets.photo.GifWidgetProvider::class.java)
+        )
+        if (widgetIds.size < 2) {
+            Toast.makeText(requireContext(), R.string.insufficient_gif_widgets, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val prefs = requireContext().getSharedPreferences("gif_widget_prefs", Context.MODE_PRIVATE)
+        val items = widgetIds.map { appWidgetId ->
+            val index = prefs.getInt("widget_index_$appWidgetId", 0)
+            getString(R.string.gif_widget_name, index)
+        }.toTypedArray()
+        val checkedItems = BooleanArray(widgetIds.size) { false }
+        var selectedWidgetIds = mutableSetOf<Int>()
+
+        var dialog: AlertDialog? = null
+
+        dialog = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+            .setTitle(R.string.sync_widgets)
+            .setMultiChoiceItems(items, checkedItems) { dialogInterface, which, isChecked ->
+                if (isChecked) {
+                    selectedWidgetIds.add(widgetIds[which])
+                    if (selectedWidgetIds.size > 2) {
+                        val oldest = selectedWidgetIds.first()
+                        selectedWidgetIds.remove(oldest)
+                        checkedItems[widgetIds.indexOf(oldest)] = false
+                        dialog?.listView?.setItemChecked(widgetIds.indexOf(oldest), false)
+                    }
+                } else {
+                    selectedWidgetIds.remove(widgetIds[which])
+                }
+            }
+            .setPositiveButton("Sync") { _, _ ->
+                if (selectedWidgetIds.size == 2) {
+                    val syncGroupId = UUID.randomUUID().toString()
+                    val intent = Intent(requireContext(), AnimationService::class.java).apply {
+                        putExtra("action", "SYNC_WIDGETS")
+                        putExtra("sync_group_id", syncGroupId)
+                        putExtra("sync_widget_ids", selectedWidgetIds.toIntArray())
+                    }
+                    requireContext().startService(intent)
+                    Toast.makeText(requireContext(), R.string.widgets_synced, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), R.string.select_two_widgets, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+            dialog.findViewById<TextView>(android.R.id.title)?.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.text_color)
+            )
+            dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.text_color)
+            )
+            dialog.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.text_color)
+            )
+        }
+
+        dialog.show()
     }
 
     private fun updateNextResetText(mode: String) {
@@ -281,7 +352,7 @@ class SettingsFragment : Fragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvCpuValue.text = progress.toString()
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seakBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("cpu_interval", seekBar?.progress ?: 60).apply()
             }
@@ -290,7 +361,7 @@ class SettingsFragment : Fragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvBatteryValue.text = progress.toString()
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seakBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("battery_interval", seekBar?.progress ?: 60).apply()
             }
@@ -299,7 +370,7 @@ class SettingsFragment : Fragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvWifiValue.text = progress.toString()
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seakBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("wifi_data_usage_interval", seekBar?.progress ?: 60).apply()
                 BaseWifiDataUsageWidgetProvider.updateAllWidgets(
@@ -316,7 +387,7 @@ class SettingsFragment : Fragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvSimValue.text = progress.toString()
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seakBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("sim_data_usage_interval", seekBar?.progress ?: 60).apply()
                 BaseSimDataUsageWidgetProvider.updateAllWidgets(

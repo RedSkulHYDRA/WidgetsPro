@@ -27,7 +27,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/interval_settings" />
 
-            <!-- Existing seekbar sections -->
+            <!-- CPU Update Interval -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -59,6 +59,7 @@
                     android:textSize="18sp" />
             </LinearLayout>
 
+            <!-- Battery Update Interval -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -90,6 +91,7 @@
                     android:textSize="18sp" />
             </LinearLayout>
 
+            <!-- WiFi Data Usage Interval -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -121,6 +123,7 @@
                     android:textSize="18sp" />
             </LinearLayout>
 
+            <!-- SIM Data Usage Interval -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -153,6 +156,7 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Weather Widget Settings Section -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -171,8 +175,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/rounded_layout_bg"
-                android:padding="5dp"
                 android:layout_marginTop="10dp"
+                android:padding="5dp"
                 android:gravity="center"
                 app:boxCornerRadiusBottomEnd="8dp"
                 app:boxCornerRadiusBottomStart="8dp"
@@ -313,7 +317,37 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="10dp"
                 android:text="@string/reset_device_image" />
+        </LinearLayout>
 
+        <!-- GIF Widget Settings Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/round_layout_outline_bg"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/gif_widget_settings" />
+
+            <Button
+                android:id="@+id/select_file_button"
+                style="@style/CustomTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/select_gif" />
+
+            <Button
+                android:id="@+id/sync_gif_widgets_button"
+                style="@style/CustomTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/sync_gif_widgets" />
         </LinearLayout>
 
         <!-- Theme Switch Button -->
@@ -324,14 +358,5 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:text="@string/switch_to_red_accent" />
-
-        <Button
-            android:id="@+id/select_file_button"
-            style="@style/CustomTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="@string/select_gif" />
-
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
