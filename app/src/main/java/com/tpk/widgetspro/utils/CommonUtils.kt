@@ -15,6 +15,13 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.os.Build
+import android.text.Layout
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.StaticLayout
+import android.text.TextPaint
+import android.text.style.AbsoluteSizeSpan
+import android.text.style.ForegroundColorSpan
 import android.util.TypedValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
@@ -84,78 +91,95 @@ object CommonUtils {
         return bitmap
     }
 
-    fun createTextNotesWidgetBitmap(
+    internal fun createTextNotesWidgetBitmap(
         context: Context,
         text: String,
-        textSizeSp: Float,
+        headingTextSizeSp: Float,
+        contentTextSizeSp: Float,
         typeface: Typeface,
         accentColor: Int,
-        textColor: Int
+        textColor: Int,
+        widthPx: Int,
+        heightPx: Int,
+        maxLines: Int
     ): Bitmap {
-        val headingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_SP,
-                textSizeSp,
-                context.resources.displayMetrics
-            )
-            color = accentColor
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             this.typeface = typeface
-            textAlign = Paint.Align.LEFT
-        }
-
-        val contentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_SP,
-                textSizeSp,
-                context.resources.displayMetrics
+                TypedValue.COMPLEX_UNIT_SP, maxOf(headingTextSizeSp, contentTextSizeSp), context.resources.displayMetrics
             )
             color = textColor
-            this.typeface = typeface
-            textAlign = Paint.Align.LEFT
         }
 
-        val lines = text.split("\n", limit = 2)
-
-        if (lines.isEmpty()) {
+        if (text.isEmpty()) {
             return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
         }
 
-        val heading = lines[0]
-        val content = if (lines.size > 1) lines[1] else ""
-
-        val headingLines = listOf(heading)
-        val headingLineHeight = headingPaint.getFontSpacing()
-        val headingMaxWidth = headingLines.maxOf { headingPaint.measureText(it) }
-        val headingHeight = headingLines.size * headingLineHeight
-
-        val contentLines = content.split("\n")
-        val contentLineHeight = contentPaint.getFontSpacing()
-        val contentMaxWidth = if (content.isNotEmpty()) contentLines.maxOf { contentPaint.measureText(it) } else 0f
-        val contentHeight = if (content.isNotEmpty()) contentLines.size * contentLineHeight else 0f
-
-        val totalWidth = maxOf(headingMaxWidth, contentMaxWidth).toInt() + 10
-        val totalHeight = (headingHeight + if (content.isNotEmpty()) contentHeight + headingLineHeight else 0f).toInt() + 10
-
-        val bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-
-        val headingFm = headingPaint.fontMetrics
-        val headingBaselineOffset = -headingFm.ascent
-        headingLines.forEachIndexed { index, line ->
-            val y = index * headingLineHeight + headingBaselineOffset
-            canvas.drawText(line, 5f, y, headingPaint)
+        val spannable = SpannableStringBuilder(text)
+        val firstNewlineIndex = text.indexOf('\n')
+        val headingEnd = if (firstNewlineIndex != -1) firstNewlineIndex else text.length
+        val contentStart = if (firstNewlineIndex != -1 && firstNewlineIndex + 1 < text.length && text[firstNewlineIndex + 1] == '\n') {
+            firstNewlineIndex + 2
+        } else if (firstNewlineIndex != -1) {
+            firstNewlineIndex + 1
+        } else {
+            text.length
         }
 
-        if (content.isNotEmpty()) {
-            val contentFm = contentPaint.fontMetrics
-            val contentBaselineOffset = -contentFm.ascent
-            var contentY = headingHeight + contentBaselineOffset
+        if (headingEnd > 0) {
+            spannable.setSpan(
+                AbsoluteSizeSpan(TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_SP, headingTextSizeSp, context.resources.displayMetrics).toInt()),
+                0,
+                headingEnd,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            spannable.setSpan(
+                ForegroundColorSpan(accentColor),
+                0,
+                headingEnd,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
 
-            contentLines.forEachIndexed { index, line ->
-                canvas.drawText(line, 5f, contentY + index * contentLineHeight, contentPaint)
+        if (contentStart < text.length) {
+            spannable.setSpan(
+                AbsoluteSizeSpan(TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_SP, contentTextSizeSp, context.resources.displayMetrics).toInt()),
+                contentStart,
+                text.length,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            spannable.setSpan(
+                ForegroundColorSpan(textColor),
+                contentStart,
+                text.length,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        val staticLayout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            StaticLayout.Builder.obtain(spannable, 0, spannable.length, paint, widthPx)
+                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                .setLineSpacing(4f, 1.2f)
+                .setIncludePad(false)
+                .setMaxLines(maxLines)
+                .build()
+        } else {
+            @Suppress("DEPRECATION")
+            val tempLayout = StaticLayout(spannable, paint, widthPx, Layout.Alignment.ALIGN_NORMAL, 1.2f, 4f, false)
+            if (tempLayout.lineCount > maxLines) {
+                val endIndex = tempLayout.getLineEnd(maxLines - 1)
+                val truncatedSpannable = SpannableStringBuilder(spannable.subSequence(0, endIndex))
+                StaticLayout(truncatedSpannable, paint, widthPx, Layout.Alignment.ALIGN_NORMAL, 1.2f, 4f, false)
+            } else {
+                tempLayout
             }
         }
 
+        val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        staticLayout.draw(canvas)
         return bitmap
     }
 
