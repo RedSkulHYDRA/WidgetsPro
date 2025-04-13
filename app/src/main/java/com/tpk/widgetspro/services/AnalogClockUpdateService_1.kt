@@ -1,12 +1,14 @@
 package com.tpk.widgetspro.services
 
-import android.content.Intent
-import android.os.IBinder
-import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
+import java.util.Calendar
 
 class AnalogClockUpdateService_1 : BaseMonitorService() {
 
@@ -25,7 +27,7 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         updateRunnable = object : Runnable {
             override fun run() {
                 if (shouldUpdate()) {
-                    updateWidgets()
+                    animateWidgets()
                 }
                 handler.postDelayed(this, updateInterval)
             }
@@ -52,13 +54,13 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun updateWidgets() {
+    private fun animateWidgets() {
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val componentName = ComponentName(this, AnalogClockWidgetProvider_1::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
 
         for (appWidgetId in appWidgetIds) {
-            AnalogClockWidgetProvider_1.updateAppWidget(this, appWidgetManager, appWidgetId)
+            AnalogClockWidgetProvider_1.animateWidgetUpdate(this, appWidgetManager, appWidgetId)
         }
     }
 
@@ -67,5 +69,24 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
     override fun onDestroy() {
         stopMonitoring()
         super.onDestroy()
+    }
+
+    private fun getLastPositions(appWidgetId: Int): Triple<Int, Int, Int> {
+        val prefs = getSharedPreferences("ClockPrefs_$appWidgetId", Context.MODE_PRIVATE)
+        return Triple(
+            prefs.getInt("lastSeconds", 0),
+            prefs.getInt("lastMinutes", 0),
+            prefs.getInt("lastHours", 0)
+        )
+    }
+
+    private fun saveLastPositions(appWidgetId: Int, seconds: Int, minutes: Int, hours: Int) {
+        val prefs = getSharedPreferences("ClockPrefs_$appWidgetId", Context.MODE_PRIVATE)
+        prefs.edit().apply {
+            putInt("lastSeconds", seconds)
+            putInt("lastMinutes", minutes)
+            putInt("lastHours", hours)
+            apply()
+        }
     }
 }

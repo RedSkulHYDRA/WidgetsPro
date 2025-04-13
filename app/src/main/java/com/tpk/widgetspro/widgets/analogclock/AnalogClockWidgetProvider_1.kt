@@ -7,19 +7,19 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
-import android.util.Log
 import android.view.ContextThemeWrapper
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.services.AnalogClockUpdateService_1
+import android.animation.ValueAnimator
 import java.util.Calendar
 
 class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+            animateWidgetUpdate(context, appWidgetManager, appWidgetId)
         }
         startService(context)
     }
@@ -45,8 +45,9 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
     }
 
     companion object {
-        fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
+        fun animateWidgetUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val views = RemoteViews(context.packageName, R.layout.analog_1_widget)
+
 
             views.setInt(R.id.analog_1_container, "setBackgroundResource", R.drawable.analog_1_bg)
 
@@ -64,6 +65,7 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
             }
             val themedContext = ContextThemeWrapper(context, themeResId)
 
+
             views.setImageViewResource(R.id.analog_1_hour, R.drawable.analog_1_hour)
             views.setImageViewResource(R.id.analog_1_min, R.drawable.analog_1_min)
             views.setImageViewResource(R.id.analog_1_secs, R.drawable.analog_1_secs)
@@ -77,7 +79,25 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
             views.setInt(R.id.analog_1_min, "setColorFilter", resolvedAccentColor)
             views.setInt(R.id.analog_1_secs, "setColorFilter", resolvedAccentColor)
 
-            updateClockHands(views)
+
+            val calendar = Calendar.getInstance()
+            val newHour = calendar.get(Calendar.HOUR)
+            val newMinute = calendar.get(Calendar.MINUTE)
+            val newSecond = calendar.get(Calendar.SECOND)
+
+            val lastPositions = getLastPositions(context, appWidgetId)
+            val lastHour = lastPositions.first
+            val lastMinute = lastPositions.second
+            val lastSecond = lastPositions.third
+
+
+            animateHand(lastHour, newHour, "hour", appWidgetId, context, appWidgetManager, views)
+            animateHand(lastMinute, newMinute, "minute", appWidgetId, context, appWidgetManager, views)
+            animateHand(lastSecond, newSecond, "second", appWidgetId, context, appWidgetManager, views)
+
+
+            saveLastPositions(context, appWidgetId, newHour, newMinute, newSecond)
+
 
             val clockIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_LAUNCHER)
@@ -94,19 +114,43 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
-        private fun updateClockHands(views: RemoteViews) {
-            val calendar = Calendar.getInstance()
-            val hour = calendar.get(Calendar.HOUR)
-            val minute = calendar.get(Calendar.MINUTE)
-            val second = calendar.get(Calendar.SECOND)
+        private fun animateHand(from: Int, to: Int, handType: String, appWidgetId: Int, context: Context, appWidgetManager: AppWidgetManager, views: RemoteViews) {
+            val animator = ValueAnimator.ofFloat(from.toFloat(), to.toFloat()).apply {
+                duration = 1000
+                addUpdateListener { animation ->
+                    val animatedValue = animation.animatedValue as Float
+                    updateHandPosition(handType, animatedValue, appWidgetId, context, appWidgetManager, views)
+                }
+            }
+            animator.start()
+        }
 
-            val hourRotation = (hour * 30 + minute / 2).toFloat()
-            val minuteRotation = (minute * 6 + second / 10).toFloat()
-            val secondRotation = (second * 6).toFloat()
+        private fun updateHandPosition(handType: String, position: Float, appWidgetId: Int, context: Context, appWidgetManager: AppWidgetManager, views: RemoteViews) {
+            when (handType) {
+                "hour" -> views.setFloat(R.id.analog_1_hour, "setRotation", position * 30f + (position / 60f) * 30f)
+                "minute" -> views.setFloat(R.id.analog_1_min, "setRotation", position * 6f + (position / 60f) * 6f)
+                "second" -> views.setFloat(R.id.analog_1_secs, "setRotation", position * 6f)
+            }
+            appWidgetManager.updateAppWidget(appWidgetId, views)
+        }
 
-            views.setFloat(R.id.analog_1_hour, "setRotation", hourRotation)
-            views.setFloat(R.id.analog_1_min, "setRotation", minuteRotation)
-            views.setFloat(R.id.analog_1_secs, "setRotation", secondRotation)
+        private fun getLastPositions(context: Context, appWidgetId: Int): Triple<Int, Int, Int> {
+            val prefs = context.getSharedPreferences("ClockPrefs_$appWidgetId", Context.MODE_PRIVATE)
+            return Triple(
+                prefs.getInt("lastHour", 0),
+                prefs.getInt("lastMinute", 0),
+                prefs.getInt("lastSecond", 0)
+            )
+        }
+
+        private fun saveLastPositions(context: Context, appWidgetId: Int, hour: Int, minute: Int, second: Int) {
+            val prefs = context.getSharedPreferences("ClockPrefs_$appWidgetId", Context.MODE_PRIVATE)
+            prefs.edit().apply {
+                putInt("lastHour", hour)
+                putInt("lastMinute", minute)
+                putInt("lastSecond", second)
+                apply()
+            }
         }
 
         private fun isSystemInDarkTheme(context: Context): Boolean {
