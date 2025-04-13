@@ -27,17 +27,26 @@ abstract class BaseNetworkSpeedWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         appWidgetIds.forEach { updateAppWidget(context, appWidgetManager, it, layoutResId) }
-        context.startForegroundService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
     }
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
+        val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+        val activeProviders = prefs.getStringSet("active_network_speed_providers", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        activeProviders.add(this::class.java.name)
+        prefs.edit().putStringSet("active_network_speed_providers", activeProviders).apply()
         context.startForegroundService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        context.stopService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
+        val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+        val activeProviders = prefs.getStringSet("active_network_speed_providers", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        activeProviders.remove(this::class.java.name)
+        prefs.edit().putStringSet("active_network_speed_providers", activeProviders).apply()
+        if (activeProviders.isEmpty()) {
+            context.stopService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
+        }
     }
 
     companion object {
