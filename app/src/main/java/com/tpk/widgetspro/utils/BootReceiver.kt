@@ -5,61 +5,63 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
-import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
-import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
-import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
-import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
-import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
-import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
-import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
-import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
-import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
-import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
+import com.tpk.widgetspro.services.*
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
-import com.tpk.widgetspro.services.AnalogClockUpdateService_1
-import com.tpk.widgetspro.services.AnalogClockUpdateService_2
-import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
+import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
+import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
+import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
+import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
-            updateWidgets(context, appWidgetManager, CpuWidgetProvider::class.java)
-            updateWidgets(context, appWidgetManager, BatteryWidgetProvider::class.java)
-            updateWidgets(context, appWidgetManager, CaffeineWidget::class.java)
-            updateWidgets(context, appWidgetManager, BluetoothWidgetProvider::class.java)
-            updateWidgets(context, appWidgetManager, SunTrackerWidget::class.java)
-            updateWidgets(context, appWidgetManager, NetworkSpeedWidgetProviderCircle::class.java)
-            updateWidgets(context, appWidgetManager, NetworkSpeedWidgetProviderPill::class.java)
-            updateWidgets(context, appWidgetManager, WifiDataUsageWidgetProviderCircle::class.java)
-            updateWidgets(context, appWidgetManager, WifiDataUsageWidgetProviderPill::class.java)
-            updateWidgets(context, appWidgetManager, SimDataUsageWidgetProviderCircle::class.java)
-            updateWidgets(context, appWidgetManager, SimDataUsageWidgetProviderPill::class.java)
-            updateWidgets(context, appWidgetManager, NoteWidgetProvider::class.java)
-            updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_1::class.java)
-            updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_2::class.java)
-            updateWidgets(context, appWidgetManager, GifAppWidgetProvider::class.java)
+            val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
 
-            val serviceIntent1 = Intent(context, AnalogClockUpdateService_1::class.java)
-            val serviceIntent2 = Intent(context, AnalogClockUpdateService_2::class.java)
+            val cpuWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, CpuWidgetProvider::class.java))
+            if (cpuWidgetIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, CpuMonitorService::class.java))
+            }
 
-            context.startForegroundService(serviceIntent1)
-            context.startForegroundService(serviceIntent2)
+            val batteryWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, BatteryWidgetProvider::class.java))
+            if (batteryWidgetIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, BatteryMonitorService::class.java))
+            }
 
-        }
-    }
+            val activeNetworkSpeedProviders = prefs.getStringSet("active_network_speed_providers", mutableSetOf())
+            if (!activeNetworkSpeedProviders.isNullOrEmpty()) {
+                context.startForegroundService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
+            }
 
-    private fun updateWidgets(context: Context, manager: AppWidgetManager, providerClass: Class<*>) {
-        val provider = ComponentName(context, providerClass)
-        val widgetIds = manager.getAppWidgetIds(provider)
-        if (widgetIds.isNotEmpty()) {
-            Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
-                component = provider
-                context.sendBroadcast(this)
+            val activeSimDataUsageProviders = prefs.getStringSet("active_sim_data_usage_providers", mutableSetOf())
+            if (!activeSimDataUsageProviders.isNullOrEmpty()) {
+                context.startForegroundService(Intent(context, BaseSimDataUsageWidgetService::class.java))
+            }
+
+            val activeWifiDataUsageProviders = prefs.getStringSet("active_wifi_data_usage_providers", mutableSetOf())
+            if (!activeWifiDataUsageProviders.isNullOrEmpty()) {
+                context.startForegroundService(Intent(context, BaseWifiDataUsageWidgetService::class.java))
+            }
+
+            val analogClock1WidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, AnalogClockWidgetProvider_1::class.java))
+            if (analogClock1WidgetIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, AnalogClockUpdateService_1::class.java))
+            }
+
+            val analogClock2WidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, AnalogClockWidgetProvider_2::class.java))
+            if (analogClock2WidgetIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, AnalogClockUpdateService_2::class.java))
+            }
+
+            val sunTrackerWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, SunTrackerWidget::class.java))
+            if (sunTrackerWidgetIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, SunSyncService::class.java))
+            }
+
+            val gifWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, GifWidgetProvider::class.java))
+            if (gifWidgetIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, AnimationService::class.java))
             }
         }
     }

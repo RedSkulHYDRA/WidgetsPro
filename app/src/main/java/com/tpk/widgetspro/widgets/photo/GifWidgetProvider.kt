@@ -7,7 +7,7 @@ import android.content.Intent
 import androidx.preference.PreferenceManager
 import com.tpk.widgetspro.services.AnimationService
 
-class GifAppWidgetProvider : AppWidgetProvider() {
+class GifWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,

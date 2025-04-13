@@ -12,7 +12,7 @@ import android.os.Looper
 import android.widget.RemoteViews
 import androidx.preference.PreferenceManager
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
+import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
 import pl.droidsonroids.gif.GifDrawable
 import java.io.BufferedInputStream
 
@@ -32,7 +32,7 @@ class AnimationService : BaseMonitorService() {
         if (intent == null) {
             val appWidgetManager = AppWidgetManager.getInstance(this)
             val widgetIds = appWidgetManager.getAppWidgetIds(
-                ComponentName(this, GifAppWidgetProvider::class.java)
+                ComponentName(this, GifWidgetProvider::class.java)
             )
             if (widgetIds.isNotEmpty()) {
                 activeWidgets.addAll(widgetIds.toList())

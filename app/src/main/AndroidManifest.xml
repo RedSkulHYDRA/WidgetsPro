@@ -321,7 +321,7 @@
         </receiver>
 
         <receiver
-            android:name=".widgets.photo.GifAppWidgetProvider"
+            android:name=".widgets.photo.GifWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
