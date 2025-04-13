@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -14,12 +15,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
@@ -49,6 +52,8 @@ class AddWidgetsFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        val titleTextView = view.findViewById<TextView>(R.id.title_main)
+        titleTextView.setTextColor(CommonUtils.getAccentColor(requireContext()))
         view.findViewById<Button>(R.id.button1).setOnClickListener {
             if (hasCpuPermissions())
                 requestWidgetInstallation(CpuWidgetProvider::class.java)
@@ -121,7 +126,7 @@ class AddWidgetsFragment : Fragment() {
     }
 
     private fun showPermissionDialog() {
-        val builder = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+        val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(R.string.permission_required_title)
         builder.setMessage(R.string.permission_required_message)
         builder.setPositiveButton("Open Shizuku") { _, _ ->
@@ -134,7 +139,18 @@ class AddWidgetsFragment : Fragment() {
         builder.setNegativeButton("Exit") { _, _ -> activity?.finish() }
         builder.setCancelable(false)
         builder.create()
-        builder.show()
+        val dialog = builder.create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        dialog.applyDialogTheme()
+    }
+
+    private fun AlertDialog.applyDialogTheme() {
+        val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
+        findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
+        findViewById<TextView>(android.R.id.message)?.setTextColor(textColor)
+        getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)
+        getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
     }
 
     private fun isShizukuInstalled(): Boolean = try {
@@ -163,7 +179,7 @@ class AddWidgetsFragment : Fragment() {
     }
 
     private fun showNetworkSpeedWidgetSizeSelectionDialog() {
-        val builder = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+        val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(R.string.select_widget_size)
         val sizes = arrayOf(getString(R.string.widget_size_1x1), getString(R.string.widget_size_1x2))
         builder.setItems(sizes) { _, which ->
@@ -174,11 +190,14 @@ class AddWidgetsFragment : Fragment() {
             }
             providerClass?.let { requestWidgetInstallation(it) }
         }
-        builder.show()
+        val dialog = builder.create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        dialog.applyDialogTheme()
     }
 
     private fun showWifiWidgetSizeSelectionDialog() {
-        val builder = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+        val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(R.string.select_widget_size)
         val sizes = arrayOf(getString(R.string.widget_size_1x1), getString(R.string.widget_size_1x2))
         builder.setItems(sizes) { _, which ->
@@ -189,11 +208,14 @@ class AddWidgetsFragment : Fragment() {
             }
             providerClass?.let { requestWidgetInstallation(it) }
         }
-        builder.show()
+        val dialog = builder.create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        dialog.applyDialogTheme()
     }
 
     private fun showSimWidgetSizeSelectionDialog() {
-        val builder = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+        val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(R.string.select_widget_size)
         val sizes = arrayOf(getString(R.string.widget_size_1x1), getString(R.string.widget_size_1x2))
         builder.setItems(sizes) { _, which ->
@@ -204,10 +226,13 @@ class AddWidgetsFragment : Fragment() {
             }
             providerClass?.let { requestWidgetInstallation(it) }
         }
-        builder.show()
+        val dialog = builder.create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        dialog.applyDialogTheme()
     }
     private fun showAnalogClockSizeSelectionDialog() {
-        val builder = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+        val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(R.string.select_analog_clock)
         val sizes = arrayOf(getString(R.string.analog_1_clock_widget_label), getString(R.string.analog_2_clock_widget_label))
         builder.setItems(sizes) { _, which ->
@@ -218,6 +243,9 @@ class AddWidgetsFragment : Fragment() {
             }
             providerClass?.let { requestWidgetInstallation(it) }
         }
-        builder.show()
+        val dialog = builder.create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        dialog.applyDialogTheme()
     }
 }

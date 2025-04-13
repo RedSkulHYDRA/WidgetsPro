@@ -11,6 +11,8 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.services.CpuMonitorService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
@@ -30,10 +32,13 @@ import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import android.Manifest
+import android.app.AppOpsManager
 
 class MainActivity : AppCompatActivity() {
     internal val SHIZUKU_REQUEST_CODE = 1001
     private val REQUEST_IGNORE_BATTERY_OPTIMIZATIONS = 1
+    private val REQUEST_CODE_NOTIFICATION_PERMISSION = 2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applyTheme()
@@ -43,6 +48,8 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
         navView.setupWithNavController(navController)
         checkBatteryOptimizations()
+        requestNotificationPermission()
+        requestUsageAccessPermission()
         BitmapCacheManager.clearExpiredCache(this)
     }
 
@@ -53,8 +60,8 @@ class MainActivity : AppCompatActivity() {
         setTheme(
             when {
                 isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
-                isDarkTheme -> R.style.Theme_WidgetsPro
-                isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
+                isDarkTheme && !isRedAccent -> R.style.Theme_WidgetsPro
+                !isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
                 else -> R.style.Theme_WidgetsPro
             }
         )
@@ -67,6 +74,33 @@ class MainActivity : AppCompatActivity() {
                 data = Uri.parse("package:$packageName")
             }
             startActivityForResult(intent, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_CODE_NOTIFICATION_PERMISSION
+            )
+        }
+    }
+
+    private fun requestUsageAccessPermission() {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            packageName
+        )
+
+        if (mode != AppOpsManager.MODE_ALLOWED) {
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         }
     }
 

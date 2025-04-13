@@ -35,8 +35,8 @@ object CommonUtils {
         val isRedAccent = prefs.getBoolean("red_accent", false)
         return when {
             isDarkTheme && isRedAccent -> ContextCompat.getColor(context, R.color.accent_color1)
-            isDarkTheme -> ContextCompat.getColor(context, R.color.accent_color)
-            isRedAccent -> ContextCompat.getColor(context, R.color.accent_color1)
+            isDarkTheme && !isRedAccent -> ContextCompat.getColor(context, R.color.accent_color)
+            !isDarkTheme && isRedAccent -> ContextCompat.getColor(context, R.color.accent_color1)
             else -> ContextCompat.getColor(context, R.color.accent_color)
         }
     }
