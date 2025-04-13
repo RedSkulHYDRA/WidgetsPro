@@ -1,6 +1,5 @@
 package com.tpk.widgetspro.services
 
-
 import android.content.Intent
 import android.os.IBinder
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
@@ -8,7 +7,6 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.os.Handler
 import android.os.Looper
-
 
 class AnalogClockUpdateService_1 : BaseMonitorService() {
 
@@ -26,7 +24,9 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         handler = Handler(Looper.getMainLooper())
         updateRunnable = object : Runnable {
             override fun run() {
-                updateWidgets()
+                if (shouldUpdate()) {
+                    updateWidgets()
+                }
                 handler.postDelayed(this, updateInterval)
             }
         }

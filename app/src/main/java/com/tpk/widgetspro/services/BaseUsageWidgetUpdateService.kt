@@ -51,11 +51,12 @@ abstract class BaseUsageWidgetUpdateService : BaseMonitorService() {
         scheduledFuture?.cancel(false)
         scheduledFuture = executorService.scheduleAtFixedRate({
             handler.post {
-                updateWidgets()
+                if (shouldUpdate()) {
+                    updateWidgets()
+                }
             }
         }, 0, intervalMinutes.toLong(), TimeUnit.MINUTES)
     }
 
     protected abstract fun updateWidgets()
-
 }

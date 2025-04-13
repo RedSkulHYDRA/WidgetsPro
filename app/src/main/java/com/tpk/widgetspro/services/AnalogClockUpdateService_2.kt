@@ -10,7 +10,6 @@ import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 
 class AnalogClockUpdateService_2 : BaseMonitorService() {
 
-
     private val updateInterval = 1000L
     private lateinit var handler: Handler
     private lateinit var updateRunnable: Runnable
@@ -25,7 +24,9 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
         handler = Handler(Looper.getMainLooper())
         updateRunnable = object : Runnable {
             override fun run() {
-                updateWidgets()
+                if (shouldUpdate()) {
+                    updateWidgets()
+                }
                 handler.postDelayed(this, updateInterval)
             }
         }

@@ -41,36 +41,38 @@ class CpuMonitorService : BaseMonitorService() {
     private fun initializeMonitoring() {
         repeat(MAX_DATA_POINTS) { dataPoints.add(0.0) }
         cpuMonitor = CpuMonitor(useRoot) { cpuUsage, cpuTemperature ->
-            val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
-            val isDarkTheme = prefs.getBoolean("dark_theme", false)
-            val isRedAccent = prefs.getBoolean("red_accent", false)
-            val themeResId = when {
-                isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
-                isDarkTheme -> R.style.Theme_WidgetsPro
-                isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
-                else -> R.style.Theme_WidgetsPro
-            }
-            val themedContext = ContextThemeWrapper(applicationContext, themeResId)
-
-            val typeface = CommonUtils.getTypeface(themedContext)
-            val usageBitmap = CommonUtils.createTextBitmap(themedContext, "%.0f%%".format(cpuUsage), 20f, typeface)
-            val cpuBitmap = CommonUtils.createTextBitmap(themedContext, "CPU", 20f, typeface)
-
-            dataPoints.addLast(cpuUsage)
-            if (dataPoints.size > MAX_DATA_POINTS) dataPoints.removeFirst()
-
-            val appWidgetManager = AppWidgetManager.getInstance(this)
-            val componentName = ComponentName(this, CpuWidgetProvider::class.java)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            appWidgetIds.forEach { appWidgetId ->
-                val views = RemoteViews(packageName, R.layout.cpu_widget_layout).apply {
-                    setImageViewBitmap(R.id.cpuUsageImageView, usageBitmap)
-                    setImageViewBitmap(R.id.cpuImageView, cpuBitmap)
-                    setImageViewBitmap(R.id.graphWidgetImageView, createGraphBitmap(themedContext, dataPoints, DottedGraphView::class))
-                    setTextViewText(R.id.cpuTempWidgetTextView, "%.1f°C".format(cpuTemperature))
-                    setTextViewText(R.id.cpuModelWidgetTextView, getDeviceProcessorModel())
+            if (shouldUpdate()) {
+                val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
+                val isDarkTheme = prefs.getBoolean("dark_theme", false)
+                val isRedAccent = prefs.getBoolean("red_accent", false)
+                val themeResId = when {
+                    isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
+                    isDarkTheme -> R.style.Theme_WidgetsPro
+                    isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
+                    else -> R.style.Theme_WidgetsPro
                 }
-                appWidgetManager.updateAppWidget(appWidgetId, views)
+                val themedContext = ContextThemeWrapper(applicationContext, themeResId)
+
+                val typeface = CommonUtils.getTypeface(themedContext)
+                val usageBitmap = CommonUtils.createTextBitmap(themedContext, "%.0f%%".format(cpuUsage), 20f, typeface)
+                val cpuBitmap = CommonUtils.createTextBitmap(themedContext, "CPU", 20f, typeface)
+
+                dataPoints.addLast(cpuUsage)
+                if (dataPoints.size > MAX_DATA_POINTS) dataPoints.removeFirst()
+
+                val appWidgetManager = AppWidgetManager.getInstance(this)
+                val componentName = ComponentName(this, CpuWidgetProvider::class.java)
+                val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+                appWidgetIds.forEach { appWidgetId ->
+                    val views = RemoteViews(packageName, R.layout.cpu_widget_layout).apply {
+                        setImageViewBitmap(R.id.cpuUsageImageView, usageBitmap)
+                        setImageViewBitmap(R.id.cpuImageView, cpuBitmap)
+                        setImageViewBitmap(R.id.graphWidgetImageView, createGraphBitmap(themedContext, dataPoints, DottedGraphView::class))
+                        setTextViewText(R.id.cpuTempWidgetTextView, "%.1f°C".format(cpuTemperature))
+                        setTextViewText(R.id.cpuModelWidgetTextView, getDeviceProcessorModel())
+                    }
+                    appWidgetManager.updateAppWidget(appWidgetId, views)
+                }
             }
         }
         prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
