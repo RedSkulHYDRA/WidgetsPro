@@ -29,13 +29,15 @@ class SunSyncService : BaseMonitorService() {
 
     private val updateRunnable = object : Runnable {
         override fun run() {
-            prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-            currentInterval = prefs?.getInt("sun_interval", 60)?.coerceAtLeast(1) ?: 60
-            val lastFetchDate = prefs?.getString("last_fetch_date", null)
-            val today = LocalDate.now().toString()
-            if (lastFetchDate != today) fetchSunriseSunsetData()
-            fetchWeatherData()
-            updateWidgets()
+            if (shouldUpdate()) {
+                prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+                currentInterval = prefs?.getInt("sun_interval", 60)?.coerceAtLeast(1) ?: 60
+                val lastFetchDate = prefs?.getString("last_fetch_date", null)
+                val today = LocalDate.now().toString()
+                if (lastFetchDate != today) fetchSunriseSunsetData()
+                fetchWeatherData()
+                updateWidgets()
+            }
             handler.postDelayed(this, currentInterval * 1000L)
         }
     }
@@ -112,10 +114,12 @@ class SunSyncService : BaseMonitorService() {
     }
 
     private fun updateWidgets() {
-        val appWidgetManager = AppWidgetManager.getInstance(this)
-        val componentName = ComponentName(this, SunTrackerWidget::class.java)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-        if (appWidgetIds.isEmpty()) stopSelf() else CommonUtils.updateAllWidgets(this, SunTrackerWidget::class.java)
+        if (shouldUpdate()) {
+            val appWidgetManager = AppWidgetManager.getInstance(this)
+            val componentName = ComponentName(this, SunTrackerWidget::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            if (appWidgetIds.isEmpty()) stopSelf() else CommonUtils.updateAllWidgets(this, SunTrackerWidget::class.java)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

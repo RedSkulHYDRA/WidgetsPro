@@ -207,7 +207,9 @@ class AnimationService : BaseMonitorService() {
             if (data.frames?.isNotEmpty() == true) {
                 val runnable = object : Runnable {
                     override fun run() {
-                        updateWidget(appWidgetId)
+                        if (shouldUpdate()) {
+                            updateWidget(appWidgetId)
+                        }
                         val frameDuration = data.frames!![data.currentFrame].duration.toLong()
                         handler.postDelayed(this, frameDuration)
                     }
@@ -222,7 +224,9 @@ class AnimationService : BaseMonitorService() {
             if (group.widgetIds.isNotEmpty()) {
                 val runnable = object : Runnable {
                     override fun run() {
-                        updateSyncGroup(syncGroupId)
+                        if (shouldUpdate()) {
+                            updateSyncGroup(syncGroupId)
+                        }
                         val currentFrameTimes = group.widgetIds
                             .mapNotNull { widgetData[it]?.frames?.getOrNull(widgetData[it]?.currentFrame ?: 0)?.duration }
                         val minFrameDuration = currentFrameTimes.minOrNull()?.toLong() ?: 100L

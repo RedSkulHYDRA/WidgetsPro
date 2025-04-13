@@ -23,7 +23,9 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
 
     private val updateRunnable = object : Runnable {
         override fun run() {
-            updateSpeed()
+            if (shouldUpdate()) {
+                updateSpeed()
+            }
             handler.postDelayed(this, UPDATE_INTERVAL_MS)
         }
     }
