@@ -21,7 +21,7 @@ import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import com.tpk.widgetspro.services.AnalogClockUpdateService_1
 import com.tpk.widgetspro.services.AnalogClockUpdateService_2
-import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
+import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -41,7 +41,7 @@ class BootReceiver : BroadcastReceiver() {
             updateWidgets(context, appWidgetManager, NoteWidgetProvider::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_1::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_2::class.java)
-            updateWidgets(context, appWidgetManager, GifAppWidgetProvider::class.java)
+            updateWidgets(context, appWidgetManager, GifWidgetProvider::class.java)
 
             val serviceIntent1 = Intent(context, AnalogClockUpdateService_1::class.java)
             val serviceIntent2 = Intent(context, AnalogClockUpdateService_2::class.java)

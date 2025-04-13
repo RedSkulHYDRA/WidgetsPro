@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
             putBoolean("red_accent", !isRedAccent)
             apply()
         }
-        // Update all widget providers so they reflect the theme change.
+       
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val providers = arrayOf(
             CpuWidgetProvider::class.java,

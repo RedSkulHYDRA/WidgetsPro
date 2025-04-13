@@ -30,7 +30,7 @@ class BatteryMonitorService : BaseMonitorService() {
 
     private fun initializeMonitoring() {
         batteryMonitor = BatteryMonitor(this) { percentage, health ->
-            // Determine current theme
+           
             val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
             val isDarkTheme = prefs.getBoolean("dark_theme", false)
             val isRedAccent = prefs.getBoolean("red_accent", false)

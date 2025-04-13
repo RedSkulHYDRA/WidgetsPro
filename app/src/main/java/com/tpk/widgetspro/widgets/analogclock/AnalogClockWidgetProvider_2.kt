@@ -24,7 +24,7 @@ class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
-        startService(context) // Ensure service is running
+        startService(context)
     }
 
     override fun onEnabled(context: Context) {
@@ -38,7 +38,7 @@ class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
-            startService(context) // Ensure service is running on manual update
+            startService(context)
         }
     }
 
@@ -57,18 +57,18 @@ class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
 
             views.setInt(R.id.analog_2_container, "setBackgroundResource", R.drawable.analog_2_bg)
 
-            // Determine dial based solely on system theme
+           
             val dialResource =
                 if (isSystemInDarkTheme(context)) R.drawable.analog_2_dial_dark else R.drawable.analog_2_dial_light
             views.setImageViewResource(R.id.analog_2_dial, dialResource)
 
-            // Apply theme for hands based on app preferences (including red accent)
+           
             val prefs: SharedPreferences =
                 context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
             val isDarkTheme = prefs.getBoolean(
                 "dark_theme",
                 isSystemInDarkTheme(context)
-            ) // Fallback to system theme
+            )
             val isRedAccent = prefs.getBoolean("red_accent", false)
             val themeResId = when {
                 isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
@@ -78,20 +78,20 @@ class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
             }
             val themedContext = ContextThemeWrapper(context, themeResId)
 
-            // Load PNGs for hands
+           
             views.setImageViewResource(R.id.analog_2_hour, R.drawable.analog_2_hour)
             views.setImageViewResource(R.id.analog_2_min, R.drawable.analog_2_min)
             views.setImageViewResource(R.id.analog_2_secs, R.drawable.analog_2_secs)
 
-            // Apply Monet/accent color to hands
+           
             val accentColor = ContextCompat.getColor(
                 themedContext,
                 android.R.color.holo_blue_light
-            ) // Default fallback
+            )
             val typedValue = android.util.TypedValue()
             themedContext.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
             val resolvedAccentColor =
-                typedValue.data ?: accentColor // Use Monet accent color if available
+                typedValue.data ?: accentColor
 
             views.setInt(R.id.analog_2_hour, "setColorFilter", resolvedAccentColor)
             views.setInt(R.id.analog_2_min, "setColorFilter", resolvedAccentColor)
@@ -99,7 +99,7 @@ class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
 
             updateClockHands(views)
 
-            // Intent to open the Google clock app (com.google.android.deskclock)
+           
             val clockIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_LAUNCHER)
                 setComponent(
@@ -122,14 +122,14 @@ class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
 
         private fun updateClockHands(views: RemoteViews) {
             val calendar = Calendar.getInstance()
-            val hour = calendar.get(Calendar.HOUR) // 12-hour format
+            val hour = calendar.get(Calendar.HOUR)
             val minute = calendar.get(Calendar.MINUTE)
             val second = calendar.get(Calendar.SECOND)
 
-            val hourRotation = (hour * 30 + minute / 2).toFloat() // 30° per hour + 0.5° per minute
+            val hourRotation = (hour * 30 + minute / 2).toFloat()
             val minuteRotation =
-                (minute * 6 + second / 10).toFloat() // 6° per minute + 0.1° per second
-            val secondRotation = (second * 6).toFloat() // 6° per second
+                (minute * 6 + second / 10).toFloat()
+            val secondRotation = (second * 6).toFloat()
 
             views.setFloat(R.id.analog_2_hour, "setRotation", hourRotation)
             views.setFloat(R.id.analog_2_min, "setRotation", minuteRotation)

@@ -118,6 +118,6 @@
             style="@style/CustomTextView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="@string/add_photo_widget"/>
+            android:text="@string/add_gif_widget"/>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

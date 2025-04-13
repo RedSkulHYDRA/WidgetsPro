@@ -34,7 +34,7 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
-import com.tpk.widgetspro.widgets.photo.GifAppWidgetProvider
+import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
 import rikka.shizuku.Shizuku
 
 class AddWidgetsFragment : Fragment() {
@@ -93,7 +93,7 @@ class AddWidgetsFragment : Fragment() {
             showAnalogClockSizeSelectionDialog()
         }
         view.findViewById<Button>(R.id.button12).setOnClickListener {
-            requestWidgetInstallation(GifAppWidgetProvider::class.java)
+            requestWidgetInstallation(GifWidgetProvider::class.java)
         }
     }
 

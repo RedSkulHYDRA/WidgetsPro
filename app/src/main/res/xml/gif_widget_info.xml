@@ -3,7 +3,7 @@
     android:targetCellHeight="2"
     android:targetCellWidth="2"
     android:updatePeriodMillis="0"
-    android:description="@string/photo_widget"
+    android:description="@string/gif_widget"
     android:initialLayout="@layout/gif_widget_layout"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />
