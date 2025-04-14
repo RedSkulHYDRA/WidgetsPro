@@ -5,14 +5,11 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import android.os.Build
 import android.view.ContextThemeWrapper
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.services.AnalogClockUpdateService_1
-import android.animation.ValueAnimator
 import java.util.Calendar
 
 class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
@@ -47,14 +44,10 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
     companion object {
         fun animateWidgetUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val views = RemoteViews(context.packageName, R.layout.analog_1_widget)
-
-
             views.setInt(R.id.analog_1_container, "setBackgroundResource", R.drawable.analog_1_bg)
-
             val dialResource = if (isSystemInDarkTheme(context)) R.drawable.analog_1_dial_dark else R.drawable.analog_1_dial_light
             views.setImageViewResource(R.id.analog_1_dial, dialResource)
-
-            val prefs: SharedPreferences = context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
             val isDarkTheme = prefs.getBoolean("dark_theme", isSystemInDarkTheme(context))
             val isRedAccent = prefs.getBoolean("red_accent", false)
             val themeResId = when {
@@ -64,93 +57,38 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
                 else -> R.style.Theme_WidgetsPro
             }
             val themedContext = ContextThemeWrapper(context, themeResId)
-
-
-            views.setImageViewResource(R.id.analog_1_hour, R.drawable.analog_1_hour)
-            views.setImageViewResource(R.id.analog_1_min, R.drawable.analog_1_min)
-            views.setImageViewResource(R.id.analog_1_secs, R.drawable.analog_1_secs)
-
             val accentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light)
             val typedValue = android.util.TypedValue()
             themedContext.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
             val resolvedAccentColor = typedValue.data ?: accentColor
-
+            views.setImageViewResource(R.id.analog_1_hour, R.drawable.analog_1_hour)
+            views.setImageViewResource(R.id.analog_1_min, R.drawable.analog_1_min)
+            views.setImageViewResource(R.id.analog_1_secs, R.drawable.analog_1_secs)
             views.setInt(R.id.analog_1_hour, "setColorFilter", resolvedAccentColor)
             views.setInt(R.id.analog_1_min, "setColorFilter", resolvedAccentColor)
             views.setInt(R.id.analog_1_secs, "setColorFilter", resolvedAccentColor)
-
-
             val calendar = Calendar.getInstance()
-            val newHour = calendar.get(Calendar.HOUR)
-            val newMinute = calendar.get(Calendar.MINUTE)
-            val newSecond = calendar.get(Calendar.SECOND)
-
-            val lastPositions = getLastPositions(context, appWidgetId)
-            val lastHour = lastPositions.first
-            val lastMinute = lastPositions.second
-            val lastSecond = lastPositions.third
-
-
-            animateHand(lastHour, newHour, "hour", appWidgetId, context, appWidgetManager, views)
-            animateHand(lastMinute, newMinute, "minute", appWidgetId, context, appWidgetManager, views)
-            animateHand(lastSecond, newSecond, "second", appWidgetId, context, appWidgetManager, views)
-
-
-            saveLastPositions(context, appWidgetId, newHour, newMinute, newSecond)
-
-
+            val hours = calendar.get(Calendar.HOUR)
+            val minutes = calendar.get(Calendar.MINUTE)
+            val seconds = calendar.get(Calendar.SECOND)
+            val milliseconds = calendar.get(Calendar.MILLISECOND)
+            val hourAngle = (hours % 12 * 30.0 + minutes / 2.0 + seconds / 120.0 + milliseconds / 120000.0).toFloat()
+            val minuteAngle = (minutes * 6.0 + seconds / 10.0 + milliseconds / 10000.0).toFloat()
+            val secondAngle = (seconds * 6.0 + milliseconds / 1000.0 * 6.0).toFloat()
+            views.setFloat(R.id.analog_1_hour, "setRotation", hourAngle)
+            views.setFloat(R.id.analog_1_min, "setRotation", minuteAngle)
+            views.setFloat(R.id.analog_1_secs, "setRotation", secondAngle)
             val clockIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_LAUNCHER)
                 setComponent(ComponentName("com.google.android.deskclock", "com.android.deskclock.DeskClock"))
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-
             val pendingIntent = android.app.PendingIntent.getActivity(
                 context, appWidgetId, clockIntent,
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
             views.setOnClickPendingIntent(R.id.analog_1_container, pendingIntent)
-
             appWidgetManager.updateAppWidget(appWidgetId, views)
-        }
-
-        private fun animateHand(from: Int, to: Int, handType: String, appWidgetId: Int, context: Context, appWidgetManager: AppWidgetManager, views: RemoteViews) {
-            val animator = ValueAnimator.ofFloat(from.toFloat(), to.toFloat()).apply {
-                duration = 1000
-                addUpdateListener { animation ->
-                    val animatedValue = animation.animatedValue as Float
-                    updateHandPosition(handType, animatedValue, appWidgetId, context, appWidgetManager, views)
-                }
-            }
-            animator.start()
-        }
-
-        private fun updateHandPosition(handType: String, position: Float, appWidgetId: Int, context: Context, appWidgetManager: AppWidgetManager, views: RemoteViews) {
-            when (handType) {
-                "hour" -> views.setFloat(R.id.analog_1_hour, "setRotation", position * 30f + (position / 60f) * 30f)
-                "minute" -> views.setFloat(R.id.analog_1_min, "setRotation", position * 6f + (position / 60f) * 6f)
-                "second" -> views.setFloat(R.id.analog_1_secs, "setRotation", position * 6f)
-            }
-            appWidgetManager.updateAppWidget(appWidgetId, views)
-        }
-
-        private fun getLastPositions(context: Context, appWidgetId: Int): Triple<Int, Int, Int> {
-            val prefs = context.getSharedPreferences("ClockPrefs_$appWidgetId", Context.MODE_PRIVATE)
-            return Triple(
-                prefs.getInt("lastHour", 0),
-                prefs.getInt("lastMinute", 0),
-                prefs.getInt("lastSecond", 0)
-            )
-        }
-
-        private fun saveLastPositions(context: Context, appWidgetId: Int, hour: Int, minute: Int, second: Int) {
-            val prefs = context.getSharedPreferences("ClockPrefs_$appWidgetId", Context.MODE_PRIVATE)
-            prefs.edit().apply {
-                putInt("lastHour", hour)
-                putInt("lastMinute", minute)
-                putInt("lastSecond", second)
-                apply()
-            }
         }
 
         private fun isSystemInDarkTheme(context: Context): Boolean {

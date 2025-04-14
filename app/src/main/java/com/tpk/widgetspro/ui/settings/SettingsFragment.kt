@@ -20,6 +20,7 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputLayout
@@ -59,9 +60,7 @@ class SettingsFragment : Fragment() {
     private lateinit var radioGroupResetMode: RadioGroup
     private lateinit var btnResetNow: Button
     private lateinit var tvNextReset: TextView
-
     private var pendingAppWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
-
     private val enumOptions = arrayOf(
         "black", "blue", "white", "silver", "transparent",
         "case", "fullproduct", "product", "withcase",
@@ -87,6 +86,7 @@ class SettingsFragment : Fragment() {
             }
         }
     }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -205,6 +205,16 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showWidgetSelectionDialog() {
+        val prefss = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val isDarkTheme = prefss.getBoolean("dark_theme", false)
+        val isRedAccent = prefss.getBoolean("red_accent", false)
+
+        val dialogThemeStyle = when {
+            isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
+            isDarkTheme && !isRedAccent -> R.style.CustomDialogTheme
+            !isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
+            else -> R.style.CustomDialogTheme
+        }
         val appWidgetManager = AppWidgetManager.getInstance(requireContext())
         val widgetIds = appWidgetManager.getAppWidgetIds(
             ComponentName(requireContext(), com.tpk.widgetspro.widgets.photo.GifWidgetProvider::class.java)
@@ -218,7 +228,9 @@ class SettingsFragment : Fragment() {
             val index = prefs.getInt("widget_index_$appWidgetId", 0)
             getString(R.string.gif_widget_name, index)
         }.toTypedArray()
-        AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+        var dialog: AlertDialog? = null
+
+        dialog = AlertDialog.Builder(requireContext(), dialogThemeStyle)
             .setTitle(R.string.select_gif_widget)
             .setItems(items) { _, which ->
                 pendingAppWidgetId = widgetIds[which]
@@ -237,10 +249,22 @@ class SettingsFragment : Fragment() {
                     )
                 }
             }
-            .show()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        dialog.applyDialogTheme()
     }
 
     private fun showSyncWidgetSelectionDialog() {
+        val prefss = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val isDarkTheme = prefss.getBoolean("dark_theme", false)
+        val isRedAccent = prefss.getBoolean("red_accent", false)
+
+        val dialogThemeStyle = when {
+            isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
+            isDarkTheme && !isRedAccent -> R.style.CustomDialogTheme
+            !isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
+            else -> R.style.CustomDialogTheme
+        }
         val appWidgetManager = AppWidgetManager.getInstance(requireContext())
         val widgetIds = appWidgetManager.getAppWidgetIds(
             ComponentName(requireContext(), com.tpk.widgetspro.widgets.photo.GifWidgetProvider::class.java)
@@ -259,7 +283,7 @@ class SettingsFragment : Fragment() {
 
         var dialog: AlertDialog? = null
 
-        dialog = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
+        dialog = AlertDialog.Builder(requireContext(), dialogThemeStyle)
             .setTitle(R.string.sync_widgets)
             .setMultiChoiceItems(items, checkedItems) { dialogInterface, which, isChecked ->
                 if (isChecked) {
@@ -303,8 +327,9 @@ class SettingsFragment : Fragment() {
                 ContextCompat.getColor(requireContext(), R.color.text_color)
             )
         }
-
         dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        dialog.applyDialogTheme()
     }
 
     private fun updateNextResetText(mode: String) {
@@ -352,7 +377,7 @@ class SettingsFragment : Fragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvCpuValue.text = progress.toString()
             }
-            override fun onStartTrackingTouch(seakBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("cpu_interval", seekBar?.progress ?: 60).apply()
             }
@@ -361,7 +386,7 @@ class SettingsFragment : Fragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvBatteryValue.text = progress.toString()
             }
-            override fun onStartTrackingTouch(seakBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("battery_interval", seekBar?.progress ?: 60).apply()
             }
@@ -370,7 +395,7 @@ class SettingsFragment : Fragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvWifiValue.text = progress.toString()
             }
-            override fun onStartTrackingTouch(seakBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("wifi_data_usage_interval", seekBar?.progress ?: 60).apply()
                 BaseWifiDataUsageWidgetProvider.updateAllWidgets(
@@ -387,7 +412,7 @@ class SettingsFragment : Fragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvSimValue.text = progress.toString()
             }
-            override fun onStartTrackingTouch(seakBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 prefs.edit().putInt("sim_data_usage_interval", seekBar?.progress ?: 60).apply()
                 BaseSimDataUsageWidgetProvider.updateAllWidgets(
@@ -403,8 +428,19 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showEnumSelectionDialog() {
-        val builder = AlertDialog.Builder(requireContext(), R.style.CustomDialogTheme)
-        builder.setTitle(R.string.select_option)
+        val prefs = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val isDarkTheme = prefs.getBoolean("dark_theme", false)
+        val isRedAccent = prefs.getBoolean("red_accent", false)
+
+        val dialogThemeStyle = when {
+            isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
+            isDarkTheme && !isRedAccent -> R.style.CustomDialogTheme
+            !isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
+            else -> R.style.CustomDialogTheme
+        }
+
+        val builder = AlertDialog.Builder(requireContext(), dialogThemeStyle)
+        builder.setTitle("Select options")
         builder.setMultiChoiceItems(enumOptions, null) { _, _, _ -> }
         builder.setPositiveButton("OK") { dialog, _ ->
             val checkedItems = (dialog as AlertDialog).listView.checkedItemPositions

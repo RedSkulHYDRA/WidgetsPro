@@ -42,13 +42,6 @@ class BootReceiver : BroadcastReceiver() {
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_1::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_2::class.java)
             updateWidgets(context, appWidgetManager, GifWidgetProvider::class.java)
-
-            val serviceIntent1 = Intent(context, AnalogClockUpdateService_1::class.java)
-            val serviceIntent2 = Intent(context, AnalogClockUpdateService_2::class.java)
-
-            context.startForegroundService(serviceIntent1)
-            context.startForegroundService(serviceIntent2)
-
         }
     }
 

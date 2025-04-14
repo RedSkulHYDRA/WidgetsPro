@@ -1,65 +1,53 @@
 package com.tpk.widgetspro.services
 
+import android.app.KeyguardManager
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.KeyguardManager
-import android.app.usage.UsageStatsManager
-import android.os.Handler
-import android.os.Looper
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import java.util.concurrent.TimeUnit
 
 abstract class BaseMonitorService : Service() {
     companion object {
         private const val WIDGETS_PRO_NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "widgets_pro_channel"
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
-        private const val FORCE_LAUNCHER_TIMEOUT_MS = 15000L
+        private const val EVENT_QUERY_INTERVAL_MS = 5000L
     }
 
-    private var powerManager: PowerManager? = null
-    private var keyguardManager: KeyguardManager? = null
-    private var usageStatsManager: UsageStatsManager? = null
-    private var handler: Handler? = null
+    private lateinit var powerManager: PowerManager
+    private lateinit var keyguardManager: KeyguardManager
+    private lateinit var usageStatsManager: UsageStatsManager
+    private lateinit var handler: Handler
     private var cachedLauncherPackage: String? = null
-    private var forceLauncherForeground = false
     private var lastWasLauncher = true
-
-    private val forceLauncherRunnable = Runnable {
-        forceLauncherForeground = false
-        android.util.Log.d("BaseMonitorService", "Force launcher foreground timeout")
-    }
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
-                    android.util.Log.d("BaseMonitorService", "Received ${intent.action}, checking visibility")
-                    if (shouldUpdate()) {
-                        notifyVisibilityResumed()
-                    }
+                    Log.d("BaseMonitorService", "Received ${intent.action}, checking visibility")
+                    if (shouldUpdate()) notifyVisibilityResumed()
                 }
                 Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
-                    android.util.Log.d("BaseMonitorService", "Received ACTION_CLOSE_SYSTEM_DIALOGS, forcing launcher foreground")
-                    forceLauncherForeground = true
-                    lastWasLauncher = true
-                    handler?.removeCallbacks(forceLauncherRunnable)
-                    handler?.postDelayed(forceLauncherRunnable, FORCE_LAUNCHER_TIMEOUT_MS)
-                    if (shouldUpdate()) {
-                        notifyVisibilityResumed()
-                    }
+                    Log.d("BaseMonitorService", "Received ACTION_CLOSE_SYSTEM_DIALOGS")
+                    updateCachedLauncherPackage()
+                    if (shouldUpdate()) notifyVisibilityResumed()
                 }
             }
         }
@@ -69,16 +57,29 @@ abstract class BaseMonitorService : Service() {
         super.onCreate()
         powerManager = getSystemService(POWER_SERVICE) as PowerManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-        usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
         handler = Handler(Looper.getMainLooper())
+        updateCachedLauncherPackage()
 
-        val filter = IntentFilter().apply {
+        createNotificationChannel()
+        registerReceiver(systemReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
             addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+        }, Context.RECEIVER_NOT_EXPORTED)
+        Log.d("BaseMonitorService", "Service created")
+    }
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Widgets Pro Channel",
+            NotificationManager.IMPORTANCE_MIN
+        ).apply {
+            description = "Channel for keeping Widgets Pro services running"
         }
-        registerReceiver(systemReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        android.util.Log.d("BaseMonitorService", "Service created")
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+            .createNotificationChannel(channel)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -87,13 +88,6 @@ abstract class BaseMonitorService : Service() {
     }
 
     private fun createNotification(): Notification {
-        val channelName = "Widgets Pro Channel"
-        val channel = NotificationChannel(CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_MIN).apply {
-            description = "Channel for keeping Widgets Pro services running"
-        }
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
-
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -115,11 +109,11 @@ abstract class BaseMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     protected fun shouldUpdate(): Boolean {
-        val isScreenOn = powerManager?.isInteractive ?: false
-        val isKeyguardLocked = keyguardManager?.isKeyguardLocked ?: false
+        val isScreenOn = powerManager.isInteractive
+        val isKeyguardLocked = keyguardManager.isKeyguardLocked
         val isLauncherInForeground = isLauncherForeground()
         val shouldUpdate = isScreenOn && !isKeyguardLocked && isLauncherInForeground
-        android.util.Log.d(
+        Log.d(
             "BaseMonitorService",
             "shouldUpdate: screenOn=$isScreenOn, keyguardLocked=$isKeyguardLocked, launcherForeground=$isLauncherInForeground, result=$shouldUpdate"
         )
@@ -127,53 +121,54 @@ abstract class BaseMonitorService : Service() {
     }
 
     private fun isLauncherForeground(): Boolean {
-        if (forceLauncherForeground) {
-            android.util.Log.d("BaseMonitorService", "Force launcher foreground active")
-            return true
-        }
         try {
             if (!hasUsageStatsPermission()) {
-                android.util.Log.d("BaseMonitorService", "No usage stats permission, using last known state: $lastWasLauncher")
-                return lastWasLauncher
-            }
-            val endTime = System.currentTimeMillis()
-            val startTime = endTime - TimeUnit.SECONDS.toMillis(20)
-            val usageStats = usageStatsManager?.queryUsageStats(
-                UsageStatsManager.INTERVAL_BEST,
-                startTime,
-                endTime
-            )
-
-            if (usageStats == null || usageStats.isEmpty()) {
-                android.util.Log.w("BaseMonitorService", "Usage stats empty, using last known state: $lastWasLauncher")
+                Log.d("BaseMonitorService", "No usage stats permission, using last known state: $lastWasLauncher")
                 return lastWasLauncher
             }
 
-            if (cachedLauncherPackage == null) {
-                val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
-                    addCategory(Intent.CATEGORY_HOME)
-                }
-                val resolveInfo = packageManager.resolveActivity(launcherIntent, 0)
-                cachedLauncherPackage = resolveInfo?.activityInfo?.packageName
-                android.util.Log.d("BaseMonitorService", "Cached launcher package: $cachedLauncherPackage")
+            val recentPackage = getRecentPackageName()
+            if (recentPackage == null) {
+                Log.d("BaseMonitorService", "No recent package found, using last known state: $lastWasLauncher")
+                return lastWasLauncher
             }
 
-            val recentStat = usageStats.maxByOrNull { it.lastTimeUsed }
-            val isSystemUi = recentStat?.packageName == "com.android.systemui"
-            val isLauncher = recentStat?.packageName == cachedLauncherPackage || isSystemUi
-            if (isSystemUi) {
-                android.util.Log.d("BaseMonitorService", "System UI detected, treating as launcher")
-            }
-            lastWasLauncher = isLauncher
-            android.util.Log.d(
-                "BaseMonitorService",
-                "Launcher check: recent=${recentStat?.packageName}, launcher=$cachedLauncherPackage, isSystemUi=$isSystemUi, result=$isLauncher"
-            )
-            return isLauncher
+            return checkAgainstLauncherPackage(recentPackage).also { lastWasLauncher = it }
         } catch (e: Exception) {
-            android.util.Log.e("BaseMonitorService", "Error checking launcher: $e")
+            Log.e("BaseMonitorService", "Error checking launcher: $e")
             return lastWasLauncher
         }
+    }
+
+    private fun getRecentPackageName(): String? {
+        val endTime = System.currentTimeMillis()
+        val startTime = endTime - EVENT_QUERY_INTERVAL_MS
+        val events = usageStatsManager.queryEvents(startTime, endTime)
+        var recentPackage: String? = null
+        val event = UsageEvents.Event()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                recentPackage = event.packageName
+            }
+        }
+        return recentPackage
+    }
+
+    private fun checkAgainstLauncherPackage(packageName: String): Boolean {
+        if (cachedLauncherPackage == null) updateCachedLauncherPackage()
+        val isLauncher = packageName == cachedLauncherPackage
+        Log.d(
+            "BaseMonitorService",
+            "Launcher check: recent=$packageName, launcher=$cachedLauncherPackage, result=$isLauncher"
+        )
+        return isLauncher
+    }
+
+    private fun updateCachedLauncherPackage() {
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        cachedLauncherPackage = packageManager.resolveActivity(launcherIntent, 0)?.activityInfo?.packageName
+        Log.d("BaseMonitorService", "Updated cached launcher package: $cachedLauncherPackage")
     }
 
     private fun hasUsageStatsPermission(): Boolean {
@@ -187,15 +182,13 @@ abstract class BaseMonitorService : Service() {
     }
 
     private fun notifyVisibilityResumed() {
-        android.util.Log.d("BaseMonitorService", "Notifying visibility resumed")
-        val intent = Intent(ACTION_VISIBILITY_RESUMED)
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+        Log.d("BaseMonitorService", "Notifying visibility resumed")
+        LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(ACTION_VISIBILITY_RESUMED))
     }
 
     override fun onDestroy() {
         unregisterReceiver(systemReceiver)
-        handler?.removeCallbacks(forceLauncherRunnable)
-        android.util.Log.d("BaseMonitorService", "Service destroyed")
+        Log.d("BaseMonitorService", "Service destroyed")
         super.onDestroy()
     }
 }
