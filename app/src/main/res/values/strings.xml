@@ -107,4 +107,11 @@
     <string name="suggestions_error_message">Error fetching suggestions</string>
     <string name="bluetooth_reset_message">Reset image and query for %1$s</string>
     <string name="select_option">Select Option</string>
+    <string name="usage_access_dialog_title">Usage Access Permission Required</string>
+    <string name="usage_access_dialog_body">This app requires usage access permission to help save more battery and display network usage data. Please grant the permission in settings.</string>
+    <string name="battery_optimizations_toast_success">Battery optimizations disabled</string>
+    <string name="battery_optimizations_toast_fail">Please disable battery optimizations for better performance</string>
+    <string name="shizuku_toast_fail">Shizuku permission denied</string>
+    <string name="go_to_settings">Go to Settings</string>
+    <string name="exit">Exit</string>
 </resources>

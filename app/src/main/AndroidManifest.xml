@@ -60,11 +60,21 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.WidgetsPro.Red.Light">
+
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".PermissionActivity"
+            android:exported="true"
+            android:theme="@style/Theme.WidgetsPro">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false">
+            <intent-filter>
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

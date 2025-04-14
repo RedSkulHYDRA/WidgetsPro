@@ -33,12 +33,13 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.Manifest
+import android.app.AlertDialog
 import android.app.AppOpsManager
+import android.content.DialogInterface
+import android.widget.TextView
 
 class MainActivity : AppCompatActivity() {
     internal val SHIZUKU_REQUEST_CODE = 1001
-    private val REQUEST_IGNORE_BATTERY_OPTIMIZATIONS = 1
-    private val REQUEST_CODE_NOTIFICATION_PERMISSION = 2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applyTheme()
@@ -47,9 +48,6 @@ class MainActivity : AppCompatActivity() {
         val navView: BottomNavigationView = findViewById(R.id.nav_view)
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
         navView.setupWithNavController(navController)
-        checkBatteryOptimizations()
-        requestNotificationPermission()
-        requestUsageAccessPermission()
         BitmapCacheManager.clearExpiredCache(this)
     }
 
@@ -67,59 +65,6 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun checkBatteryOptimizations() {
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:$packageName")
-            }
-            startActivityForResult(intent, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-        }
-    }
-
-    private fun requestNotificationPermission() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                REQUEST_CODE_NOTIFICATION_PERMISSION
-            )
-        }
-    }
-
-    private fun requestUsageAccessPermission() {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            android.os.Process.myUid(),
-            packageName
-        )
-
-        if (mode != AppOpsManager.MODE_ALLOWED) {
-            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_IGNORE_BATTERY_OPTIMIZATIONS) {
-            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            if (powerManager.isIgnoringBatteryOptimizations(packageName)) {
-                Toast.makeText(this, "Battery optimizations disabled", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(
-                    this,
-                    "Please disable battery optimizations for better performance",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -130,7 +75,7 @@ class MainActivity : AppCompatActivity() {
             SHIZUKU_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                     startServiceAndFinish(useRoot = false)
-                else Toast.makeText(this, "Shizuku permission denied", Toast.LENGTH_SHORT).show()
+                else Toast.makeText(this, R.string.shizuku_toast_fail, Toast.LENGTH_SHORT).show()
             }
         }
     }
