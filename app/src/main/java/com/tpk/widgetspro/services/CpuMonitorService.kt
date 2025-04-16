@@ -14,6 +14,7 @@ import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseDottedGraphView
 import com.tpk.widgetspro.utils.CommonUtils
+import com.tpk.widgetspro.utils.PermissionUtils
 import com.tpk.widgetspro.widgets.cpu.CpuMonitor
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.cpu.DottedGraphView
@@ -29,8 +30,11 @@ class CpuMonitorService : BaseMonitorService() {
     private var prefs: SharedPreferences? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        intent?.let { useRoot = it.getBooleanExtra("use_root", false) }
-        if (!useRoot && (!Shizuku.pingBinder() || Shizuku.checkSelfPermission() != android.content.pm.PackageManager.PERMISSION_GRANTED)) {
+        if (PermissionUtils.hasRootAccess()) {
+            useRoot = true
+        } else if (PermissionUtils.hasShizukuPermission()) {
+            useRoot = false
+        } else {
             stopSelf()
             return START_NOT_STICKY
         }
