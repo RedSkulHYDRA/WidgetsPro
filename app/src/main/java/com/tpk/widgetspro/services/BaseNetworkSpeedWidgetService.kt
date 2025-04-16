@@ -1,5 +1,7 @@
 package com.tpk.widgetspro.services
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
@@ -19,24 +21,37 @@ import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
 class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     private var previousBytes: Long = 0
     private val handler = Handler(Looper.getMainLooper())
-    private val UPDATE_INTERVAL_MS = 1000L
+    private lateinit var prefs: SharedPreferences
+    private val intervalKey = "network_speed_interval" // Define your SharedPreferences key
+    private var updateIntervalMs = 1000L
+
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == intervalKey) {
+            updateIntervalMs = prefs.getInt(intervalKey, 60).coerceAtLeast(1) * 1000L
+            restartMonitoring()
+        }
+    }
 
     private val updateRunnable = object : Runnable {
         override fun run() {
             if (shouldUpdate()) {
                 updateSpeed()
             }
-            handler.postDelayed(this, UPDATE_INTERVAL_MS)
+            handler.postDelayed(this, updateIntervalMs)
         }
     }
 
     override fun onCreate() {
         super.onCreate()
-        handler.post(updateRunnable)
+        prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
+        updateIntervalMs = prefs.getInt(intervalKey, 60).coerceAtLeast(1) * 1000L
+        restartMonitoring()
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(updateRunnable)
+        prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         super.onDestroy()
     }
 
@@ -45,6 +60,11 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun restartMonitoring() {
+        handler.removeCallbacks(updateRunnable)
+        handler.post(updateRunnable)
+    }
 
     private fun updateSpeed() {
         val currentBytes = TrafficStats.getTotalRxBytes()

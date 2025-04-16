@@ -48,10 +48,12 @@ class SettingsFragment : Fragment() {
     private lateinit var seekBarBattery: SeekBar
     private lateinit var seekBarWifi: SeekBar
     private lateinit var seekBarSim: SeekBar
+    private lateinit var seekBarNetworkSpeed: SeekBar
     private lateinit var tvCpuValue: TextView
     private lateinit var tvBatteryValue: TextView
     private lateinit var tvWifiValue: TextView
     private lateinit var tvSimValue: TextView
+    private lateinit var tvNetworkSpeedValue: TextView
     private lateinit var enumInputLayout: TextInputLayout
     private lateinit var chipGroup: ChipGroup
     private lateinit var locationAutoComplete: AutoCompleteTextView
@@ -101,10 +103,12 @@ class SettingsFragment : Fragment() {
         seekBarBattery = view.findViewById(R.id.seekBarBattery)
         seekBarWifi = view.findViewById(R.id.seekBarWifi)
         seekBarSim = view.findViewById(R.id.seekBarSim)
+        seekBarNetworkSpeed = view.findViewById(R.id.seekBarNetworkSpeed)
         tvCpuValue = view.findViewById(R.id.tvCpuValue)
         tvBatteryValue = view.findViewById(R.id.tvBatteryValue)
         tvWifiValue = view.findViewById(R.id.tvWifiValue)
         tvSimValue = view.findViewById(R.id.tvSimValue)
+        tvNetworkSpeedValue = view.findViewById(R.id.tvNetworkSpeedValue)
         enumInputLayout = view.findViewById(R.id.enum_input_layout)
         chipGroup = view.findViewById(R.id.chip_group)
         locationAutoComplete = view.findViewById(R.id.location_auto_complete)
@@ -118,11 +122,13 @@ class SettingsFragment : Fragment() {
         seekBarBattery.progress = prefs.getInt("battery_interval", 60)
         seekBarWifi.progress = prefs.getInt("wifi_data_usage_interval", 60)
         seekBarSim.progress = prefs.getInt("sim_data_usage_interval", 60)
+        seekBarNetworkSpeed.progress = prefs.getInt("network_speed_interval", 60)
 
         tvCpuValue.text = seekBarCpu.progress.toString()
         tvBatteryValue.text = seekBarBattery.progress.toString()
         tvWifiValue.text = seekBarWifi.progress.toString()
         tvSimValue.text = seekBarSim.progress.toString()
+        tvNetworkSpeedValue.text = seekBarNetworkSpeed.progress.toString()
 
         val resetMode = prefs.getString("data_usage_reset_mode", "daily") ?: "daily"
         when (resetMode) {
@@ -423,6 +429,15 @@ class SettingsFragment : Fragment() {
                     requireContext(),
                     SimDataUsageWidgetProviderPill::class.java
                 )
+            }
+        })
+        seekBarNetworkSpeed.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                tvNetworkSpeedValue.text = progress.toString()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                prefs.edit().putInt("network_speed_interval", seekBar?.progress ?: 60).apply()
             }
         })
     }
