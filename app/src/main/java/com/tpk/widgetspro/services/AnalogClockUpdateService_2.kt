@@ -104,7 +104,7 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
                 baseContext, appWidgetId, clockIntent,
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
-            views.setOnClickPendingIntent(R.id.analog_1_container, pendingIntent)
+            views.setOnClickPendingIntent(R.id.analog_2_container, pendingIntent)
             appWidgetManager.partiallyUpdateAppWidget(appWidgetId, views)
         }
     }
