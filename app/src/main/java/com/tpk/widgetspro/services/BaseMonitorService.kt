@@ -1,41 +1,41 @@
 package com.tpk.widgetspro.services
 
-import android.app.KeyguardManager
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.Service
+import android.app.*
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
-import android.os.PowerManager
+import android.appwidget.AppWidgetManager
+import android.content.*
+import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
+import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
+import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
+import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
+import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.*
+import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
+import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
+import android.content.res.Configuration
 
 abstract class BaseMonitorService : Service() {
     companion object {
         private const val WIDGETS_PRO_NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "widgets_pro_channel"
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
-        private const val EVENT_QUERY_INTERVAL_MS = 5000L
+        private const val EVENT_QUERY_INTERVAL_MS = 3000L
     }
 
     private lateinit var powerManager: PowerManager
     private lateinit var keyguardManager: KeyguardManager
     private lateinit var usageStatsManager: UsageStatsManager
-    private lateinit var handler: Handler
     private var cachedLauncherPackage: String? = null
     private var lastWasLauncher = true
+    private var lastUiMode: Int = -1
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -49,6 +49,10 @@ abstract class BaseMonitorService : Service() {
                     updateCachedLauncherPackage()
                     if (shouldUpdate()) notifyVisibilityResumed()
                 }
+                Intent.ACTION_CONFIGURATION_CHANGED -> {
+                    Log.d("BaseMonitorService", "Received ACTION_CONFIGURATION_CHANGED")
+                    checkThemeChange()
+                }
             }
         }
     }
@@ -58,14 +62,15 @@ abstract class BaseMonitorService : Service() {
         powerManager = getSystemService(POWER_SERVICE) as PowerManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
-        handler = Handler(Looper.getMainLooper())
         updateCachedLauncherPackage()
+        lastUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 
         createNotificationChannel()
         registerReceiver(systemReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
             addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+            addAction(Intent.ACTION_CONFIGURATION_CHANGED)
         }, Context.RECEIVER_NOT_EXPORTED)
         Log.d("BaseMonitorService", "Service created")
     }
@@ -106,8 +111,6 @@ abstract class BaseMonitorService : Service() {
             .build()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
     protected fun shouldUpdate(): Boolean {
         val isScreenOn = powerManager.isInteractive
         val isKeyguardLocked = keyguardManager.isKeyguardLocked
@@ -128,12 +131,20 @@ abstract class BaseMonitorService : Service() {
             }
 
             val recentPackage = getRecentPackageName()
-            if (recentPackage == null) {
-                Log.d("BaseMonitorService", "No recent package found, using last known state: $lastWasLauncher")
-                return lastWasLauncher
+            if (recentPackage != null) {
+                return checkAgainstLauncherPackage(recentPackage).also { lastWasLauncher = it }
             }
 
-            return checkAgainstLauncherPackage(recentPackage).also { lastWasLauncher = it }
+            val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val runningProcesses = am.runningAppProcesses
+            runningProcesses?.forEach { process ->
+                if (process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                    return checkAgainstLauncherPackage(process.pkgList?.get(0) ?: "").also { lastWasLauncher = it }
+                }
+            }
+
+            Log.d("BaseMonitorService", "No recent package found, using last known state: $lastWasLauncher")
+            return lastWasLauncher
         } catch (e: Exception) {
             Log.e("BaseMonitorService", "Error checking launcher: $e")
             return lastWasLauncher
@@ -185,6 +196,49 @@ abstract class BaseMonitorService : Service() {
         Log.d("BaseMonitorService", "Notifying visibility resumed")
         LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(ACTION_VISIBILITY_RESUMED))
     }
+
+    private fun checkThemeChange() {
+        val currentUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        if (lastUiMode != -1 && currentUiMode != lastUiMode) {
+            Log.d("BaseMonitorService", "Theme changed, updating widgets")
+            updateAllWidgets()
+        }
+        lastUiMode = currentUiMode
+    }
+
+    private fun updateAllWidgets() {
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val providers = arrayOf(
+            CpuWidgetProvider::class.java,
+            BatteryWidgetProvider::class.java,
+            BluetoothWidgetProvider::class.java,
+            CaffeineWidget::class.java,
+            SunTrackerWidget::class.java,
+            NetworkSpeedWidgetProviderCircle::class.java,
+            NetworkSpeedWidgetProviderPill::class.java,
+            WifiDataUsageWidgetProviderCircle::class.java,
+            WifiDataUsageWidgetProviderPill::class.java,
+            SimDataUsageWidgetProviderCircle::class.java,
+            SimDataUsageWidgetProviderPill::class.java,
+            NoteWidgetProvider::class.java,
+            AnalogClockWidgetProvider_1::class.java,
+            AnalogClockWidgetProvider_2::class.java
+        )
+
+        providers.forEach { provider ->
+            val componentName = ComponentName(this, provider)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            if (appWidgetIds.isNotEmpty()) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+                    component = componentName
+                }
+                sendBroadcast(intent)
+            }
+        }
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         unregisterReceiver(systemReceiver)

@@ -9,6 +9,7 @@ import com.tpk.widgetspro.services.AnalogClockUpdateService_2
 class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
         startService(context)
     }
 
