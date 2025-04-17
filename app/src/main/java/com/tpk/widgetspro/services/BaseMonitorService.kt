@@ -12,15 +12,32 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.ComponentName
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
+import android.appwidget.AppWidgetManager
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
+import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
+import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
+import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
+import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
+import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
+import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
+import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
+import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
+import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
+import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
+import android.content.res.Configuration
 
 abstract class BaseMonitorService : Service() {
     companion object {
@@ -36,18 +53,25 @@ abstract class BaseMonitorService : Service() {
     private lateinit var handler: Handler
     private var cachedLauncherPackage: String? = null
     private var lastWasLauncher = true
+    private var lastUiMode: Int = -1
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
-                    Log.d("BaseMonitorService", "Received ${intent.action}, checking visibility")
-                    if (shouldUpdate()) notifyVisibilityResumed()
+                    Log.d("BaseMonitor", "Screen ON/Unlocked - Forcing visibility check")
+                    handler.postDelayed({
+                        if (shouldUpdate()) notifyVisibilityResumed()
+                    }, 1000)
                 }
                 Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
                     Log.d("BaseMonitorService", "Received ACTION_CLOSE_SYSTEM_DIALOGS")
                     updateCachedLauncherPackage()
                     if (shouldUpdate()) notifyVisibilityResumed()
+                }
+                Intent.ACTION_CONFIGURATION_CHANGED -> {
+                    Log.d("BaseMonitorService", "Received ACTION_CONFIGURATION_CHANGED")
+                    checkThemeChange()
                 }
             }
         }
@@ -60,12 +84,14 @@ abstract class BaseMonitorService : Service() {
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
         handler = Handler(Looper.getMainLooper())
         updateCachedLauncherPackage()
+        lastUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 
         createNotificationChannel()
         registerReceiver(systemReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
             addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+            addAction(Intent.ACTION_CONFIGURATION_CHANGED)
         }, Context.RECEIVER_NOT_EXPORTED)
         Log.d("BaseMonitorService", "Service created")
     }
@@ -109,15 +135,18 @@ abstract class BaseMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     protected fun shouldUpdate(): Boolean {
-        val isScreenOn = powerManager.isInteractive
-        val isKeyguardLocked = keyguardManager.isKeyguardLocked
-        val isLauncherInForeground = isLauncherForeground()
-        val shouldUpdate = isScreenOn && !isKeyguardLocked && isLauncherInForeground
-        Log.d(
-            "BaseMonitorService",
-            "shouldUpdate: screenOn=$isScreenOn, keyguardLocked=$isKeyguardLocked, launcherForeground=$isLauncherInForeground, result=$shouldUpdate"
-        )
-        return shouldUpdate
+        return try {
+            val isScreenOn = powerManager.isInteractive
+            val isKeyguardLocked = keyguardManager.isKeyguardLocked
+            val isLauncherInForeground = isLauncherForeground()
+
+            val shouldUpdate = isScreenOn && !isKeyguardLocked && isLauncherInForeground
+            Log.d("BaseMonitor", "Update check: $shouldUpdate (Screen: $isScreenOn, Keyguard: $isKeyguardLocked, Launcher: $isLauncherInForeground)")
+            shouldUpdate
+        } catch (e: Exception) {
+            Log.e("BaseMonitor", "Update check failed", e)
+            false
+        }
     }
 
     private fun isLauncherForeground(): Boolean {
@@ -186,9 +215,56 @@ abstract class BaseMonitorService : Service() {
         LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(ACTION_VISIBILITY_RESUMED))
     }
 
+    private fun checkThemeChange() {
+        val currentUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        if (lastUiMode != -1 && currentUiMode != lastUiMode) {
+            Log.d("BaseMonitorService", "Theme changed, updating widgets. Old mode: $lastUiMode, New mode: $currentUiMode")
+            updateAllWidgets()
+        }
+        lastUiMode = currentUiMode
+    }
+
+    private fun updateAllWidgets() {
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val providers = arrayOf(
+            CpuWidgetProvider::class.java,
+            BatteryWidgetProvider::class.java,
+            BluetoothWidgetProvider::class.java,
+            CaffeineWidget::class.java,
+            SunTrackerWidget::class.java,
+            NetworkSpeedWidgetProviderCircle::class.java,
+            NetworkSpeedWidgetProviderPill::class.java,
+            WifiDataUsageWidgetProviderCircle::class.java,
+            WifiDataUsageWidgetProviderPill::class.java,
+            SimDataUsageWidgetProviderCircle::class.java,
+            SimDataUsageWidgetProviderPill::class.java,
+            NoteWidgetProvider::class.java,
+            AnalogClockWidgetProvider_1::class.java,
+            AnalogClockWidgetProvider_2::class.java
+        )
+
+        providers.forEach { provider ->
+            val componentName = ComponentName(this, provider)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            if (appWidgetIds.isNotEmpty()) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+                    component = componentName
+                }
+                sendBroadcast(intent)
+                Log.d("BaseMonitorService", "Sent update broadcast for ${provider.simpleName}")
+            }
+        }
+    }
+
     override fun onDestroy() {
-        unregisterReceiver(systemReceiver)
-        Log.d("BaseMonitorService", "Service destroyed")
         super.onDestroy()
+        try {
+            unregisterReceiver(systemReceiver)
+            handler.removeCallbacksAndMessages(null)
+        } catch (e: Exception) {
+            Log.e("BaseMonitor", "Cleanup error", e)
+        }
+        Log.d("BaseMonitorService", "Service destroyed")
     }
 }
