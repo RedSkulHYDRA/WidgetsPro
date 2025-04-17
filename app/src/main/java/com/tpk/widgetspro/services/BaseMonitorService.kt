@@ -1,42 +1,25 @@
 package com.tpk.widgetspro.services
 
-import android.app.KeyguardManager
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.Service
+import android.app.*
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.ComponentName
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
-import android.os.PowerManager
-import android.util.Log
 import android.appwidget.AppWidgetManager
+import android.content.*
+import android.os.*
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
-import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
-import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
-import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
-import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
-import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
+import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
-import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
-import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import android.content.res.Configuration
 
 abstract class BaseMonitorService : Service() {
@@ -44,13 +27,12 @@ abstract class BaseMonitorService : Service() {
         private const val WIDGETS_PRO_NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "widgets_pro_channel"
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
-        private const val EVENT_QUERY_INTERVAL_MS = 5000L
+        private const val EVENT_QUERY_INTERVAL_MS = 3000L
     }
 
     private lateinit var powerManager: PowerManager
     private lateinit var keyguardManager: KeyguardManager
     private lateinit var usageStatsManager: UsageStatsManager
-    private lateinit var handler: Handler
     private var cachedLauncherPackage: String? = null
     private var lastWasLauncher = true
     private var lastUiMode: Int = -1
@@ -59,10 +41,8 @@ abstract class BaseMonitorService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
-                    Log.d("BaseMonitor", "Screen ON/Unlocked - Forcing visibility check")
-                    handler.postDelayed({
-                        if (shouldUpdate()) notifyVisibilityResumed()
-                    }, 1000)
+                    Log.d("BaseMonitorService", "Received ${intent.action}, checking visibility")
+                    if (shouldUpdate()) notifyVisibilityResumed()
                 }
                 Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
                     Log.d("BaseMonitorService", "Received ACTION_CLOSE_SYSTEM_DIALOGS")
@@ -82,7 +62,6 @@ abstract class BaseMonitorService : Service() {
         powerManager = getSystemService(POWER_SERVICE) as PowerManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
-        handler = Handler(Looper.getMainLooper())
         updateCachedLauncherPackage()
         lastUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 
@@ -132,21 +111,16 @@ abstract class BaseMonitorService : Service() {
             .build()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
     protected fun shouldUpdate(): Boolean {
-        return try {
-            val isScreenOn = powerManager.isInteractive
-            val isKeyguardLocked = keyguardManager.isKeyguardLocked
-            val isLauncherInForeground = isLauncherForeground()
-
-            val shouldUpdate = isScreenOn && !isKeyguardLocked && isLauncherInForeground
-            Log.d("BaseMonitor", "Update check: $shouldUpdate (Screen: $isScreenOn, Keyguard: $isKeyguardLocked, Launcher: $isLauncherInForeground)")
-            shouldUpdate
-        } catch (e: Exception) {
-            Log.e("BaseMonitor", "Update check failed", e)
-            false
-        }
+        val isScreenOn = powerManager.isInteractive
+        val isKeyguardLocked = keyguardManager.isKeyguardLocked
+        val isLauncherInForeground = isLauncherForeground()
+        val shouldUpdate = isScreenOn && !isKeyguardLocked && isLauncherInForeground
+        Log.d(
+            "BaseMonitorService",
+            "shouldUpdate: screenOn=$isScreenOn, keyguardLocked=$isKeyguardLocked, launcherForeground=$isLauncherInForeground, result=$shouldUpdate"
+        )
+        return shouldUpdate
     }
 
     private fun isLauncherForeground(): Boolean {
@@ -157,12 +131,20 @@ abstract class BaseMonitorService : Service() {
             }
 
             val recentPackage = getRecentPackageName()
-            if (recentPackage == null) {
-                Log.d("BaseMonitorService", "No recent package found, using last known state: $lastWasLauncher")
-                return lastWasLauncher
+            if (recentPackage != null) {
+                return checkAgainstLauncherPackage(recentPackage).also { lastWasLauncher = it }
             }
 
-            return checkAgainstLauncherPackage(recentPackage).also { lastWasLauncher = it }
+            val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val runningProcesses = am.runningAppProcesses
+            runningProcesses?.forEach { process ->
+                if (process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                    return checkAgainstLauncherPackage(process.pkgList?.get(0) ?: "").also { lastWasLauncher = it }
+                }
+            }
+
+            Log.d("BaseMonitorService", "No recent package found, using last known state: $lastWasLauncher")
+            return lastWasLauncher
         } catch (e: Exception) {
             Log.e("BaseMonitorService", "Error checking launcher: $e")
             return lastWasLauncher
@@ -218,7 +200,7 @@ abstract class BaseMonitorService : Service() {
     private fun checkThemeChange() {
         val currentUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         if (lastUiMode != -1 && currentUiMode != lastUiMode) {
-            Log.d("BaseMonitorService", "Theme changed, updating widgets. Old mode: $lastUiMode, New mode: $currentUiMode")
+            Log.d("BaseMonitorService", "Theme changed, updating widgets")
             updateAllWidgets()
         }
         lastUiMode = currentUiMode
@@ -252,19 +234,15 @@ abstract class BaseMonitorService : Service() {
                     component = componentName
                 }
                 sendBroadcast(intent)
-                Log.d("BaseMonitorService", "Sent update broadcast for ${provider.simpleName}")
             }
         }
     }
 
+    override fun onBind(intent: Intent?): IBinder? = null
+
     override fun onDestroy() {
-        super.onDestroy()
-        try {
-            unregisterReceiver(systemReceiver)
-            handler.removeCallbacksAndMessages(null)
-        } catch (e: Exception) {
-            Log.e("BaseMonitor", "Cleanup error", e)
-        }
+        unregisterReceiver(systemReceiver)
         Log.d("BaseMonitorService", "Service destroyed")
+        super.onDestroy()
     }
 }
