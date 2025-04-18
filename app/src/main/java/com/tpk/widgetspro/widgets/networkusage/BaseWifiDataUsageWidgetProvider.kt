@@ -10,7 +10,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.provider.Settings
-import android.util.Log
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.services.BaseWifiDataUsageWidgetService
@@ -91,7 +90,6 @@ abstract class BaseWifiDataUsageWidgetProvider : AppWidgetProvider() {
 
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
-                Log.e("DataUsageWidget", "Error getting WiFi data usage", e)
                 setPermissionPrompt(context, appWidgetManager, appWidgetId, layoutResId)
             }
         }

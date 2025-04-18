@@ -3,7 +3,6 @@ package com.tpk.widgetspro.services
 import android.appwidget.AppWidgetManager
 import android.content.*
 import android.os.*
-import android.util.Log
 import android.view.ContextThemeWrapper
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
@@ -34,7 +33,6 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     private val visibilityResumedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_VISIBILITY_RESUMED) {
-                Log.d("AnalogClockUpdate", "Visibility resumed broadcast received")
                 wasUpdating = false
             }
         }
@@ -59,7 +57,6 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
                         catchUpDelta = now - lastUpdateTime
                         catchUpStartTime = now
                         isCatchingUp = true
-                        Log.d("AnalogClockUpdate", "Starting catch-up with delta: $catchUpDelta ms")
                     }
                     updateHandPositions()
                     wasUpdating = true

@@ -6,7 +6,6 @@ import android.app.usage.UsageStatsManager
 import android.appwidget.AppWidgetManager
 import android.content.*
 import android.os.*
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.MainActivity
@@ -20,7 +19,6 @@ import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
-import android.content.res.Configuration
 
 abstract class BaseMonitorService : Service() {
     companion object {
@@ -28,6 +26,7 @@ abstract class BaseMonitorService : Service() {
         private const val CHANNEL_ID = "widgets_pro_channel"
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
         private const val EVENT_QUERY_INTERVAL_MS = 3000L
+        private const val ACTION_WALLPAPER_CHANGED_STRING = "android.intent.action.WALLPAPER_CHANGED"
     }
 
     private lateinit var powerManager: PowerManager
@@ -35,23 +34,22 @@ abstract class BaseMonitorService : Service() {
     private lateinit var usageStatsManager: UsageStatsManager
     private var cachedLauncherPackage: String? = null
     private var lastWasLauncher = true
-    private var lastUiMode: Int = -1
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
-                    Log.d("BaseMonitorService", "Received ${intent.action}, checking visibility")
                     if (shouldUpdate()) notifyVisibilityResumed()
                 }
                 Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
-                    Log.d("BaseMonitorService", "Received ACTION_CLOSE_SYSTEM_DIALOGS")
                     updateCachedLauncherPackage()
                     if (shouldUpdate()) notifyVisibilityResumed()
                 }
                 Intent.ACTION_CONFIGURATION_CHANGED -> {
-                    Log.d("BaseMonitorService", "Received ACTION_CONFIGURATION_CHANGED")
-                    checkThemeChange()
+                    updateAllWidgets()
+                }
+                ACTION_WALLPAPER_CHANGED_STRING -> {
+                    updateAllWidgets()
                 }
             }
         }
@@ -63,16 +61,16 @@ abstract class BaseMonitorService : Service() {
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
         updateCachedLauncherPackage()
-        lastUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 
         createNotificationChannel()
+
         registerReceiver(systemReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
             addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
             addAction(Intent.ACTION_CONFIGURATION_CHANGED)
+            addAction(ACTION_WALLPAPER_CHANGED_STRING)
         }, Context.RECEIVER_NOT_EXPORTED)
-        Log.d("BaseMonitorService", "Service created")
     }
 
     private fun createNotificationChannel() {
@@ -116,17 +114,12 @@ abstract class BaseMonitorService : Service() {
         val isKeyguardLocked = keyguardManager.isKeyguardLocked
         val isLauncherInForeground = isLauncherForeground()
         val shouldUpdate = isScreenOn && !isKeyguardLocked && isLauncherInForeground
-        Log.d(
-            "BaseMonitorService",
-            "shouldUpdate: screenOn=$isScreenOn, keyguardLocked=$isKeyguardLocked, launcherForeground=$isLauncherInForeground, result=$shouldUpdate"
-        )
         return shouldUpdate
     }
 
     private fun isLauncherForeground(): Boolean {
         try {
             if (!hasUsageStatsPermission()) {
-                Log.d("BaseMonitorService", "No usage stats permission, using last known state: $lastWasLauncher")
                 return lastWasLauncher
             }
 
@@ -143,10 +136,8 @@ abstract class BaseMonitorService : Service() {
                 }
             }
 
-            Log.d("BaseMonitorService", "No recent package found, using last known state: $lastWasLauncher")
             return lastWasLauncher
         } catch (e: Exception) {
-            Log.e("BaseMonitorService", "Error checking launcher: $e")
             return lastWasLauncher
         }
     }
@@ -169,17 +160,12 @@ abstract class BaseMonitorService : Service() {
     private fun checkAgainstLauncherPackage(packageName: String): Boolean {
         if (cachedLauncherPackage == null) updateCachedLauncherPackage()
         val isLauncher = packageName == cachedLauncherPackage
-        Log.d(
-            "BaseMonitorService",
-            "Launcher check: recent=$packageName, launcher=$cachedLauncherPackage, result=$isLauncher"
-        )
         return isLauncher
     }
 
     private fun updateCachedLauncherPackage() {
         val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         cachedLauncherPackage = packageManager.resolveActivity(launcherIntent, 0)?.activityInfo?.packageName
-        Log.d("BaseMonitorService", "Updated cached launcher package: $cachedLauncherPackage")
     }
 
     private fun hasUsageStatsPermission(): Boolean {
@@ -193,17 +179,7 @@ abstract class BaseMonitorService : Service() {
     }
 
     private fun notifyVisibilityResumed() {
-        Log.d("BaseMonitorService", "Notifying visibility resumed")
         LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(ACTION_VISIBILITY_RESUMED))
-    }
-
-    private fun checkThemeChange() {
-        val currentUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        if (lastUiMode != -1 && currentUiMode != lastUiMode) {
-            Log.d("BaseMonitorService", "Theme changed, updating widgets")
-            updateAllWidgets()
-        }
-        lastUiMode = currentUiMode
     }
 
     private fun updateAllWidgets() {
@@ -242,7 +218,6 @@ abstract class BaseMonitorService : Service() {
 
     override fun onDestroy() {
         unregisterReceiver(systemReceiver)
-        Log.d("BaseMonitorService", "Service destroyed")
         super.onDestroy()
     }
 }
