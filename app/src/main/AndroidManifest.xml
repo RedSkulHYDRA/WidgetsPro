@@ -218,6 +218,15 @@
         </receiver>
 
         <receiver
+            android:name=".utils.UpdateReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".widgets.networkusage.WifiDataUsageWidgetProviderCircle"
             android:exported="false">
             <intent-filter>

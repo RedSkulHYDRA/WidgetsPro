@@ -85,7 +85,7 @@ dependencies {
     implementation(libs.jna)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.picasso)
-    implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.28")
+    implementation(libs.androidx.preference.ktx)
+    implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.29")
     implementation("androidx.media:media:1.7.0")
 }
