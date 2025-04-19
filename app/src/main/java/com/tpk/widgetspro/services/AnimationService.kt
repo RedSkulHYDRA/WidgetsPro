@@ -481,7 +481,7 @@ class AnimationService : BaseMonitorService() {
                 }
             }
         } catch (e: Exception) {
-            // Handle errors
+
         } finally {
             try { retriever.release() } catch (e: Exception) {}
         }

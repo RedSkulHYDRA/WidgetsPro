@@ -19,13 +19,16 @@ import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
+import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class BaseMonitorService : Service() {
     companion object {
-        private const val WIDGETS_PRO_NOTIFICATION_ID = 100
+        const val WIDGETS_PRO_NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "widgets_pro_channel"
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
-        private const val EVENT_QUERY_INTERVAL_MS = 3000L
+        private const val NORMAL_QUERY_INTERVAL = 5000L
+        private const val IDLE_QUERY_INTERVAL = 15000L
+        private const val MIN_UPDATE_INTERVAL = 30000L
         private const val ACTION_WALLPAPER_CHANGED_STRING = "android.intent.action.WALLPAPER_CHANGED"
     }
 
@@ -33,95 +36,111 @@ abstract class BaseMonitorService : Service() {
     private lateinit var keyguardManager: KeyguardManager
     private lateinit var usageStatsManager: UsageStatsManager
     private var cachedLauncherPackage: String? = null
-    private var lastWasLauncher = true
+    private val isMonitoring = AtomicBoolean(false)
+    private var lastUpdateTime = 0L
+    private val handler = Handler(Looper.getMainLooper())
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
-                    if (shouldUpdate()) notifyVisibilityResumed()
-                }
-                Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
-                    updateCachedLauncherPackage()
-                    if (shouldUpdate()) notifyVisibilityResumed()
-                }
-                Intent.ACTION_CONFIGURATION_CHANGED -> {
-                    updateAllWidgets()
-                }
-                ACTION_WALLPAPER_CHANGED_STRING -> {
-                    updateAllWidgets()
-                }
+                Intent.ACTION_SCREEN_OFF -> stopMonitoring()
+                Intent.ACTION_SCREEN_ON -> startDelayedMonitoring()
+                Intent.ACTION_USER_PRESENT -> handleUserPresent()
+                Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> handleSystemDialogClose()
+                Intent.ACTION_CONFIGURATION_CHANGED -> updateAllWidgets()
+                ACTION_WALLPAPER_CHANGED_STRING -> updateAllWidgets()
             }
         }
     }
 
     override fun onCreate() {
         super.onCreate()
+        initServices()
+        setupReceivers()
+        createNotificationChannel()
+    }
+
+    private fun initServices() {
         powerManager = getSystemService(POWER_SERVICE) as PowerManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
         updateCachedLauncherPackage()
+    }
 
-        createNotificationChannel()
-
-        registerReceiver(systemReceiver, IntentFilter().apply {
+    private fun setupReceivers() {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
             addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
             addAction(Intent.ACTION_CONFIGURATION_CHANGED)
             addAction(ACTION_WALLPAPER_CHANGED_STRING)
-        }, Context.RECEIVER_NOT_EXPORTED)
-    }
-
-    private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Widgets Pro Channel",
-            NotificationManager.IMPORTANCE_MIN
-        ).apply {
-            description = "Channel for keeping Widgets Pro services running"
         }
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
-            .createNotificationChannel(channel)
+        registerReceiver(systemReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(WIDGETS_PRO_NOTIFICATION_ID, createNotification())
-        return START_STICKY
-    }
-
-    private fun createNotification(): Notification {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    private fun handleUserPresent() {
+        if (shouldUpdate()) {
+            notifyVisibilityResumed()
+            startImmediateMonitoring()
         }
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    }
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.widgets_pro_running))
-            .setContentText(getString(R.string.widgets_pro_active_text))
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .build()
+    private fun handleSystemDialogClose() {
+        updateCachedLauncherPackage()
+        if (shouldUpdate()) {
+            notifyVisibilityResumed()
+            startDelayedMonitoring()
+        }
+    }
+
+    private fun startImmediateMonitoring() {
+        if (isMonitoring.compareAndSet(false, true)) {
+            handler.post(monitoringRunnable)
+        }
+    }
+
+    private fun startDelayedMonitoring() {
+        if (isMonitoring.compareAndSet(false, true)) {
+            handler.postDelayed(monitoringRunnable, 1000)
+        }
+    }
+
+    private fun stopMonitoring() {
+        isMonitoring.set(false)
+        handler.removeCallbacks(monitoringRunnable)
+    }
+
+    private val monitoringRunnable = object : Runnable {
+        override fun run() {
+            if (!isMonitoring.get()) return
+
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastUpdateTime > MIN_UPDATE_INTERVAL) {
+                if (shouldUpdate()) {
+                    notifyVisibilityResumed()
+                    lastUpdateTime = currentTime
+                }
+            }
+
+            val interval = when {
+                powerManager.isInteractive -> NORMAL_QUERY_INTERVAL
+                else -> IDLE_QUERY_INTERVAL
+            }
+
+            handler.postDelayed(this, interval)
+        }
     }
 
     protected fun shouldUpdate(): Boolean {
-        val isScreenOn = powerManager.isInteractive
-        val isKeyguardLocked = keyguardManager.isKeyguardLocked
-        val isLauncherInForeground = isLauncherForeground()
-        val shouldUpdate = isScreenOn && !isKeyguardLocked && isLauncherInForeground
-        return shouldUpdate
+        return powerManager.isInteractive &&
+                !keyguardManager.isKeyguardLocked &&
+                isLauncherForeground()
     }
 
     private fun isLauncherForeground(): Boolean {
         try {
-            if (!hasUsageStatsPermission()) {
-                return lastWasLauncher
-            }
+            if (!hasUsageStatsPermission()) return lastWasLauncher
 
             val recentPackage = getRecentPackageName()
             if (recentPackage != null) {
@@ -129,11 +148,12 @@ abstract class BaseMonitorService : Service() {
             }
 
             val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            val runningProcesses = am.runningAppProcesses
-            runningProcesses?.forEach { process ->
-                if (process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                    return checkAgainstLauncherPackage(process.pkgList?.get(0) ?: "").also { lastWasLauncher = it }
-                }
+            val runningProcesses = am.runningAppProcesses ?: return lastWasLauncher
+
+            runningProcesses.firstOrNull {
+                it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+            }?.pkgList?.firstOrNull()?.let {
+                return checkAgainstLauncherPackage(it).also { lastWasLauncher = it }
             }
 
             return lastWasLauncher
@@ -142,9 +162,11 @@ abstract class BaseMonitorService : Service() {
         }
     }
 
+    private var lastWasLauncher = true
+
     private fun getRecentPackageName(): String? {
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - EVENT_QUERY_INTERVAL_MS
+        val startTime = endTime - NORMAL_QUERY_INTERVAL
         val events = usageStatsManager.queryEvents(startTime, endTime)
         var recentPackage: String? = null
         val event = UsageEvents.Event()
@@ -159,23 +181,23 @@ abstract class BaseMonitorService : Service() {
 
     private fun checkAgainstLauncherPackage(packageName: String): Boolean {
         if (cachedLauncherPackage == null) updateCachedLauncherPackage()
-        val isLauncher = packageName == cachedLauncherPackage
-        return isLauncher
+        return packageName == cachedLauncherPackage
     }
 
     private fun updateCachedLauncherPackage() {
-        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        cachedLauncherPackage = packageManager.resolveActivity(launcherIntent, 0)?.activityInfo?.packageName
+        cachedLauncherPackage = packageManager.resolveActivity(
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+            0
+        )?.activityInfo?.packageName
     }
 
     private fun hasUsageStatsPermission(): Boolean {
         val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
-        val mode = appOpsManager.checkOpNoThrow(
+        return appOpsManager.checkOpNoThrow(
             android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
             android.os.Process.myUid(),
             packageName
-        )
-        return mode == android.app.AppOpsManager.MODE_ALLOWED
+        ) == android.app.AppOpsManager.MODE_ALLOWED
     }
 
     private fun notifyVisibilityResumed() {
@@ -185,11 +207,12 @@ abstract class BaseMonitorService : Service() {
     private fun updateAllWidgets() {
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val providers = arrayOf(
-            CpuWidgetProvider::class.java,
+            AnalogClockWidgetProvider_1::class.java,
+            AnalogClockWidgetProvider_2::class.java,
             BatteryWidgetProvider::class.java,
             BluetoothWidgetProvider::class.java,
             CaffeineWidget::class.java,
-            SunTrackerWidget::class.java,
+            CpuWidgetProvider::class.java,
             NetworkSpeedWidgetProviderCircle::class.java,
             NetworkSpeedWidgetProviderPill::class.java,
             WifiDataUsageWidgetProviderCircle::class.java,
@@ -197,26 +220,56 @@ abstract class BaseMonitorService : Service() {
             SimDataUsageWidgetProviderCircle::class.java,
             SimDataUsageWidgetProviderPill::class.java,
             NoteWidgetProvider::class.java,
-            AnalogClockWidgetProvider_1::class.java,
-            AnalogClockWidgetProvider_2::class.java
+            SunTrackerWidget::class.java
         )
 
         providers.forEach { provider ->
             val componentName = ComponentName(this, provider)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
             if (appWidgetIds.isNotEmpty()) {
-                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+                sendBroadcast(Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
                     component = componentName
-                }
-                sendBroadcast(intent)
+                })
             }
         }
+    }
+
+    private fun createNotificationChannel() {
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_ID,
+                "Widgets Pro Channel",
+                NotificationManager.IMPORTANCE_MIN
+            ).apply { description = "Channel for Widgets Pro services" }
+        )
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        startForeground(WIDGETS_PRO_NOTIFICATION_ID, createNotification())
+        return START_STICKY
+    }
+
+    fun createNotification(): Notification {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.widgets_pro_running))
+            .setContentText(getString(R.string.widgets_pro_active_text))
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentIntent(PendingIntent.getActivity(
+                this, 0, Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ))
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .build()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        stopMonitoring()
         unregisterReceiver(systemReceiver)
         super.onDestroy()
     }

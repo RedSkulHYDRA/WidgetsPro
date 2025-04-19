@@ -8,11 +8,14 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.TypedValue
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,6 +26,7 @@ import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputLayout
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
@@ -32,6 +36,8 @@ import com.tpk.widgetspro.services.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.ImageLoader
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
+import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.BaseSimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
@@ -89,7 +95,6 @@ class SettingsFragment : Fragment() {
         }
     }
 
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -129,6 +134,26 @@ class SettingsFragment : Fragment() {
         tvWifiValue.text = seekBarWifi.progress.toString()
         tvSimValue.text = seekBarSim.progress.toString()
         tvNetworkSpeedValue.text = seekBarNetworkSpeed.progress.toString()
+
+
+        val switchSmooth = view.findViewById<MaterialSwitch>(R.id.switchSmoothClock)
+        val tvSmoothDesc = view.findViewById<TextView>(R.id.tvSmoothDesc)
+
+        val themePrefs = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        switchSmooth.isChecked = themePrefs.getBoolean("smooth_clock", false)
+
+
+        val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
+        switchSmooth.thumbTintList = ColorStateList.valueOf(textColor)
+        switchSmooth.trackTintList = ColorStateList.valueOf(textColor).withAlpha(0x80)
+
+        switchSmooth.setOnCheckedChangeListener { _, isChecked ->
+            themePrefs.edit().putBoolean("smooth_clock", isChecked).apply()
+            if (isChecked) {
+                Toast.makeText(requireContext(), R.string.smooth_clock_toast, Toast.LENGTH_SHORT).show()
+            }
+            updateClockWidgets()
+        }
 
         val resetMode = prefs.getString("data_usage_reset_mode", "daily") ?: "daily"
         when (resetMode) {
@@ -208,6 +233,24 @@ class SettingsFragment : Fragment() {
         view.findViewById<Button>(R.id.sync_gif_widgets_button).setOnClickListener {
             showSyncWidgetSelectionDialog()
         }
+    }
+
+    private fun isSystemInDarkTheme(context: Context): Boolean {
+        return (context.resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+    }
+
+    private fun updateClockWidgets() {
+        val appWidgetManager = AppWidgetManager.getInstance(requireContext())
+        val provider1 = ComponentName(requireContext(), AnalogClockWidgetProvider_1::class.java)
+        val provider2 = ComponentName(requireContext(), AnalogClockWidgetProvider_2::class.java)
+        appWidgetManager.notifyAppWidgetViewDataChanged(
+            appWidgetManager.getAppWidgetIds(provider1), R.id.analog_1_container
+        )
+        appWidgetManager.notifyAppWidgetViewDataChanged(
+            appWidgetManager.getAppWidgetIds(provider2), R.id.analog_2_container
+        )
     }
 
     private fun showWidgetSelectionDialog() {
