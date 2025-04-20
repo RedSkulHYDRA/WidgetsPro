@@ -22,7 +22,7 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     private var previousBytes: Long = 0
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var prefs: SharedPreferences
-    private val intervalKey = "network_speed_interval" // Define your SharedPreferences key
+    private val intervalKey = "network_speed_interval"
     private var updateIntervalMs = 1000L
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -56,6 +56,14 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Check for active widgets and stop if none are present
+        val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
+        val circleWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, NetworkSpeedWidgetProviderCircle::class.java))
+        val pillWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, NetworkSpeedWidgetProviderPill::class.java))
+        if (circleWidgetIds.isEmpty() && pillWidgetIds.isEmpty()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -67,15 +75,18 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     }
 
     private fun updateSpeed() {
-        val currentBytes = TrafficStats.getTotalRxBytes()
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
-
         val circleWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, NetworkSpeedWidgetProviderCircle::class.java))
-        updateWidgets(appWidgetManager, circleWidgetIds, R.layout.network_speed_widget_circle, currentBytes)
-
         val pillWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, NetworkSpeedWidgetProviderPill::class.java))
-        updateWidgets(appWidgetManager, pillWidgetIds, R.layout.network_speed_widget_pill, currentBytes)
+        // Stop service if no widgets are present
+        if (circleWidgetIds.isEmpty() && pillWidgetIds.isEmpty()) {
+            stopSelf()
+            return
+        }
 
+        val currentBytes = TrafficStats.getTotalRxBytes()
+        updateWidgets(appWidgetManager, circleWidgetIds, R.layout.network_speed_widget_circle, currentBytes)
+        updateWidgets(appWidgetManager, pillWidgetIds, R.layout.network_speed_widget_pill, currentBytes)
         previousBytes = currentBytes
     }
 
