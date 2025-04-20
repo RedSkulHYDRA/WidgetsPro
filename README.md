@@ -3,4 +3,4 @@ Took drawable resources from various apps
 
 For support and discussion please use - https://t.me/widgets_pro/1
 
-Currently the app support Android 15 and above. Will soon lower the android requirements.
+Currently the app support Android 14 and above. Will soon lower the android requirements.
