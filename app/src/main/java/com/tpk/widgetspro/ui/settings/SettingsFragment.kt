@@ -89,7 +89,6 @@ class SettingsFragment : Fragment() {
         }
     }
 
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -240,7 +239,7 @@ class SettingsFragment : Fragment() {
             .setTitle(R.string.select_gif_widget)
             .setItems(items) { _, which ->
                 pendingAppWidgetId = widgetIds[which]
-                selectFileLauncher.launch(arrayOf("image/gif", "video/*"))
+                selectFileLauncher.launch(arrayOf("image/gif"))
             }
             .setNegativeButton("Cancel", null)
             .create()

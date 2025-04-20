@@ -4,7 +4,6 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
 import android.os.IBinder
@@ -27,8 +26,6 @@ class AnimationService : BaseMonitorService() {
     companion object {
         private const val SYNC_TICK_INTERVAL_MS = 50L
         private const val MIN_FRAME_DURATION_MS = 20L
-        private const val DEFAULT_VIDEO_FPS = 15
-        private const val VIDEO_FPS_PREF_KEY = "video_fps_"
     }
 
     data class Frame(val bitmap: Bitmap, val duration: Int)
@@ -111,12 +108,10 @@ class AnimationService : BaseMonitorService() {
 
         stopAnimation(appWidgetId)
 
-        val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
-        val targetFps = prefs.getInt(VIDEO_FPS_PREF_KEY + appWidgetId, DEFAULT_VIDEO_FPS)
-        val frameIntervalMs = (1000 / targetFps).coerceIn(33, 1000)
-        val frames = getFrames(Uri.parse(uriString), frameIntervalMs)
+        val frames = getFrames(Uri.parse(uriString))
 
         if (frames.isNotEmpty()) {
+            val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
             val syncGroupId = prefs.getString("sync_group_$appWidgetId", null)
             val newData = WidgetAnimationData(
                 frames = frames,
@@ -174,12 +169,10 @@ class AnimationService : BaseMonitorService() {
 
         existingData?.frames?.forEach { it.bitmap.recycle() }
 
-        val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
-        val targetFps = prefs.getInt(VIDEO_FPS_PREF_KEY + appWidgetId, DEFAULT_VIDEO_FPS)
-        val frameIntervalMs = (1000 / targetFps).coerceIn(33, 1000)
-        val newFrames = getFrames(Uri.parse(uriString), frameIntervalMs)
+        val newFrames = getFrames(Uri.parse(uriString))
 
         if (newFrames.isNotEmpty()) {
+            val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
             val newSyncGroupId = prefs.getString("sync_group_$appWidgetId", null)
             val updatedData = existingData ?: WidgetAnimationData()
             updatedData.frames = newFrames
@@ -244,13 +237,11 @@ class AnimationService : BaseMonitorService() {
         checkServiceStopCondition()
     }
 
-
     private fun startAnimation(appWidgetId: Int) {
         stopAnimation(appWidgetId)
 
         widgetData[appWidgetId]?.let { data ->
             if (data.frames?.isNotEmpty() == true && data.syncGroupId == null) {
-
                 val runnable = object : Runnable {
                     override fun run() {
                         val currentData = widgetData[appWidgetId]
@@ -324,7 +315,7 @@ class AnimationService : BaseMonitorService() {
                 }
                 group.runnable = runnable
                 handler.post(runnable)
-            } else if (group.widgetIds.isEmpty()) {
+            } else {
                 stopSyncAnimation(syncGroupId)
                 syncGroups.remove(syncGroupId)
             }
@@ -336,7 +327,6 @@ class AnimationService : BaseMonitorService() {
             handler.removeCallbacks(it)
         }
     }
-
 
     private fun updateSyncGroupWidgets(syncGroupId: String, deltaMs: Long) {
         syncGroups[syncGroupId]?.let { group ->
@@ -423,18 +413,10 @@ class AnimationService : BaseMonitorService() {
         }
     }
 
-
-    private fun getFrames(uri: Uri, videoFrameIntervalMs: Int): List<Frame> {
+    private fun getFrames(uri: Uri): List<Frame> {
         val mimeType = contentResolver.getType(uri) ?: return emptyList()
-        return try {
-            when {
-                mimeType == "image/gif" -> decodeGif(uri)
-                mimeType.startsWith("video/") -> decodeVideo(uri, videoFrameIntervalMs)
-                else -> emptyList()
-            }
-        } catch (e: Exception) {
-            emptyList()
-        }
+        if (mimeType != "image/gif") return emptyList()
+        return decodeGif(uri)
     }
 
     private fun decodeGif(uri: Uri): List<Frame> {
@@ -460,34 +442,6 @@ class AnimationService : BaseMonitorService() {
             emptyList()
         }
     }
-
-    private fun decodeVideo(uri: Uri, frameIntervalMs: Int): List<Frame> {
-        val retriever = MediaMetadataRetriever()
-        val frames = mutableListOf<Frame>()
-        val safeIntervalMs = frameIntervalMs.coerceAtLeast(MIN_FRAME_DURATION_MS.toInt())
-        try {
-            contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
-                retriever.setDataSource(pfd.fileDescriptor)
-                val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                val durationMs = durationStr?.toLongOrNull() ?: 0L
-
-                if (durationMs > 0) {
-                    val step = safeIntervalMs.toLong()
-                    for (timeMicros in 0 until (durationMs * 1000) step (step * 1000)) {
-                        retriever.getFrameAtTime(timeMicros, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)?.let { bitmap ->
-                            frames.add(Frame(bitmap.copy(Bitmap.Config.ARGB_8888, false), safeIntervalMs))
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            // Handle errors
-        } finally {
-            try { retriever.release() } catch (e: Exception) {}
-        }
-        return frames
-    }
-
 
     override fun onBind(intent: Intent?): IBinder? = null
 
