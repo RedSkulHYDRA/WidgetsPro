@@ -102,6 +102,13 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Check for active widgets and stop if none are present
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, AnalogClockWidgetProvider_1::class.java))
+        if (widgetIds.isEmpty()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (!isRunning) startMonitoring()
         return super.onStartCommand(intent, flags, startId)
     }
@@ -117,6 +124,12 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val componentName = ComponentName(this, AnalogClockWidgetProvider_1::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        // Stop service if no widgets are present
+        if (appWidgetIds.isEmpty()) {
+            stopSelf()
+            return
+        }
+
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = System.currentTimeMillis()
 

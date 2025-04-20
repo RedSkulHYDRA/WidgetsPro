@@ -30,6 +30,14 @@ class CpuMonitorService : BaseMonitorService() {
     private var prefs: SharedPreferences? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Check for active widgets and stop if none are present
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
+        if (widgetIds.isEmpty()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         if (PermissionUtils.hasRootAccess()) {
             useRoot = true
         } else if (PermissionUtils.hasShizukuPermission()) {
@@ -46,6 +54,14 @@ class CpuMonitorService : BaseMonitorService() {
         repeat(MAX_DATA_POINTS) { dataPoints.add(0.0) }
         cpuMonitor = CpuMonitor(useRoot) { cpuUsage, cpuTemperature ->
             if (shouldUpdate()) {
+                val appWidgetManager = AppWidgetManager.getInstance(this)
+                val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
+                // Stop service if no widgets are present
+                if (widgetIds.isEmpty()) {
+                    stopSelf()
+                    return@CpuMonitor
+                }
+
                 val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
                 val isDarkTheme = prefs.getBoolean("dark_theme", false)
                 val isRedAccent = prefs.getBoolean("red_accent", false)
@@ -64,10 +80,7 @@ class CpuMonitorService : BaseMonitorService() {
                 dataPoints.addLast(cpuUsage)
                 if (dataPoints.size > MAX_DATA_POINTS) dataPoints.removeFirst()
 
-                val appWidgetManager = AppWidgetManager.getInstance(this)
-                val componentName = ComponentName(this, CpuWidgetProvider::class.java)
-                val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-                appWidgetIds.forEach { appWidgetId ->
+                widgetIds.forEach { appWidgetId ->
                     val views = RemoteViews(packageName, R.layout.cpu_widget_layout).apply {
                         setImageViewBitmap(R.id.cpuUsageImageView, usageBitmap)
                         setImageViewBitmap(R.id.cpuImageView, cpuBitmap)

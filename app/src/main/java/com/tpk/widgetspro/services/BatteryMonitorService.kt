@@ -24,6 +24,13 @@ class BatteryMonitorService : BaseMonitorService() {
     private var prefs: SharedPreferences? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Check for active widgets and stop if none are present
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, BatteryWidgetProvider::class.java))
+        if (widgetIds.isEmpty()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (!::batteryMonitor.isInitialized) initializeMonitoring()
         return super.onStartCommand(intent, flags, startId)
     }
@@ -31,6 +38,14 @@ class BatteryMonitorService : BaseMonitorService() {
     private fun initializeMonitoring() {
         batteryMonitor = BatteryMonitor(this) { percentage, health ->
             if (shouldUpdate()) {
+                val appWidgetManager = AppWidgetManager.getInstance(this)
+                val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, BatteryWidgetProvider::class.java))
+                // Stop service if no widgets are present
+                if (widgetIds.isEmpty()) {
+                    stopSelf()
+                    return@BatteryMonitor
+                }
+
                 val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
                 val isDarkTheme = prefs.getBoolean("dark_theme", false)
                 val isRedAccent = prefs.getBoolean("red_accent", false)
@@ -47,10 +62,7 @@ class BatteryMonitorService : BaseMonitorService() {
                 val batteryBitmap = CommonUtils.createTextBitmap(themedContext, "BAT", 20f, typeface)
                 val graphBitmap = createGraphBitmap(themedContext, percentage, BatteryDottedView::class)
 
-                val appWidgetManager = AppWidgetManager.getInstance(this)
-                val componentName = ComponentName(this, BatteryWidgetProvider::class.java)
-                val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-                appWidgetIds.forEach { appWidgetId ->
+                widgetIds.forEach { appWidgetId ->
                     val views = RemoteViews(packageName, R.layout.battery_widget_layout).apply {
                         setImageViewBitmap(R.id.batteryImageView, batteryBitmap)
                         setImageViewBitmap(R.id.batteryPercentageImageView, percentageBitmap)
