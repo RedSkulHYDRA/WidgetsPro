@@ -19,14 +19,16 @@ import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
+import java.util.concurrent.TimeUnit
 
 abstract class BaseMonitorService : Service() {
     companion object {
         private const val WIDGETS_PRO_NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "widgets_pro_channel"
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
-        private const val EVENT_QUERY_INTERVAL_MS = 3000L
+        private val EVENT_QUERY_INTERVAL_MS = TimeUnit.SECONDS.toMillis(3)
         private const val ACTION_WALLPAPER_CHANGED_STRING = "android.intent.action.WALLPAPER_CHANGED"
+        private val CHECK_INTERVAL_INACTIVE_MS = TimeUnit.MINUTES.toMillis(5)
     }
 
     private lateinit var powerManager: PowerManager
@@ -34,22 +36,46 @@ abstract class BaseMonitorService : Service() {
     private lateinit var usageStatsManager: UsageStatsManager
     private var cachedLauncherPackage: String? = null
     private var lastWasLauncher = true
+    private var isInActiveState = false
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val updateChecker = object : Runnable {
+        override fun run() {
+            if (!shouldUpdate()) {
+                updateAllWidgets()
+                handler.postDelayed(this, CHECK_INTERVAL_INACTIVE_MS)
+            }
+        }
+    }
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
-                    if (shouldUpdate()) notifyVisibilityResumed()
+                    if (shouldUpdate()) {
+                        notifyVisibilityResumed()
+                        cancelInactiveUpdates()
+                    }
                 }
                 Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
                     updateCachedLauncherPackage()
-                    if (shouldUpdate()) notifyVisibilityResumed()
+                    if (shouldUpdate()) {
+                        notifyVisibilityResumed()
+                        cancelInactiveUpdates()
+                    }
                 }
-                Intent.ACTION_CONFIGURATION_CHANGED -> {
-                    updateAllWidgets()
-                }
-                ACTION_WALLPAPER_CHANGED_STRING -> {
-                    updateAllWidgets()
+                Intent.ACTION_CONFIGURATION_CHANGED -> updateAllWidgets()
+                ACTION_WALLPAPER_CHANGED_STRING -> updateAllWidgets()
+            }
+
+            val currentActiveState = shouldUpdate()
+            if (currentActiveState != isInActiveState) {
+                isInActiveState = currentActiveState
+                if (!currentActiveState) {
+                    handler.removeCallbacks(updateChecker)
+                    handler.post(updateChecker)
+                } else {
+                    cancelInactiveUpdates()
                 }
             }
         }
@@ -61,6 +87,7 @@ abstract class BaseMonitorService : Service() {
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
         updateCachedLauncherPackage()
+        isInActiveState = shouldUpdate()
 
         createNotificationChannel()
 
@@ -71,6 +98,14 @@ abstract class BaseMonitorService : Service() {
             addAction(Intent.ACTION_CONFIGURATION_CHANGED)
             addAction(ACTION_WALLPAPER_CHANGED_STRING)
         }, Context.RECEIVER_NOT_EXPORTED)
+
+        if (!isInActiveState) {
+            handler.post(updateChecker)
+        }
+    }
+
+    private fun cancelInactiveUpdates() {
+        handler.removeCallbacks(updateChecker)
     }
 
     private fun createNotificationChannel() {
@@ -113,24 +148,18 @@ abstract class BaseMonitorService : Service() {
         val isScreenOn = powerManager.isInteractive
         val isKeyguardLocked = keyguardManager.isKeyguardLocked
         val isLauncherInForeground = isLauncherForeground()
-        val shouldUpdate = isScreenOn && !isKeyguardLocked && isLauncherInForeground
-        return shouldUpdate
+        return isScreenOn && !isKeyguardLocked && isLauncherInForeground
     }
 
     private fun isLauncherForeground(): Boolean {
         try {
-            if (!hasUsageStatsPermission()) {
-                return lastWasLauncher
+            if (!hasUsageStatsPermission()) return lastWasLauncher
+
+            getRecentPackageName()?.let {
+                return checkAgainstLauncherPackage(it).also { lastWasLauncher = it }
             }
 
-            val recentPackage = getRecentPackageName()
-            if (recentPackage != null) {
-                return checkAgainstLauncherPackage(recentPackage).also { lastWasLauncher = it }
-            }
-
-            val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            val runningProcesses = am.runningAppProcesses
-            runningProcesses?.forEach { process ->
+            (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).runningAppProcesses?.forEach { process ->
                 if (process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
                     return checkAgainstLauncherPackage(process.pkgList?.get(0) ?: "").also { lastWasLauncher = it }
                 }
@@ -159,8 +188,7 @@ abstract class BaseMonitorService : Service() {
 
     private fun checkAgainstLauncherPackage(packageName: String): Boolean {
         if (cachedLauncherPackage == null) updateCachedLauncherPackage()
-        val isLauncher = packageName == cachedLauncherPackage
-        return isLauncher
+        return packageName == cachedLauncherPackage
     }
 
     private fun updateCachedLauncherPackage() {
@@ -205,11 +233,10 @@ abstract class BaseMonitorService : Service() {
             val componentName = ComponentName(this, provider)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
             if (appWidgetIds.isNotEmpty()) {
-                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+                sendBroadcast(Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
                     component = componentName
-                }
-                sendBroadcast(intent)
+                })
             }
         }
     }
@@ -217,6 +244,7 @@ abstract class BaseMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        cancelInactiveUpdates()
         unregisterReceiver(systemReceiver)
         super.onDestroy()
     }
