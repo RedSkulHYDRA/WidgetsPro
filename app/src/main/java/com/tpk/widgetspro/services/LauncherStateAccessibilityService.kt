@@ -24,6 +24,7 @@ class LauncherStateAccessibilityService : AccessibilityService() {
         }
         this.serviceInfo = info
 
+        // Get default launcher package
         val intent = Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_HOME)
         }
@@ -31,20 +32,32 @@ class LauncherStateAccessibilityService : AccessibilityService() {
             intent,
             PackageManager.MATCH_DEFAULT_ONLY
         )?.activityInfo?.packageName
+
+        // Perform initial state check
+        checkCurrentWindowState()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event?.let {
             if (it.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-                val currentPackage = it.packageName?.toString()
-                val isLauncherActive = currentPackage == defaultLauncherPackage
-                LocalBroadcastManager.getInstance(this).sendBroadcast(
-                    Intent(ACTION_LAUNCHER_STATE_CHANGED).apply {
-                        putExtra(EXTRA_IS_ACTIVE, isLauncherActive)
-                    }
-                )
+                checkCurrentWindowState()
             }
         }
+    }
+
+    private fun checkCurrentWindowState() {
+        val rootNode = rootInActiveWindow ?: return
+        val currentPackage = rootNode.packageName?.toString()
+        val isLauncherActive = currentPackage == defaultLauncherPackage
+        sendLauncherStateUpdate(isLauncherActive)
+    }
+
+    private fun sendLauncherStateUpdate(isActive: Boolean) {
+        LocalBroadcastManager.getInstance(this).sendBroadcast(
+            Intent(ACTION_LAUNCHER_STATE_CHANGED).apply {
+                putExtra(EXTRA_IS_ACTIVE, isActive)
+            }
+        )
     }
 
     override fun onInterrupt() {}

@@ -36,6 +36,7 @@ abstract class BaseMonitorService : Service() {
     private var isInActiveState = false
     private var isLauncherActive = false
     private var isAccessibilityEnabled = false
+    private var launcherStateReceived = false
 
     private val handler = Handler(Looper.getMainLooper())
     private val updateChecker = object : Runnable {
@@ -77,6 +78,7 @@ abstract class BaseMonitorService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_LAUNCHER_STATE_CHANGED) {
                 isLauncherActive = intent.getBooleanExtra(EXTRA_IS_ACTIVE, false)
+                launcherStateReceived = true
             }
         }
     }
@@ -167,7 +169,7 @@ abstract class BaseMonitorService : Service() {
         val baseCondition = isScreenOn && !isKeyguardLocked
 
         return if (isAccessibilityEnabled) {
-            baseCondition && isLauncherActive
+            baseCondition && (isLauncherActive || !launcherStateReceived)
         } else {
             baseCondition
         }
