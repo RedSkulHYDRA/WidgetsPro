@@ -1,8 +1,6 @@
 package com.tpk.widgetspro.services
 
 import android.app.*
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.appwidget.AppWidgetManager
 import android.content.*
 import android.os.*
@@ -26,16 +24,12 @@ abstract class BaseMonitorService : Service() {
         private const val WIDGETS_PRO_NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "widgets_pro_channel"
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
-        private val EVENT_QUERY_INTERVAL_MS = TimeUnit.SECONDS.toMillis(3)
         private const val ACTION_WALLPAPER_CHANGED_STRING = "android.intent.action.WALLPAPER_CHANGED"
         private val CHECK_INTERVAL_INACTIVE_MS = TimeUnit.MINUTES.toMillis(10)
     }
 
     private lateinit var powerManager: PowerManager
     private lateinit var keyguardManager: KeyguardManager
-    private lateinit var usageStatsManager: UsageStatsManager
-    private var cachedLauncherPackage: String? = null
-    private var lastWasLauncher = true
     private var isInActiveState = false
 
     private val handler = Handler(Looper.getMainLooper())
@@ -52,13 +46,6 @@ abstract class BaseMonitorService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
-                    if (shouldUpdate()) {
-                        notifyVisibilityResumed()
-                        cancelInactiveUpdates()
-                    }
-                }
-                Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
-                    updateCachedLauncherPackage()
                     if (shouldUpdate()) {
                         notifyVisibilityResumed()
                         cancelInactiveUpdates()
@@ -85,8 +72,6 @@ abstract class BaseMonitorService : Service() {
         super.onCreate()
         powerManager = getSystemService(POWER_SERVICE) as PowerManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-        usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
-        updateCachedLauncherPackage()
         isInActiveState = shouldUpdate()
 
         createNotificationChannel()
@@ -94,7 +79,6 @@ abstract class BaseMonitorService : Service() {
         registerReceiver(systemReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
-            addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
             addAction(Intent.ACTION_CONFIGURATION_CHANGED)
             addAction(ACTION_WALLPAPER_CHANGED_STRING)
         }, Context.RECEIVER_NOT_EXPORTED)
@@ -147,63 +131,7 @@ abstract class BaseMonitorService : Service() {
     protected fun shouldUpdate(): Boolean {
         val isScreenOn = powerManager.isInteractive
         val isKeyguardLocked = keyguardManager.isKeyguardLocked
-        val isLauncherInForeground = isLauncherForeground()
-        return isScreenOn && !isKeyguardLocked && isLauncherInForeground
-    }
-
-    private fun isLauncherForeground(): Boolean {
-        try {
-            if (!hasUsageStatsPermission()) return lastWasLauncher
-
-            getRecentPackageName()?.let {
-                return checkAgainstLauncherPackage(it).also { lastWasLauncher = it }
-            }
-
-            (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).runningAppProcesses?.forEach { process ->
-                if (process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                    return checkAgainstLauncherPackage(process.pkgList?.get(0) ?: "").also { lastWasLauncher = it }
-                }
-            }
-
-            return lastWasLauncher
-        } catch (e: Exception) {
-            return lastWasLauncher
-        }
-    }
-
-    private fun getRecentPackageName(): String? {
-        val endTime = System.currentTimeMillis()
-        val startTime = endTime - EVENT_QUERY_INTERVAL_MS
-        val events = usageStatsManager.queryEvents(startTime, endTime)
-        var recentPackage: String? = null
-        val event = UsageEvents.Event()
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event)
-            if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
-                recentPackage = event.packageName
-            }
-        }
-        return recentPackage
-    }
-
-    private fun checkAgainstLauncherPackage(packageName: String): Boolean {
-        if (cachedLauncherPackage == null) updateCachedLauncherPackage()
-        return packageName == cachedLauncherPackage
-    }
-
-    private fun updateCachedLauncherPackage() {
-        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        cachedLauncherPackage = packageManager.resolveActivity(launcherIntent, 0)?.activityInfo?.packageName
-    }
-
-    private fun hasUsageStatsPermission(): Boolean {
-        val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
-        val mode = appOpsManager.checkOpNoThrow(
-            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
-            android.os.Process.myUid(),
-            packageName
-        )
-        return mode == android.app.AppOpsManager.MODE_ALLOWED
+        return isScreenOn && !isKeyguardLocked
     }
 
     private fun notifyVisibilityResumed() {
