@@ -28,7 +28,7 @@ abstract class BaseMonitorService : Service() {
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
         private val EVENT_QUERY_INTERVAL_MS = TimeUnit.SECONDS.toMillis(3)
         private const val ACTION_WALLPAPER_CHANGED_STRING = "android.intent.action.WALLPAPER_CHANGED"
-        private val CHECK_INTERVAL_INACTIVE_MS = TimeUnit.MINUTES.toMillis(5)
+        private val CHECK_INTERVAL_INACTIVE_MS = TimeUnit.MINUTES.toMillis(10)
     }
 
     private lateinit var powerManager: PowerManager
