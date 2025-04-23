@@ -10,13 +10,15 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class AnalogClockUpdateService_2 : BaseMonitorService() {
 
     private lateinit var handler: Handler
     private lateinit var updateRunnable: Runnable
     private var isRunning = false
-    private val updateInterval = 1000L // 1 second for 1 FPS
+    private val normalUpdateInterval = TimeUnit.SECONDS.toMillis(1)
+    private val idleUpdateInterval = TimeUnit.MINUTES.toMillis(10)
     private var cachedThemeResId: Int = R.style.Theme_WidgetsPro
     private var cachedAccentColor: Int = 0
     private var lastRedAccent: Boolean = false
@@ -30,7 +32,17 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     private val visibilityResumedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_VISIBILITY_RESUMED) {
-                // No action needed as catch-up logic is removed
+                handler.removeCallbacks(updateRunnable)
+                handler.post(updateRunnable)
+            }
+        }
+    }
+
+    private val userPresentReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_USER_PRESENT) {
+                handler.removeCallbacks(updateRunnable)
+                handler.post(updateRunnable)
             }
         }
     }
@@ -48,18 +60,22 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
         handler = Handler(Looper.getMainLooper())
         updateThemeCache()
 
+        // Register all receivers
         LocalBroadcastManager.getInstance(this).registerReceiver(
             visibilityResumedReceiver,
             IntentFilter(ACTION_VISIBILITY_RESUMED)
         )
         registerReceiver(configChangeReceiver, IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED))
+        registerReceiver(userPresentReceiver, IntentFilter(Intent.ACTION_USER_PRESENT))
 
         updateRunnable = object : Runnable {
             override fun run() {
-                if (shouldUpdate()) {
+                val shouldUpdateNow = shouldUpdate()
+                if (shouldUpdateNow) {
                     updateHandPositions()
                 }
-                handler.postDelayed(this, updateInterval)
+                val nextDelay = if (shouldUpdateNow) normalUpdateInterval else idleUpdateInterval
+                handler.postDelayed(this, nextDelay)
             }
         }
         startMonitoring()
@@ -102,7 +118,6 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Check for active widgets and stop if none are present
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, AnalogClockWidgetProvider_2::class.java))
         if (widgetIds.isEmpty()) {
@@ -114,7 +129,6 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     }
 
     private fun updateHandPositions() {
-        // Check for red accent change
         val prefs = getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
         val currentRedAccent = prefs.getBoolean("red_accent", false)
         if (currentRedAccent != lastRedAccent) {
@@ -124,7 +138,7 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val componentName = ComponentName(this, AnalogClockWidgetProvider_2::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-        // Stop service if no widgets are present
+
         if (appWidgetIds.isEmpty()) {
             stopSelf()
             return
@@ -172,6 +186,7 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     override fun onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(visibilityResumedReceiver)
         unregisterReceiver(configChangeReceiver)
+        unregisterReceiver(userPresentReceiver)
         stopMonitoring()
         super.onDestroy()
     }

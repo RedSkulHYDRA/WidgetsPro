@@ -1,11 +1,14 @@
 package com.tpk.widgetspro.services
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -19,10 +22,21 @@ abstract class BaseUsageWidgetUpdateService : BaseMonitorService() {
     protected abstract val intervalKey: String
     protected abstract val widgetProviderClass: Class<*>
 
+    private val idleIntervalMs = TimeUnit.MINUTES.toMillis(10)
+    private var userIntervalMs = TimeUnit.MINUTES.toMillis(1)
+
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == intervalKey) {
-            val newInterval = prefs.getInt(intervalKey, 60).coerceAtLeast(1)
-            startMonitoring(newInterval)
+            updateIntervals()
+            restartMonitoring()
+        }
+    }
+
+    private val visibilityResumedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == ACTION_VISIBILITY_RESUMED) {
+                restartMonitoring()
+            }
         }
     }
 
@@ -30,32 +44,39 @@ abstract class BaseUsageWidgetUpdateService : BaseMonitorService() {
         super.onCreate()
         prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
-        val interval = prefs.getInt(intervalKey, 60).coerceAtLeast(1)
-        startMonitoring(interval)
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            visibilityResumedReceiver,
+            IntentFilter(ACTION_VISIBILITY_RESUMED)
+        )
+        updateIntervals()
+        restartMonitoring()
     }
 
     override fun onDestroy() {
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
-        scheduledFuture?.cancel(false)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(visibilityResumedReceiver)
+        scheduledFuture?.cancel(true)
         executorService.shutdown()
         super.onDestroy()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return super.onStartCommand(intent, flags, startId)
+    private fun updateIntervals() {
+        val intervalMinutes = prefs.getInt(intervalKey, 60).coerceAtLeast(1)
+        userIntervalMs = TimeUnit.MINUTES.toMillis(intervalMinutes.toLong())
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    protected fun startMonitoring(intervalMinutes: Int) {
-        scheduledFuture?.cancel(false)
-        scheduledFuture = executorService.scheduleAtFixedRate({
-            handler.post {
+    private fun restartMonitoring() {
+        scheduledFuture?.cancel(true)
+        scheduledFuture = executorService.schedule(object : Runnable {
+            override fun run() {
                 if (shouldUpdate()) {
-                    updateWidgets()
+                    handler.post { updateWidgets() }
+                    scheduledFuture = executorService.schedule(this, userIntervalMs, TimeUnit.MILLISECONDS)
+                } else {
+                    scheduledFuture = executorService.schedule(this, idleIntervalMs, TimeUnit.MILLISECONDS)
                 }
             }
-        }, 0, intervalMinutes.toLong(), TimeUnit.MINUTES)
+        }, 0, TimeUnit.MILLISECONDS)
     }
 
     protected abstract fun updateWidgets()
