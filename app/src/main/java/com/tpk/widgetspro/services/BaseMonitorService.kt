@@ -4,6 +4,7 @@ import android.app.*
 import android.appwidget.AppWidgetManager
 import android.content.*
 import android.os.*
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.MainActivity
@@ -24,6 +25,8 @@ abstract class BaseMonitorService : Service() {
         private const val WIDGETS_PRO_NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "widgets_pro_channel"
         const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.VISIBILITY_RESUMED"
+        const val ACTION_LAUNCHER_STATE_CHANGED = "com.tpk.widgetspro.LAUNCHER_STATE_CHANGED"
+        const val EXTRA_IS_ACTIVE = "is_active"
         private const val ACTION_WALLPAPER_CHANGED_STRING = "android.intent.action.WALLPAPER_CHANGED"
         private val CHECK_INTERVAL_INACTIVE_MS = TimeUnit.MINUTES.toMillis(10)
     }
@@ -31,6 +34,9 @@ abstract class BaseMonitorService : Service() {
     private lateinit var powerManager: PowerManager
     private lateinit var keyguardManager: KeyguardManager
     private var isInActiveState = false
+    private var isLauncherActive = false
+    private var isAccessibilityEnabled = false
+    private var launcherStateReceived = false
 
     private val handler = Handler(Looper.getMainLooper())
     private val updateChecker = object : Runnable {
@@ -68,24 +74,53 @@ abstract class BaseMonitorService : Service() {
         }
     }
 
+    private val launcherStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == ACTION_LAUNCHER_STATE_CHANGED) {
+                isLauncherActive = intent.getBooleanExtra(EXTRA_IS_ACTIVE, false)
+                launcherStateReceived = true
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         powerManager = getSystemService(POWER_SERVICE) as PowerManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         isInActiveState = shouldUpdate()
+        isAccessibilityEnabled = isAccessibilityServiceEnabled()
 
         createNotificationChannel()
 
-        registerReceiver(systemReceiver, IntentFilter().apply {
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_USER_PRESENT)
-            addAction(Intent.ACTION_CONFIGURATION_CHANGED)
-            addAction(ACTION_WALLPAPER_CHANGED_STRING)
-        }, Context.RECEIVER_NOT_EXPORTED)
+        registerReceiver(
+            systemReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_USER_PRESENT)
+                addAction(Intent.ACTION_CONFIGURATION_CHANGED)
+                addAction(ACTION_WALLPAPER_CHANGED_STRING)
+            },
+            Context.RECEIVER_NOT_EXPORTED
+        )
+
+        registerReceiver(
+            launcherStateReceiver,
+            IntentFilter(ACTION_LAUNCHER_STATE_CHANGED),
+            Context.RECEIVER_NOT_EXPORTED
+        )
 
         if (!isInActiveState) {
             handler.post(updateChecker)
         }
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val serviceName = ComponentName(this, LauncherStateAccessibilityService::class.java)
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains(serviceName.flattenToString())
     }
 
     private fun cancelInactiveUpdates() {
@@ -131,7 +166,13 @@ abstract class BaseMonitorService : Service() {
     protected fun shouldUpdate(): Boolean {
         val isScreenOn = powerManager.isInteractive
         val isKeyguardLocked = keyguardManager.isKeyguardLocked
-        return isScreenOn && !isKeyguardLocked
+        val baseCondition = isScreenOn && !isKeyguardLocked
+
+        return if (isAccessibilityEnabled) {
+            baseCondition && (isLauncherActive || !launcherStateReceived)
+        } else {
+            baseCondition
+        }
     }
 
     private fun notifyVisibilityResumed() {
@@ -174,6 +215,7 @@ abstract class BaseMonitorService : Service() {
     override fun onDestroy() {
         cancelInactiveUpdates()
         unregisterReceiver(systemReceiver)
+        unregisterReceiver(launcherStateReceiver)
         super.onDestroy()
     }
 }
