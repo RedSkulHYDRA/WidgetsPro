@@ -1,17 +1,18 @@
 package com.tpk.widgetspro
 
 import android.app.AppOpsManager
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.tpk.widgetspro.services.LauncherStateAccessibilityService
 
 class PermissionActivity : AppCompatActivity() {
     private val REQUEST_IGNORE_BATTERY_OPTIMIZATIONS = 1
@@ -20,6 +21,7 @@ class PermissionActivity : AppCompatActivity() {
     private lateinit var btnBatteryOptimizations: Button
     private lateinit var btnNotificationPermission: Button
     private lateinit var btnUsageAccess: Button
+    private lateinit var btnAccessibility: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,10 +30,15 @@ class PermissionActivity : AppCompatActivity() {
         btnBatteryOptimizations = findViewById(R.id.btn_battery_optimizations)
         btnNotificationPermission = findViewById(R.id.btn_notification_permission)
         btnUsageAccess = findViewById(R.id.btn_usage_access)
+        btnAccessibility = findViewById(R.id.btn_accessibility)
 
         btnBatteryOptimizations.setOnClickListener { checkBatteryOptimizations() }
         btnNotificationPermission.setOnClickListener { requestNotificationPermission() }
         btnUsageAccess.setOnClickListener { requestUsageAccessPermission() }
+        btnAccessibility.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            Toast.makeText(this, "Please enable Widgets Pro in Accessibility Services", Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onResume() {
@@ -45,7 +52,7 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     private fun checkBatteryOptimizations() {
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
             val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                 data = Uri.parse("package:$packageName")
@@ -69,7 +76,7 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     private fun requestUsageAccessPermission() {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,
             android.os.Process.myUid(),
@@ -81,13 +88,13 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     private fun areAllPermissionsGranted(): Boolean {
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         val isIgnoringBatteryOptimizations = powerManager.isIgnoringBatteryOptimizations(packageName)
         val hasNotificationPermission = ContextCompat.checkSelfPermission(
             this,
             android.Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,
             android.os.Process.myUid(),
@@ -98,18 +105,28 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     private fun updateButtonStates() {
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         btnBatteryOptimizations.isEnabled = !powerManager.isIgnoringBatteryOptimizations(packageName)
         btnNotificationPermission.isEnabled = ContextCompat.checkSelfPermission(
             this,
             android.Manifest.permission.POST_NOTIFICATIONS
         ) != PackageManager.PERMISSION_GRANTED
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,
             android.os.Process.myUid(),
             packageName
         )
         btnUsageAccess.isEnabled = mode != AppOpsManager.MODE_ALLOWED
+        btnAccessibility.isEnabled = !isAccessibilityServiceEnabled()
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val serviceName = ComponentName(this, LauncherStateAccessibilityService::class.java)
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains(serviceName.flattenToString())
     }
 }
