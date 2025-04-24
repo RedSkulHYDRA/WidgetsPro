@@ -18,7 +18,7 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     private lateinit var updateRunnable: Runnable
     private var isRunning = false
     private val normalUpdateInterval = TimeUnit.SECONDS.toMillis(1)
-    private val idleUpdateInterval = TimeUnit.MINUTES.toMillis(10)
+    private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
     private var cachedThemeResId: Int = R.style.Theme_WidgetsPro
     private var cachedAccentColor: Int = 0
     private var lastRedAccent: Boolean = false
