@@ -29,7 +29,7 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     private lateinit var prefs: SharedPreferences
     private val intervalKey = "network_speed_interval"
     private var updateIntervalMs = 1000L
-    private val idleUpdateInterval = TimeUnit.MINUTES.toMillis(10)
+    private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
     private var isRunning = false
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->

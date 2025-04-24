@@ -28,7 +28,8 @@ abstract class BaseMonitorService : Service() {
         const val ACTION_LAUNCHER_STATE_CHANGED = "com.tpk.widgetspro.LAUNCHER_STATE_CHANGED"
         const val EXTRA_IS_ACTIVE = "is_active"
         private const val ACTION_WALLPAPER_CHANGED_STRING = "android.intent.action.WALLPAPER_CHANGED"
-        private val CHECK_INTERVAL_INACTIVE_MS = TimeUnit.MINUTES.toMillis(10)
+        @JvmStatic
+        protected val CHECK_INTERVAL_INACTIVE_MS = TimeUnit.MINUTES.toMillis(60)
     }
 
     private lateinit var powerManager: PowerManager

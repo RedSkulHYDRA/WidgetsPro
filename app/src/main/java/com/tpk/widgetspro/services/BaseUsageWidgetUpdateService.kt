@@ -22,7 +22,7 @@ abstract class BaseUsageWidgetUpdateService : BaseMonitorService() {
     protected abstract val intervalKey: String
     protected abstract val widgetProviderClass: Class<*>
 
-    private val idleIntervalMs = TimeUnit.MINUTES.toMillis(10)
+    private val idleIntervalMs = CHECK_INTERVAL_INACTIVE_MS
     private var userIntervalMs = TimeUnit.MINUTES.toMillis(1)
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
