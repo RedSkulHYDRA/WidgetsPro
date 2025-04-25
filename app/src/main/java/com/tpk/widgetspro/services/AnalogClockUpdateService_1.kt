@@ -60,7 +60,6 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         handler = Handler(Looper.getMainLooper())
         updateThemeCache()
 
-        // Register all receivers
         LocalBroadcastManager.getInstance(this).registerReceiver(
             visibilityResumedReceiver,
             IntentFilter(ACTION_VISIBILITY_RESUMED)
@@ -70,11 +69,17 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
 
         updateRunnable = object : Runnable {
             override fun run() {
+                val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+                val is60FpsEnabled = prefs.getBoolean("clock_60fps_enabled", false)
                 val shouldUpdateNow = shouldUpdate()
                 if (shouldUpdateNow) {
                     updateHandPositions()
                 }
-                val nextDelay = if (shouldUpdateNow) normalUpdateInterval else idleUpdateInterval
+                val nextDelay = if (shouldUpdateNow) {
+                    if (is60FpsEnabled) 16L else normalUpdateInterval
+                } else {
+                    idleUpdateInterval
+                }
                 handler.postDelayed(this, nextDelay)
             }
         }
@@ -150,10 +155,15 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         val hours = calendar.get(Calendar.HOUR)
         val minutes = calendar.get(Calendar.MINUTE)
         val seconds = calendar.get(Calendar.SECOND)
+        val milliseconds = calendar.get(Calendar.MILLISECOND)
 
-        val hourAngle = (hours % 12 * 30.0 + minutes / 2.0 + seconds / 120.0).toFloat()
-        val minuteAngle = (minutes * 6.0 + seconds / 10.0).toFloat()
-        val secondAngle = (seconds * 6.0).toFloat()
+        val totalSeconds = seconds + milliseconds / 1000.0
+        val totalMinutes = minutes + totalSeconds / 60.0
+        val totalHours = hours + totalMinutes / 60.0
+
+        val hourAngle = (totalHours % 12 * 30.0).toFloat()
+        val minuteAngle = (totalMinutes * 6.0).toFloat()
+        val secondAngle = (totalSeconds * 6.0).toFloat()
 
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(packageName, R.layout.analog_1_widget)

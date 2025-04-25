@@ -207,6 +207,15 @@ class SettingsFragment : Fragment() {
         view.findViewById<Button>(R.id.sync_gif_widgets_button).setOnClickListener {
             showSyncWidgetSelectionDialog()
         }
+
+        val switchClockFps = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.switch_clock_fps)
+        switchClockFps.isChecked = prefs.getBoolean("clock_60fps_enabled", false)
+        switchClockFps.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("clock_60fps_enabled", isChecked).apply()
+            if (isChecked) {
+                Toast.makeText(requireContext(), R.string.warning_battery_drain, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun showWidgetSelectionDialog() {
