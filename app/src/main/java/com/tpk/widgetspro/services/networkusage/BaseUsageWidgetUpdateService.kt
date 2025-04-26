@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.networkusage
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -6,9 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.tpk.widgetspro.services.BaseMonitorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture

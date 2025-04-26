@@ -5,7 +5,16 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import com.tpk.widgetspro.services.*
+import com.tpk.widgetspro.services.analogclock.AnalogClockUpdateService_1
+import com.tpk.widgetspro.services.analogclock.AnalogClockUpdateService_2
+import com.tpk.widgetspro.services.battery.BatteryMonitorService
+import com.tpk.widgetspro.services.caffeine.CaffeineService
+import com.tpk.widgetspro.services.cpu.CpuMonitorService
+import com.tpk.widgetspro.services.gif.AnimationService
+import com.tpk.widgetspro.services.networkusage.BaseNetworkSpeedWidgetService
+import com.tpk.widgetspro.services.networkusage.BaseSimDataUsageWidgetService
+import com.tpk.widgetspro.services.networkusage.BaseWifiDataUsageWidgetService
+import com.tpk.widgetspro.services.sun.SunSyncService
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
@@ -14,7 +23,7 @@ import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
-import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
+import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 
 class UpdateReceiver : BroadcastReceiver() {

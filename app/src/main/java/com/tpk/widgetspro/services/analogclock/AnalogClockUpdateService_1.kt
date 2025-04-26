@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.analogclock
 
 import android.appwidget.AppWidgetManager
 import android.content.*
@@ -8,6 +8,7 @@ import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import java.util.*
 import java.util.concurrent.TimeUnit

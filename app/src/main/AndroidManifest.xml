@@ -80,7 +80,7 @@
         </activity>
 
         <service
-            android:name=".services.CpuMonitorService"
+            android:name=".services.cpu.CpuMonitorService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
@@ -96,7 +96,7 @@
         </receiver>
 
         <service
-            android:name=".services.BatteryMonitorService"
+            android:name=".services.battery.BatteryMonitorService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
@@ -127,7 +127,7 @@
             android:exported="false" />
 
         <service
-            android:name=".services.CaffeineService"
+            android:name=".services.caffeine.CaffeineService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
@@ -177,7 +177,7 @@
         </receiver>
 
         <service
-            android:name=".services.SunSyncService"
+            android:name=".services.sun.SunSyncService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
@@ -204,7 +204,7 @@
         </receiver>
 
         <service
-            android:name=".services.BaseNetworkSpeedWidgetService"
+            android:name=".services.networkusage.BaseNetworkSpeedWidgetService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
@@ -271,12 +271,12 @@
         </receiver>
 
         <service
-            android:name=".services.BaseWifiDataUsageWidgetService"
+            android:name=".services.networkusage.BaseWifiDataUsageWidgetService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
         <service
-            android:name=".services.BaseSimDataUsageWidgetService"
+            android:name=".services.networkusage.BaseSimDataUsageWidgetService"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
@@ -292,7 +292,7 @@
         </receiver>
 
         <activity
-            android:name=".services.NoteWidgetInputService"
+            android:name=".services.notes.NoteWidgetInputService"
             android:excludeFromRecents="true"
             android:theme="@style/Theme.NotesWidget"></activity>
 
@@ -305,7 +305,7 @@
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
         <service
-            android:name=".services.AnalogClockUpdateService_1"
+            android:name=".services.analogclock.AnalogClockUpdateService_1"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />
@@ -324,7 +324,7 @@
         </receiver>
 
         <service
-            android:name=".services.AnalogClockUpdateService_2"
+            android:name=".services.analogclock.AnalogClockUpdateService_2"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="systemExempted"/>
@@ -343,7 +343,7 @@
         </receiver>
 
         <receiver
-            android:name=".widgets.photo.GifWidgetProvider"
+            android:name=".widgets.gif.GifWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -354,7 +354,7 @@
         </receiver>
 
         <service
-            android:name=".services.AnimationService"
+            android:name=".services.gif.AnimationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="systemExempted" />

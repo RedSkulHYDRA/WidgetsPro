@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.cpu
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -13,37 +13,53 @@ import android.view.View
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseDottedGraphView
+import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
-import com.tpk.widgetspro.widgets.battery.BatteryDottedView
-import com.tpk.widgetspro.widgets.battery.BatteryMonitor
-import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
+import com.tpk.widgetspro.utils.PermissionUtils
+import com.tpk.widgetspro.widgets.cpu.CpuMonitor
+import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
+import com.tpk.widgetspro.widgets.cpu.DottedGraphView
+import java.util.LinkedList
 import kotlin.reflect.KClass
 
-class BatteryMonitorService : BaseMonitorService() {
-    private lateinit var batteryMonitor: BatteryMonitor
+class CpuMonitorService : BaseMonitorService() {
+    private lateinit var cpuMonitor: CpuMonitor
+    private val dataPoints = LinkedList<Double>()
+    private val MAX_DATA_POINTS = 50
+    private var useRoot = false
     private var prefs: SharedPreferences? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val appWidgetManager = AppWidgetManager.getInstance(this)
-        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, BatteryWidgetProvider::class.java))
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
         if (widgetIds.isEmpty()) {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (!::batteryMonitor.isInitialized) initializeMonitoring()
+
+        if (PermissionUtils.hasRootAccess()) {
+            useRoot = true
+        } else if (PermissionUtils.hasShizukuPermission()) {
+            useRoot = false
+        } else {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        if (!::cpuMonitor.isInitialized) initializeMonitoring()
         return super.onStartCommand(intent, flags, startId)
     }
 
     private fun initializeMonitoring() {
-        batteryMonitor = BatteryMonitor(this) { percentage, health ->
+        repeat(MAX_DATA_POINTS) { dataPoints.add(0.0) }
+        cpuMonitor = CpuMonitor(useRoot) { cpuUsage, cpuTemperature ->
             if (shouldUpdate()) {
                 val appWidgetManager = AppWidgetManager.getInstance(this)
-                val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, BatteryWidgetProvider::class.java))
+                val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
 
                 if (widgetIds.isEmpty()) {
                     stopSelf()
-                    return@BatteryMonitor
+                    return@CpuMonitor
                 }
 
                 val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
@@ -58,16 +74,19 @@ class BatteryMonitorService : BaseMonitorService() {
                 val themedContext = ContextThemeWrapper(applicationContext, themeResId)
 
                 val typeface = CommonUtils.getTypeface(themedContext)
-                val percentageBitmap = CommonUtils.createTextBitmap(themedContext, "$percentage%", 20f, typeface)
-                val batteryBitmap = CommonUtils.createTextBitmap(themedContext, "BAT", 20f, typeface)
-                val graphBitmap = createGraphBitmap(themedContext, percentage, BatteryDottedView::class)
+                val usageBitmap = CommonUtils.createTextBitmap(themedContext, "%.0f%%".format(cpuUsage), 20f, typeface)
+                val cpuBitmap = CommonUtils.createTextBitmap(themedContext, "CPU", 20f, typeface)
+
+                dataPoints.addLast(cpuUsage)
+                if (dataPoints.size > MAX_DATA_POINTS) dataPoints.removeFirst()
 
                 widgetIds.forEach { appWidgetId ->
-                    val views = RemoteViews(packageName, R.layout.battery_widget_layout).apply {
-                        setImageViewBitmap(R.id.batteryImageView, batteryBitmap)
-                        setImageViewBitmap(R.id.batteryPercentageImageView, percentageBitmap)
-                        setTextViewText(R.id.batteryModelWidgetTextView, health.toString())
-                        setImageViewBitmap(R.id.graphWidgetImageView, graphBitmap)
+                    val views = RemoteViews(packageName, R.layout.cpu_widget_layout).apply {
+                        setImageViewBitmap(R.id.cpuUsageImageView, usageBitmap)
+                        setImageViewBitmap(R.id.cpuImageView, cpuBitmap)
+                        setImageViewBitmap(R.id.graphWidgetImageView, createGraphBitmap(themedContext, dataPoints, DottedGraphView::class))
+                        setTextViewText(R.id.cpuTempWidgetTextView, "%.1f°C".format(cpuTemperature))
+                        setTextViewText(R.id.cpuModelWidgetTextView, getDeviceProcessorModel())
                     }
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }
@@ -75,20 +94,25 @@ class BatteryMonitorService : BaseMonitorService() {
         }
         prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         prefs?.registerOnSharedPreferenceChangeListener(preferenceListener)
-        val interval = prefs?.getInt("battery_interval", 60)?.coerceAtLeast(1) ?: 60
-        batteryMonitor.startMonitoring(interval)
+        val cpuInterval = prefs?.getInt("cpu_interval", 60)?.coerceAtLeast(1) ?: 60
+        cpuMonitor.startMonitoring(cpuInterval)
     }
 
     private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == "battery_interval") {
+        if (key == "cpu_interval") {
             val newInterval = prefs?.getInt(key, 60)?.coerceAtLeast(1) ?: 60
-            batteryMonitor.updateInterval(newInterval)
+            cpuMonitor.updateInterval(newInterval)
         }
+    }
+
+    private fun getDeviceProcessorModel(): String = when (android.os.Build.SOC_MODEL) {
+        "SM8475" -> "8+ Gen 1"
+        else -> android.os.Build.SOC_MODEL
     }
 
     private fun <T : BaseDottedGraphView> createGraphBitmap(context: Context, data: Any, viewClass: KClass<T>): Bitmap {
         val graphView = viewClass.java.getConstructor(Context::class.java).newInstance(context)
-        (graphView as? BatteryDottedView)?.updatePercentage(data as Int)
+        (graphView as? DottedGraphView)?.setDataPoints((data as List<*>).filterIsInstance<Double>())
         val widthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200f, context.resources.displayMetrics).toInt()
         val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 80f, context.resources.displayMetrics).toInt()
         graphView.measure(View.MeasureSpec.makeMeasureSpec(widthPx, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(heightPx, View.MeasureSpec.EXACTLY))
@@ -98,7 +122,7 @@ class BatteryMonitorService : BaseMonitorService() {
 
     override fun onDestroy() {
         prefs?.unregisterOnSharedPreferenceChangeListener(preferenceListener)
-        if (::batteryMonitor.isInitialized) batteryMonitor.stopMonitoring()
+        if (::cpuMonitor.isInitialized) cpuMonitor.stopMonitoring()
         super.onDestroy()
     }
 }

@@ -13,7 +13,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.drawable.VectorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
@@ -23,25 +22,20 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.RemoteViews
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.Fragment
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.base.BaseDottedGraphView
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
-import com.tpk.widgetspro.widgets.battery.BatteryDottedView
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.cpu.DottedGraphView
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
@@ -49,12 +43,9 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
-import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
+import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
-import java.util.LinkedList
-import kotlin.math.min
-import kotlin.reflect.KClass
 
 class AddWidgetsFragment : Fragment() {
 

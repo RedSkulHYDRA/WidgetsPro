@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.notes
 
 import android.appwidget.AppWidgetManager
 import android.content.Context

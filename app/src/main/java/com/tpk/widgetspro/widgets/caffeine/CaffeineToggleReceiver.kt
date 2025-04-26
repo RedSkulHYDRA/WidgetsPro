@@ -3,8 +3,7 @@ package com.tpk.widgetspro.widgets.caffeine
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import com.tpk.widgetspro.services.CaffeineService
+import com.tpk.widgetspro.services.caffeine.CaffeineService
 
 class CaffeineToggleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

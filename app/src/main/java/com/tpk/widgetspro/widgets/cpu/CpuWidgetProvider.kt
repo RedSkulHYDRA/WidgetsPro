@@ -6,7 +6,7 @@ import android.content.Intent
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseWidgetProvider
-import com.tpk.widgetspro.services.CpuMonitorService
+import com.tpk.widgetspro.services.cpu.CpuMonitorService
 import com.tpk.widgetspro.utils.PermissionUtils
 
 class CpuWidgetProvider : BaseWidgetProvider() {

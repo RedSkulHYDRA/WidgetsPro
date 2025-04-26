@@ -4,7 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import com.tpk.widgetspro.services.AnalogClockUpdateService_1
+import com.tpk.widgetspro.services.analogclock.AnalogClockUpdateService_1
 
 class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
 
