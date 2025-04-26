@@ -24,7 +24,7 @@ class LauncherStateAccessibilityService : AccessibilityService() {
         }
         this.serviceInfo = info
 
-        // Get default launcher package
+
         val intent = Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_HOME)
         }
@@ -33,7 +33,7 @@ class LauncherStateAccessibilityService : AccessibilityService() {
             PackageManager.MATCH_DEFAULT_ONLY
         )?.activityInfo?.packageName
 
-        // Perform initial state check
+
         checkCurrentWindowState()
     }
 

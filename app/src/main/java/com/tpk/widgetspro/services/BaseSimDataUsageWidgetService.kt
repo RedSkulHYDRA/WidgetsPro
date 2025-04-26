@@ -13,7 +13,7 @@ class BaseSimDataUsageWidgetService : BaseUsageWidgetUpdateService() {
     override val widgetProviderClass = BaseSimDataUsageWidgetProvider::class.java
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Check for active widgets and stop if none are present
+
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
         val circleWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, SimDataUsageWidgetProviderCircle::class.java))
         val pillWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, SimDataUsageWidgetProviderPill::class.java))
@@ -28,7 +28,7 @@ class BaseSimDataUsageWidgetService : BaseUsageWidgetUpdateService() {
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
         val circleWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, SimDataUsageWidgetProviderCircle::class.java))
         val pillWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, SimDataUsageWidgetProviderPill::class.java))
-        // Stop service if no widgets are present
+
         if (circleWidgetIds.isEmpty() && pillWidgetIds.isEmpty()) {
             stopSelf()
             return

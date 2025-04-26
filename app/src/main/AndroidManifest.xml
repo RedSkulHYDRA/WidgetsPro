@@ -292,7 +292,7 @@
         </receiver>
 
         <activity
-            android:name=".widgets.notes.NoteInputActivity"
+            android:name=".services.NoteWidgetInputService"
             android:excludeFromRecents="true"
             android:theme="@style/Theme.NotesWidget"></activity>
 
