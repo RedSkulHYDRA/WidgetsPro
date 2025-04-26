@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.networkusage
 
 import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
@@ -17,10 +17,10 @@ import android.os.Looper
 import android.widget.RemoteViews
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
-import java.util.concurrent.TimeUnit
 
 class BaseNetworkSpeedWidgetService : BaseMonitorService() {
 

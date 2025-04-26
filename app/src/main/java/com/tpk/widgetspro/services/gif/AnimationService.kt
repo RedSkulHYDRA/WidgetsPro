@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.gif
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -10,7 +10,8 @@ import android.os.IBinder
 import android.os.Looper
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
+import com.tpk.widgetspro.services.BaseMonitorService
+import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import pl.droidsonroids.gif.GifDrawable
 import java.io.BufferedInputStream
 

@@ -1,10 +1,10 @@
-package com.tpk.widgetspro.widgets.photo
+package com.tpk.widgetspro.widgets.gif
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import com.tpk.widgetspro.services.AnimationService
+import com.tpk.widgetspro.services.gif.AnimationService
 
 class GifWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(

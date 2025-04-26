@@ -11,7 +11,7 @@ import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.services.NoteWidgetInputService
+import com.tpk.widgetspro.services.notes.NoteWidgetInputService
 import com.tpk.widgetspro.utils.CommonUtils
 
 class NoteWidgetProvider : AppWidgetProvider() {

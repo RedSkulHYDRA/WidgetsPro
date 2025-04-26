@@ -12,7 +12,7 @@ import android.graphics.drawable.Drawable
 import android.provider.Settings
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.services.BaseSimDataUsageWidgetService
+import com.tpk.widgetspro.services.networkusage.BaseSimDataUsageWidgetService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.NetworkStatsHelper
 

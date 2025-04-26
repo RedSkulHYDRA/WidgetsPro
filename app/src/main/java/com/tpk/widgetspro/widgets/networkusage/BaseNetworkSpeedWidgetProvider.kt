@@ -10,7 +10,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.services.BaseNetworkSpeedWidgetService
+import com.tpk.widgetspro.services.networkusage.BaseNetworkSpeedWidgetService
 import com.tpk.widgetspro.utils.CommonUtils
 
 abstract class BaseNetworkSpeedWidgetProvider : AppWidgetProvider() {

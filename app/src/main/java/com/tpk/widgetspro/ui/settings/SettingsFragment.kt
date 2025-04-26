@@ -7,7 +7,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
@@ -20,15 +19,14 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputLayout
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.api.ImageApiClient
-import com.tpk.widgetspro.services.AnimationService
-import com.tpk.widgetspro.services.SunSyncService
+import com.tpk.widgetspro.services.gif.AnimationService
+import com.tpk.widgetspro.services.sun.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.ImageLoader
@@ -231,7 +229,7 @@ class SettingsFragment : Fragment() {
         }
         val appWidgetManager = AppWidgetManager.getInstance(requireContext())
         val widgetIds = appWidgetManager.getAppWidgetIds(
-            ComponentName(requireContext(), com.tpk.widgetspro.widgets.photo.GifWidgetProvider::class.java)
+            ComponentName(requireContext(), com.tpk.widgetspro.widgets.gif.GifWidgetProvider::class.java)
         )
         if (widgetIds.isEmpty()) {
             Toast.makeText(requireContext(), R.string.no_gif_widgets_found, Toast.LENGTH_SHORT).show()
@@ -281,7 +279,7 @@ class SettingsFragment : Fragment() {
         }
         val appWidgetManager = AppWidgetManager.getInstance(requireContext())
         val widgetIds = appWidgetManager.getAppWidgetIds(
-            ComponentName(requireContext(), com.tpk.widgetspro.widgets.photo.GifWidgetProvider::class.java)
+            ComponentName(requireContext(), com.tpk.widgetspro.widgets.gif.GifWidgetProvider::class.java)
         )
         if (widgetIds.size < 2) {
             Toast.makeText(requireContext(), R.string.insufficient_gif_widgets, Toast.LENGTH_SHORT).show()

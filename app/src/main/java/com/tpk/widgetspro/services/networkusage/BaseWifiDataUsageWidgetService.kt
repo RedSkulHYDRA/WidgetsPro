@@ -1,8 +1,7 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.networkusage
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle

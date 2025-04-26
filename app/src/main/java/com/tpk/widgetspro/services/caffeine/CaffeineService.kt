@@ -1,8 +1,9 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.caffeine
 
 import android.content.Intent
 import android.os.IBinder
 import android.os.PowerManager
+import com.tpk.widgetspro.services.BaseMonitorService
 
 class CaffeineService : BaseMonitorService() {
     private var wakeLock: PowerManager.WakeLock? = null
