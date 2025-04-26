@@ -30,7 +30,7 @@ class CpuMonitorService : BaseMonitorService() {
     private var prefs: SharedPreferences? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Check for active widgets and stop if none are present
+
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
         if (widgetIds.isEmpty()) {
@@ -56,7 +56,7 @@ class CpuMonitorService : BaseMonitorService() {
             if (shouldUpdate()) {
                 val appWidgetManager = AppWidgetManager.getInstance(this)
                 val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
-                // Stop service if no widgets are present
+
                 if (widgetIds.isEmpty()) {
                     stopSelf()
                     return@CpuMonitor

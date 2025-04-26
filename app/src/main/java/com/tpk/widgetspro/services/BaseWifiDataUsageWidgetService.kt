@@ -13,7 +13,7 @@ class BaseWifiDataUsageWidgetService : BaseUsageWidgetUpdateService() {
     override val widgetProviderClass = BaseWifiDataUsageWidgetProvider::class.java
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Check for active widgets and stop if none are present
+
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
         val circleWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, WifiDataUsageWidgetProviderCircle::class.java))
         val pillWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, WifiDataUsageWidgetProviderPill::class.java))
@@ -28,7 +28,7 @@ class BaseWifiDataUsageWidgetService : BaseUsageWidgetUpdateService() {
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
         val circleWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, WifiDataUsageWidgetProviderCircle::class.java))
         val pillWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, WifiDataUsageWidgetProviderPill::class.java))
-        // Stop service if no widgets are present
+
         if (circleWidgetIds.isEmpty() && pillWidgetIds.isEmpty()) {
             stopSelf()
             return
