@@ -6,7 +6,7 @@ import android.content.Intent
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseWidgetProvider
-import com.tpk.widgetspro.services.BatteryMonitorService
+import com.tpk.widgetspro.services.battery.BatteryMonitorService
 
 class BatteryWidgetProvider : BaseWidgetProvider() {
     override val layoutId = R.layout.battery_widget_layout

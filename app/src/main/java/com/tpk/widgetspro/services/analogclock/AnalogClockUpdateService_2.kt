@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.analogclock
 
 import android.appwidget.AppWidgetManager
 import android.content.*
@@ -8,21 +8,21 @@ import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import java.util.*
-import kotlin.math.min
+import java.util.concurrent.TimeUnit
 
 class AnalogClockUpdateService_2 : BaseMonitorService() {
 
     private lateinit var handler: Handler
     private lateinit var updateRunnable: Runnable
     private var isRunning = false
-    private val updateInterval = 16L
-    private var wasUpdating = false
-    private var isCatchingUp = false
-    private var catchUpStartTime = 0L
-    private var catchUpDelta = 0L
-    private var lastUpdateTime = 0L
+    private val normalUpdateInterval = TimeUnit.SECONDS.toMillis(1)
+    private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
+    private var cachedThemeResId: Int = R.style.Theme_WidgetsPro
+    private var cachedAccentColor: Int = 0
+    private var lastRedAccent: Boolean = false
 
     private val clockIntent = Intent(Intent.ACTION_MAIN).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
@@ -33,7 +33,25 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     private val visibilityResumedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_VISIBILITY_RESUMED) {
-                wasUpdating = false
+                handler.removeCallbacks(updateRunnable)
+                handler.post(updateRunnable)
+            }
+        }
+    }
+
+    private val userPresentReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_USER_PRESENT) {
+                handler.removeCallbacks(updateRunnable)
+                handler.post(updateRunnable)
+            }
+        }
+    }
+
+    private val configChangeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_CONFIGURATION_CHANGED) {
+                updateThemeCache()
             }
         }
     }
@@ -41,32 +59,54 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     override fun onCreate() {
         super.onCreate()
         handler = Handler(Looper.getMainLooper())
-        lastUpdateTime = System.currentTimeMillis()
+        updateThemeCache()
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
             visibilityResumedReceiver,
             IntentFilter(ACTION_VISIBILITY_RESUMED)
         )
+        registerReceiver(configChangeReceiver, IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED))
+        registerReceiver(userPresentReceiver, IntentFilter(Intent.ACTION_USER_PRESENT))
 
         updateRunnable = object : Runnable {
             override fun run() {
+                val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+                val is60FpsEnabled = prefs.getBoolean("clock_60fps_enabled", false)
                 val shouldUpdateNow = shouldUpdate()
                 if (shouldUpdateNow) {
-                    if (!wasUpdating) {
-                        val now = System.currentTimeMillis()
-                        catchUpDelta = now - lastUpdateTime
-                        catchUpStartTime = now
-                        isCatchingUp = true
-                    }
                     updateHandPositions()
-                    wasUpdating = true
-                } else {
-                    wasUpdating = false
                 }
-                handler.postDelayed(this, updateInterval)
+                val nextDelay = if (shouldUpdateNow) {
+                    if (is60FpsEnabled) 16L else normalUpdateInterval
+                } else {
+                    idleUpdateInterval
+                }
+                handler.postDelayed(this, nextDelay)
             }
         }
         startMonitoring()
+    }
+
+    private fun updateThemeCache() {
+        val prefs = getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val isDarkTheme = prefs.getBoolean("dark_theme", isSystemInDarkTheme(baseContext))
+        val isRedAccent = prefs.getBoolean("red_accent", false)
+        lastRedAccent = isRedAccent
+
+        cachedThemeResId = when {
+            isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
+            isDarkTheme -> R.style.Theme_WidgetsPro
+            isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
+            else -> R.style.Theme_WidgetsPro
+        }
+
+        val themedContext = ContextThemeWrapper(baseContext, cachedThemeResId)
+        cachedAccentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light)
+        val typedValue = android.util.TypedValue()
+        themedContext.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
+        if (typedValue.data != 0) {
+            cachedAccentColor = typedValue.data
+        }
     }
 
     private fun startMonitoring() {
@@ -84,70 +124,59 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, AnalogClockWidgetProvider_2::class.java))
+        if (widgetIds.isEmpty()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (!isRunning) startMonitoring()
         return super.onStartCommand(intent, flags, startId)
     }
 
     private fun updateHandPositions() {
+        val prefs = getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val currentRedAccent = prefs.getBoolean("red_accent", false)
+        if (currentRedAccent != lastRedAccent) {
+            updateThemeCache()
+        }
+
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val componentName = ComponentName(this, AnalogClockWidgetProvider_2::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-        val calendar = Calendar.getInstance()
 
-        if (isCatchingUp) {
-            val currentTime = System.currentTimeMillis()
-            val timeSinceCatchUpStart = currentTime - catchUpStartTime
-            val progress = if (catchUpDelta > 0) {
-                min(1f, timeSinceCatchUpStart.toFloat() / 1000f)
-            } else {
-                1f
-            }
-            val displayedTime = currentTime - (catchUpDelta * (1 - progress)).toLong()
-            calendar.timeInMillis = displayedTime
-
-            if (progress >= 1f) {
-                isCatchingUp = false
-                lastUpdateTime = currentTime
-            }
-        } else {
-            lastUpdateTime = System.currentTimeMillis()
-            calendar.timeInMillis = lastUpdateTime
+        if (appWidgetIds.isEmpty()) {
+            stopSelf()
+            return
         }
+
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = System.currentTimeMillis()
 
         val hours = calendar.get(Calendar.HOUR)
         val minutes = calendar.get(Calendar.MINUTE)
         val seconds = calendar.get(Calendar.SECOND)
         val milliseconds = calendar.get(Calendar.MILLISECOND)
 
-        val hourAngle = (hours % 12 * 30.0 + minutes / 2.0 + seconds / 120.0 + milliseconds / 120000.0).toFloat()
-        val minuteAngle = (minutes * 6.0 + seconds / 10.0 + milliseconds / 10000.0).toFloat()
-        val secondAngle = (seconds * 6.0 + milliseconds / 1000.0 * 6.0).toFloat()
+        val totalSeconds = seconds + milliseconds / 1000.0
+        val totalMinutes = minutes + totalSeconds / 60.0
+        val totalHours = hours + totalMinutes / 60.0
+
+        val hourAngle = (totalHours % 12 * 30.0).toFloat()
+        val minuteAngle = (totalMinutes * 6.0).toFloat()
+        val secondAngle = (totalSeconds * 6.0).toFloat()
 
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(packageName, R.layout.analog_2_widget)
             views.setInt(R.id.analog_2_container, "setBackgroundResource", R.drawable.analog_2_bg)
             val dialResource = if (isSystemInDarkTheme(baseContext)) R.drawable.analog_2_dial_dark else R.drawable.analog_2_dial_light
             views.setImageViewResource(R.id.analog_2_dial, dialResource)
-            val prefs = baseContext.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
-            val isDarkTheme = prefs.getBoolean("dark_theme", isSystemInDarkTheme(baseContext))
-            val isRedAccent = prefs.getBoolean("red_accent", false)
-            val themeResId = when {
-                isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
-                isDarkTheme -> R.style.Theme_WidgetsPro
-                isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
-                else -> R.style.Theme_WidgetsPro
-            }
-            val themedContext = ContextThemeWrapper(baseContext, themeResId)
-            val accentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light)
-            val typedValue = android.util.TypedValue()
-            themedContext.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
-            val resolvedAccentColor = typedValue.data ?: accentColor
             views.setImageViewResource(R.id.analog_2_hour, R.drawable.analog_2_hour)
             views.setImageViewResource(R.id.analog_2_min, R.drawable.analog_2_min)
             views.setImageViewResource(R.id.analog_2_secs, R.drawable.analog_2_secs)
-            views.setInt(R.id.analog_2_hour, "setColorFilter", resolvedAccentColor)
-            views.setInt(R.id.analog_2_min, "setColorFilter", resolvedAccentColor)
-            views.setInt(R.id.analog_2_secs, "setColorFilter", resolvedAccentColor)
+            views.setInt(R.id.analog_2_hour, "setColorFilter", cachedAccentColor)
+            views.setInt(R.id.analog_2_min, "setColorFilter", cachedAccentColor)
+            views.setInt(R.id.analog_2_secs, "setColorFilter", cachedAccentColor)
             views.setFloat(R.id.analog_2_hour, "setRotation", hourAngle)
             views.setFloat(R.id.analog_2_min, "setRotation", minuteAngle)
             views.setFloat(R.id.analog_2_secs, "setRotation", secondAngle)
@@ -167,6 +196,8 @@ class AnalogClockUpdateService_2 : BaseMonitorService() {
 
     override fun onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(visibilityResumedReceiver)
+        unregisterReceiver(configChangeReceiver)
+        unregisterReceiver(userPresentReceiver)
         stopMonitoring()
         super.onDestroy()
     }

@@ -12,7 +12,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.services.SunSyncService
+import com.tpk.widgetspro.services.sun.SunSyncService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget.CelestialAnimator.Companion.dpToPx
 import java.time.Duration

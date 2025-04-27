@@ -57,7 +57,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Disable Battery Optimizations" />
+                android:text="@string/disable_battery_optimization" />
 
             <Button
                 android:id="@+id/btn_notification_permission"
@@ -65,7 +65,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Grant Notification Permission" />
+                android:text="@string/grant_notification_permission" />
+
+            <Button
+                android:id="@+id/btn_accessibility"
+                style="@style/CustomTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/enable_accessibility_service" />
 
             <Button
                 android:id="@+id/btn_usage_access"
@@ -73,7 +81,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:text="Grant Usage Access" />
+                android:text="@string/grant_usage_access" />
+
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

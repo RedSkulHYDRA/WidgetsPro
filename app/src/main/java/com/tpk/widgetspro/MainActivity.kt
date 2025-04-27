@@ -2,18 +2,12 @@ package com.tpk.widgetspro
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
-import android.os.PowerManager
-import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.tpk.widgetspro.services.CpuMonitorService
+import com.tpk.widgetspro.services.cpu.CpuMonitorService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
@@ -32,11 +26,6 @@ import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import android.Manifest
-import android.app.AlertDialog
-import android.app.AppOpsManager
-import android.content.DialogInterface
-import android.widget.TextView
 
 class MainActivity : AppCompatActivity() {
     internal val SHIZUKU_REQUEST_CODE = 1001
@@ -95,7 +84,7 @@ class MainActivity : AppCompatActivity() {
             putBoolean("red_accent", !isRedAccent)
             apply()
         }
-        // Update all widget providers so they reflect the theme change.
+
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val providers = arrayOf(
             CpuWidgetProvider::class.java,

@@ -19,9 +19,7 @@ import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
-import com.tpk.widgetspro.services.AnalogClockUpdateService_1
-import com.tpk.widgetspro.services.AnalogClockUpdateService_2
-import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
+import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

@@ -1,4 +1,4 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.cpu
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -13,12 +13,12 @@ import android.view.View
 import android.widget.RemoteViews
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseDottedGraphView
+import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.utils.PermissionUtils
 import com.tpk.widgetspro.widgets.cpu.CpuMonitor
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.cpu.DottedGraphView
-import rikka.shizuku.Shizuku
 import java.util.LinkedList
 import kotlin.reflect.KClass
 
@@ -30,6 +30,14 @@ class CpuMonitorService : BaseMonitorService() {
     private var prefs: SharedPreferences? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
+        if (widgetIds.isEmpty()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         if (PermissionUtils.hasRootAccess()) {
             useRoot = true
         } else if (PermissionUtils.hasShizukuPermission()) {
@@ -46,6 +54,14 @@ class CpuMonitorService : BaseMonitorService() {
         repeat(MAX_DATA_POINTS) { dataPoints.add(0.0) }
         cpuMonitor = CpuMonitor(useRoot) { cpuUsage, cpuTemperature ->
             if (shouldUpdate()) {
+                val appWidgetManager = AppWidgetManager.getInstance(this)
+                val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
+
+                if (widgetIds.isEmpty()) {
+                    stopSelf()
+                    return@CpuMonitor
+                }
+
                 val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
                 val isDarkTheme = prefs.getBoolean("dark_theme", false)
                 val isRedAccent = prefs.getBoolean("red_accent", false)
@@ -64,10 +80,7 @@ class CpuMonitorService : BaseMonitorService() {
                 dataPoints.addLast(cpuUsage)
                 if (dataPoints.size > MAX_DATA_POINTS) dataPoints.removeFirst()
 
-                val appWidgetManager = AppWidgetManager.getInstance(this)
-                val componentName = ComponentName(this, CpuWidgetProvider::class.java)
-                val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-                appWidgetIds.forEach { appWidgetId ->
+                widgetIds.forEach { appWidgetId ->
                     val views = RemoteViews(packageName, R.layout.cpu_widget_layout).apply {
                         setImageViewBitmap(R.id.cpuUsageImageView, usageBitmap)
                         setImageViewBitmap(R.id.cpuImageView, cpuBitmap)

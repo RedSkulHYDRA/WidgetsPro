@@ -1,10 +1,12 @@
-package com.tpk.widgetspro.services
+package com.tpk.widgetspro.services.networkusage
 
-import android.content.Context
-import android.content.SharedPreferences
 import android.appwidget.AppWidgetManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
@@ -13,17 +15,22 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.widget.RemoteViews
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
 
 class BaseNetworkSpeedWidgetService : BaseMonitorService() {
+
     private var previousBytes: Long = 0
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var prefs: SharedPreferences
-    private val intervalKey = "network_speed_interval" // Define your SharedPreferences key
+    private val intervalKey = "network_speed_interval"
     private var updateIntervalMs = 1000L
+    private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
+    private var isRunning = false
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == intervalKey) {
@@ -32,12 +39,32 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
         }
     }
 
+    private val visibilityResumedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == ACTION_VISIBILITY_RESUMED) {
+                handler.removeCallbacks(updateRunnable)
+                handler.post(updateRunnable)
+            }
+        }
+    }
+
+    private val userPresentReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_USER_PRESENT) {
+                handler.removeCallbacks(updateRunnable)
+                handler.post(updateRunnable)
+            }
+        }
+    }
+
     private val updateRunnable = object : Runnable {
         override fun run() {
-            if (shouldUpdate()) {
+            val shouldUpdateNow = shouldUpdate()
+            if (shouldUpdateNow) {
                 updateSpeed()
             }
-            handler.postDelayed(this, updateIntervalMs)
+            val nextDelay = if (shouldUpdateNow) updateIntervalMs else idleUpdateInterval
+            handler.postDelayed(this, nextDelay)
         }
     }
 
@@ -46,36 +73,75 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
         prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
         updateIntervalMs = prefs.getInt(intervalKey, 60).coerceAtLeast(1) * 1000L
-        restartMonitoring()
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            visibilityResumedReceiver,
+            IntentFilter(ACTION_VISIBILITY_RESUMED)
+        )
+        registerReceiver(userPresentReceiver, IntentFilter(Intent.ACTION_USER_PRESENT))
+
+        startMonitoring()
     }
 
     override fun onDestroy() {
-        handler.removeCallbacks(updateRunnable)
+        stopMonitoring()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(visibilityResumedReceiver)
+        unregisterReceiver(userPresentReceiver)
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
+        val circleWidgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(applicationContext, NetworkSpeedWidgetProviderCircle::class.java))
+        val pillWidgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(applicationContext, NetworkSpeedWidgetProviderPill::class.java))
+
+        if (circleWidgetIds.isEmpty() && pillWidgetIds.isEmpty()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        if (!isRunning) startMonitoring()
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    private fun startMonitoring() {
+        if (!isRunning) {
+            isRunning = true
+            handler.post(updateRunnable)
+        }
+    }
+
+    private fun stopMonitoring() {
+        if (isRunning) {
+            isRunning = false
+            handler.removeCallbacks(updateRunnable)
+        }
+    }
+
     private fun restartMonitoring() {
-        handler.removeCallbacks(updateRunnable)
-        handler.post(updateRunnable)
+        stopMonitoring()
+        startMonitoring()
     }
 
     private fun updateSpeed() {
-        val currentBytes = TrafficStats.getTotalRxBytes()
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
+        val circleWidgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(applicationContext, NetworkSpeedWidgetProviderCircle::class.java))
+        val pillWidgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(applicationContext, NetworkSpeedWidgetProviderPill::class.java))
 
-        val circleWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, NetworkSpeedWidgetProviderCircle::class.java))
+        if (circleWidgetIds.isEmpty() && pillWidgetIds.isEmpty()) {
+            stopSelf()
+            return
+        }
+
+        val currentBytes = TrafficStats.getTotalRxBytes()
         updateWidgets(appWidgetManager, circleWidgetIds, R.layout.network_speed_widget_circle, currentBytes)
-
-        val pillWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(applicationContext, NetworkSpeedWidgetProviderPill::class.java))
         updateWidgets(appWidgetManager, pillWidgetIds, R.layout.network_speed_widget_pill, currentBytes)
-
         previousBytes = currentBytes
     }
 
@@ -139,5 +205,9 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
         } else {
             String.format("%.1f %sB/s", value, pre)
         }
+    }
+
+    companion object {
+        const val ACTION_VISIBILITY_RESUMED = "com.tpk.widgetspro.ACTION_VISIBILITY_RESUMED"
     }
 }

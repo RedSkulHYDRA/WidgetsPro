@@ -13,7 +13,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.drawable.VectorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
@@ -23,25 +22,20 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.RemoteViews
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.Fragment
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
-import com.tpk.widgetspro.base.BaseDottedGraphView
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
-import com.tpk.widgetspro.widgets.battery.BatteryDottedView
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.cpu.DottedGraphView
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
@@ -49,12 +43,9 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
-import com.tpk.widgetspro.widgets.photo.GifWidgetProvider
+import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
-import java.util.LinkedList
-import kotlin.math.min
-import kotlin.reflect.KClass
 
 class AddWidgetsFragment : Fragment() {
 
@@ -73,13 +64,13 @@ class AddWidgetsFragment : Fragment() {
         val titleTextView = view.findViewById<TextView>(R.id.title_main)
         titleTextView.setTextColor(CommonUtils.getAccentColor(requireContext()))
 
-        // Setup previews using static layouts
+
         setupWidgetPreview(view.findViewById(R.id.preview_cpu), R.layout.cpu_widget_preview_static)
         setupWidgetPreview(view.findViewById(R.id.preview_battery), R.layout.battery_widget_preview_static)
         setupWidgetPreview(view.findViewById(R.id.preview_caffeine), R.layout.caffeine_widget_preview_static)
         setupWidgetPreview(view.findViewById(R.id.preview_bluetooth), R.layout.bluetooth_widget_preview_static)
 
-        // Special handling for Sun tracker preview path
+
         val sunPreviewContainer = view.findViewById<FrameLayout>(R.id.preview_sun)
         setupWidgetPreview(sunPreviewContainer, R.layout.sun_tracker_widget_preview_static)
         val pathImageView = sunPreviewContainer.findViewById<ImageView>(R.id.path_preview_static)
@@ -97,7 +88,7 @@ class AddWidgetsFragment : Fragment() {
         setupWidgetPreview(view.findViewById(R.id.preview_sim_data_pill), R.layout.sim_data_usage_widget_pill_preview_static)
         setupWidgetPreview(view.findViewById(R.id.preview_notes), R.layout.notes_widget_preview_static)
 
-        // Special handling for analog clock dials
+
         val analog1PreviewContainer = view.findViewById<FrameLayout>(R.id.preview_analog_1)
         setupWidgetPreview(analog1PreviewContainer, R.layout.analog_1_widget_preview_static)
         val dial1ImageView = analog1PreviewContainer.findViewById<ImageView>(R.id.analog_1_dial_preview)
@@ -166,19 +157,19 @@ class AddWidgetsFragment : Fragment() {
         }
     }
 
-    // Updated function to inflate static layout directly
+
     private fun setupWidgetPreview(previewContainer: ViewGroup, staticLayoutId: Int) {
         try {
-            previewContainer.removeAllViews() // Clear previous preview if any
+            previewContainer.removeAllViews()
             val inflater = LayoutInflater.from(requireContext())
             val previewView = inflater.inflate(staticLayoutId, previewContainer, false)
             previewContainer.addView(previewView)
         } catch (e: Exception) {
-            // Fallback or error handling
+
             previewContainer.removeAllViews()
             val errorText = TextView(requireContext()).apply {
                 text = "Preview failed"
-                textSize = 8f // Smaller text for error
+                textSize = 8f
             }
             val params = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
             params.gravity = android.view.Gravity.CENTER
@@ -192,11 +183,11 @@ class AddWidgetsFragment : Fragment() {
         val canvas = Canvas(bitmap)
         val paint = Paint().apply {
             color = CommonUtils.getAccentColor(context)
-            strokeWidth = 2f * context.resources.displayMetrics.density // Scale stroke width
+            strokeWidth = 2f * context.resources.displayMetrics.density
             style = Paint.Style.STROKE
             isAntiAlias = true
         }
-        // Adjust control points based on target density if needed, or keep relative
+
         val path = Path().apply {
             val p0 = Pair(40f / 300f * widthPx, 82f / 150f * heightPx)
             val p1 = Pair(150f / 300f * widthPx, (-20f) / 150f * heightPx)
