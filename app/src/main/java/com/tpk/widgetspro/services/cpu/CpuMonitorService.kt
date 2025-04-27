@@ -28,8 +28,10 @@ class CpuMonitorService : BaseMonitorService() {
     private val MAX_DATA_POINTS = 50
     private var useRoot = false
     private var prefs: SharedPreferences? = null
+    private var initialized = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val commandResult = super.onStartCommand(intent, flags, startId)
 
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, CpuWidgetProvider::class.java))
@@ -38,16 +40,22 @@ class CpuMonitorService : BaseMonitorService() {
             return START_NOT_STICKY
         }
 
-        if (PermissionUtils.hasRootAccess()) {
-            useRoot = true
-        } else if (PermissionUtils.hasShizukuPermission()) {
-            useRoot = false
-        } else {
-            stopSelf()
-            return START_NOT_STICKY
+        if (!initialized) {
+            if (PermissionUtils.hasRootAccess()) {
+                useRoot = true
+                initializeMonitoring()
+                initialized = true
+            } else if (PermissionUtils.hasShizukuPermission()) {
+                useRoot = false
+                initializeMonitoring()
+                initialized = true
+            } else {
+                stopSelf()
+                return START_NOT_STICKY
+            }
         }
-        if (!::cpuMonitor.isInitialized) initializeMonitoring()
-        return super.onStartCommand(intent, flags, startId)
+
+        return commandResult
     }
 
     private fun initializeMonitoring() {
@@ -62,9 +70,9 @@ class CpuMonitorService : BaseMonitorService() {
                     return@CpuMonitor
                 }
 
-                val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
-                val isDarkTheme = prefs.getBoolean("dark_theme", false)
-                val isRedAccent = prefs.getBoolean("red_accent", false)
+                val themePrefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
+                val isDarkTheme = themePrefs.getBoolean("dark_theme", false)
+                val isRedAccent = themePrefs.getBoolean("red_accent", false)
                 val themeResId = when {
                     isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
                     isDarkTheme -> R.style.Theme_WidgetsPro
@@ -101,7 +109,9 @@ class CpuMonitorService : BaseMonitorService() {
     private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == "cpu_interval") {
             val newInterval = prefs?.getInt(key, 60)?.coerceAtLeast(1) ?: 60
-            cpuMonitor.updateInterval(newInterval)
+            if (::cpuMonitor.isInitialized) {
+                cpuMonitor.updateInterval(newInterval)
+            }
         }
     }
 
