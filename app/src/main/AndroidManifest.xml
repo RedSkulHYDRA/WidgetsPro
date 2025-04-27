@@ -59,7 +59,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.WidgetsPro">
+        android:theme="@style/Theme.WidgetsPro.Red.Light">
 
         <activity
             android:name=".PermissionActivity"
@@ -294,7 +294,7 @@
         <activity
             android:name=".services.notes.NoteWidgetInputService"
             android:excludeFromRecents="true"
-            android:theme="@style/Theme.NotesWidget"></activity>
+            android:theme="@style/Theme.NotesWidget"/>
 
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
