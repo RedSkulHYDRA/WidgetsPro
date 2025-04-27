@@ -26,6 +26,7 @@ import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.tpk.widgetspro.services.BaseMonitorService
 
 class MainActivity : AppCompatActivity() {
     internal val SHIZUKU_REQUEST_CODE = 1001
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         val navView: BottomNavigationView = findViewById(R.id.nav_view)
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
+
         navView.setupWithNavController(navController)
         BitmapCacheManager.clearExpiredCache(this)
     }
@@ -84,7 +86,6 @@ class MainActivity : AppCompatActivity() {
             putBoolean("red_accent", !isRedAccent)
             apply()
         }
-
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val providers = arrayOf(
             CpuWidgetProvider::class.java,
@@ -102,16 +103,17 @@ class MainActivity : AppCompatActivity() {
             AnalogClockWidgetProvider_1::class.java,
             AnalogClockWidgetProvider_2::class.java
         )
-
+        val intent = Intent(BaseMonitorService.ACTION_THEME_CHANGED)
+        sendBroadcast(intent)
         providers.forEach { provider ->
             val componentName = ComponentName(this, provider)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
             if (appWidgetIds.isNotEmpty()) {
-                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+                val updateIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
                     component = componentName
                 }
-                sendBroadcast(intent)
+                sendBroadcast(updateIntent)
             }
         }
         recreate()

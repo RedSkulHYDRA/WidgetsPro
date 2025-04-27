@@ -20,13 +20,28 @@ class NoteWidgetInputService : AppCompatActivity() {
     private lateinit var noteEditText: EditText
     private lateinit var bulletToggle: CheckBox
 
+    private fun applyAppTheme() {
+        val prefs = getSharedPreferences("theme_prefs", MODE_PRIVATE)
+        val isDarkTheme = prefs.getBoolean("dark_theme", false)
+        val isRedAccent = prefs.getBoolean("red_accent", false)
+        setTheme(
+            when {
+                isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
+                isDarkTheme -> R.style.Theme_WidgetsPro_Dark
+                isRedAccent -> R.style.Theme_WidgetsPro_Red_Light
+                else -> R.style.Theme_WidgetsPro
+            }
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        applyAppTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_note_input)
 
         window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.9).toInt(),
-            (resources.displayMetrics.heightPixels * 0.4).toInt()
+            (resources.displayMetrics.widthPixels * 0.6).toInt(),
+            (resources.displayMetrics.heightPixels * 0.3).toInt()
         )
         window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
 

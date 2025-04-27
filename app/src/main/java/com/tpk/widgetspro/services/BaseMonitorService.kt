@@ -28,6 +28,7 @@ abstract class BaseMonitorService : Service() {
         const val ACTION_LAUNCHER_STATE_CHANGED = "com.tpk.widgetspro.LAUNCHER_STATE_CHANGED"
         const val EXTRA_IS_ACTIVE = "is_active"
         private const val ACTION_WALLPAPER_CHANGED_STRING = "android.intent.action.WALLPAPER_CHANGED"
+        const val ACTION_THEME_CHANGED = "com.tpk.widgetspro.ACTION_THEME_CHANGED"
         @JvmStatic
         protected val CHECK_INTERVAL_INACTIVE_MS = TimeUnit.MINUTES.toMillis(60)
     }
@@ -58,8 +59,11 @@ abstract class BaseMonitorService : Service() {
                         cancelInactiveUpdates()
                     }
                 }
-                Intent.ACTION_CONFIGURATION_CHANGED -> updateAllWidgets()
-                ACTION_WALLPAPER_CHANGED_STRING -> updateAllWidgets()
+                Intent.ACTION_CONFIGURATION_CHANGED,
+                ACTION_WALLPAPER_CHANGED_STRING,
+                ACTION_THEME_CHANGED -> {
+                    updateAllWidgets()
+                }
             }
 
             val currentActiveState = shouldUpdate()
@@ -100,9 +104,11 @@ abstract class BaseMonitorService : Service() {
                 addAction(Intent.ACTION_USER_PRESENT)
                 addAction(Intent.ACTION_CONFIGURATION_CHANGED)
                 addAction(ACTION_WALLPAPER_CHANGED_STRING)
+                addAction(ACTION_THEME_CHANGED)
             },
             Context.RECEIVER_NOT_EXPORTED
         )
+
 
         registerReceiver(
             launcherStateReceiver,
@@ -203,13 +209,15 @@ abstract class BaseMonitorService : Service() {
             val componentName = ComponentName(this, provider)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
             if (appWidgetIds.isNotEmpty()) {
-                sendBroadcast(Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+                val updateIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
                     component = componentName
-                })
+                }
+                sendBroadcast(updateIntent)
             }
         }
     }
+
 
     override fun onBind(intent: Intent?): IBinder? = null
 

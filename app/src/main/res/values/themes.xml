@@ -7,6 +7,8 @@
         <item name="colorAccent">@color/accent_color</item>
         <item name="bottomNavigationStyle">@style/Widget.Material3.BottomNavigationView</item>
         <item name="radioButtonStyle">@style/Widget.App.RadioButton</item>
+        <item name="materialSwitchStyle">@style/MyCustomSwitchStyle</item>
+        <item name="checkboxStyle">@style/MyCustomCheckboxStyle</item>
     </style>
 
     <style name="Theme.WidgetsPro.Light" parent="Theme.Material3.Light.NoActionBar">
@@ -16,6 +18,8 @@
         <item name="colorAccent">@color/accent_color</item>
         <item name="bottomNavigationStyle">@style/Widget.Material3.BottomNavigationView</item>
         <item name="radioButtonStyle">@style/Widget.App.RadioButton</item>
+        <item name="materialSwitchStyle">@style/MyCustomSwitchStyle</item>
+        <item name="checkboxStyle">@style/MyCustomCheckboxStyle</item>
     </style>
 
     <style name="Theme.WidgetsPro.Red.Light" parent="Theme.Material3.Light.NoActionBar">
@@ -25,6 +29,8 @@
         <item name="colorAccent">@color/accent_color1</item>
         <item name="bottomNavigationStyle">@style/Widget.Material3.BottomNavigationView1</item>
         <item name="radioButtonStyle">@style/Widget.App.RadioButton1</item>
+        <item name="materialSwitchStyle">@style/MyCustomSwitchStyle1</item>
+        <item name="checkboxStyle">@style/MyCustomCheckboxStyle1</item>
     </style>
 
     <style name="Widget.Material3.BottomNavigationView" parent="@style/Widget.MaterialComponents.BottomNavigationView">
@@ -142,5 +148,17 @@
     <style name="Theme.NotesWidget" parent="Theme.Material3.Dark.Dialog">
         <item name="android:colorBackground">@color/shape_background_color</item>
         <item name="android:textColor">@color/text_color</item>
+    </style>
+    <style name="MyCustomSwitchStyle" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbTint">@color/accent_color</item>
+    </style>
+    <style name="MyCustomSwitchStyle1" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbTint">@color/accent_color1</item>
+    </style>
+    <style name="MyCustomCheckboxStyle" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">@color/accent_color</item>
+    </style>
+    <style name="MyCustomCheckboxStyle1" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">@color/accent_color1</item>
     </style>
 </resources>

@@ -22,7 +22,6 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
     private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
     private var cachedThemeResId: Int = R.style.Theme_WidgetsPro
     private var cachedAccentColor: Int = 0
-    private var lastRedAccent: Boolean = false
 
     private val clockIntent = Intent(Intent.ACTION_MAIN).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
@@ -47,6 +46,7 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
             }
         }
     }
+
 
     private val configChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -91,7 +91,6 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         val prefs = getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
         val isDarkTheme = prefs.getBoolean("dark_theme", isSystemInDarkTheme(baseContext))
         val isRedAccent = prefs.getBoolean("red_accent", false)
-        lastRedAccent = isRedAccent
 
         cachedThemeResId = when {
             isDarkTheme && isRedAccent -> R.style.Theme_WidgetsPro_Red_Dark
@@ -101,13 +100,15 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         }
 
         val themedContext = ContextThemeWrapper(baseContext, cachedThemeResId)
-        cachedAccentColor = ContextCompat.getColor(themedContext, android.R.color.holo_blue_light)
         val typedValue = android.util.TypedValue()
-        themedContext.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
-        if (typedValue.data != 0) {
-            cachedAccentColor = typedValue.data
+        themedContext.theme.resolveAttribute(R.attr.colorAccent, typedValue, true)
+        if (typedValue.resourceId != 0) {
+            cachedAccentColor = ContextCompat.getColor(themedContext, typedValue.resourceId)
+        } else {
+            cachedAccentColor = ContextCompat.getColor(themedContext, R.color.accent_color)
         }
     }
+
 
     private fun startMonitoring() {
         if (!isRunning) {
@@ -130,17 +131,12 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
             stopSelf()
             return START_NOT_STICKY
         }
+        updateThemeCache()
         if (!isRunning) startMonitoring()
         return super.onStartCommand(intent, flags, startId)
     }
 
     private fun updateHandPositions() {
-        val prefs = getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
-        val currentRedAccent = prefs.getBoolean("red_accent", false)
-        if (currentRedAccent != lastRedAccent) {
-            updateThemeCache()
-        }
-
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val componentName = ComponentName(this, AnalogClockWidgetProvider_1::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
@@ -166,10 +162,12 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         val minuteAngle = (totalMinutes * 6.0).toFloat()
         val secondAngle = (totalSeconds * 6.0).toFloat()
 
+        val isDark = isSystemInDarkTheme(baseContext)
+        val dialResource = if (isDark) R.drawable.analog_1_dial_dark else R.drawable.analog_1_dial_light
+
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(packageName, R.layout.analog_1_widget)
             views.setInt(R.id.analog_1_container, "setBackgroundResource", R.drawable.analog_1_bg)
-            val dialResource = if (isSystemInDarkTheme(baseContext)) R.drawable.analog_1_dial_dark else R.drawable.analog_1_dial_light
             views.setImageViewResource(R.id.analog_1_dial, dialResource)
             views.setImageViewResource(R.id.analog_1_hour, R.drawable.analog_1_hour)
             views.setImageViewResource(R.id.analog_1_min, R.drawable.analog_1_min)
