@@ -49,6 +49,28 @@
                     android:layout_height="match_parent"
                     android:padding="10dp">
 
+                    <TextView
+                        android:id="@+id/title_cpu"
+                        style="@style/CustomTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/widget_cpu_name"
+                        android:textAppearance="?attr/textAppearanceCaption" />
+
+                    <FrameLayout
+                        android:id="@+id/preview_cpu"
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/title_cpu"
+                        android:layout_above="@+id/cpu_button_container"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:background="@drawable/round_layout"/>
+
                     <LinearLayout
                         android:id="@+id/cpu_button_container"
                         android:layout_width="wrap_content"
@@ -84,17 +106,6 @@
                             app:tint="?attr/colorControlNormal" />
                     </LinearLayout>
 
-                    <FrameLayout
-                        android:id="@+id/preview_cpu"
-                        android:layout_width="120dp"
-                        android:layout_height="wrap_content"
-                        android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/cpu_button_container"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="5dp"
-                        android:background="@drawable/round_layout"/>
-
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -110,6 +121,28 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:padding="10dp">
+
+                    <TextView
+                        android:id="@+id/title_battery"
+                        style="@style/CustomTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/widget_battery_name"
+                        android:textAppearance="?attr/textAppearanceCaption" />
+
+                    <FrameLayout
+                        android:id="@+id/preview_battery"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:layout_below="@id/title_battery"
+                        android:layout_above="@+id/button2"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:background="@drawable/round_layout"/>
 
                     <Button
                         android:id="@+id/button2"
@@ -125,17 +158,6 @@
                         android:insetBottom="0dp"
                         android:text="@string/add" />
 
-                    <FrameLayout
-                        android:id="@+id/preview_battery"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button2"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="5dp"
-                        android:background="@drawable/round_layout"/>
-
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -151,6 +173,28 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:padding="10dp">
+
+                    <TextView
+                        android:id="@+id/title_caffeine"
+                        style="@style/CustomTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/widget_caffeine_name"
+                        android:textAppearance="?attr/textAppearanceCaption" />
+
+                    <FrameLayout
+                        android:id="@+id/preview_caffeine"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/title_caffeine"
+                        android:layout_above="@+id/button3"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="20dp"
+                        android:background="@drawable/preview_shape_circle"/>
 
                     <Button
                         android:id="@+id/button3"
@@ -166,15 +210,6 @@
                         android:insetBottom="0dp"
                         android:text="@string/add" />
 
-                    <FrameLayout
-                        android:id="@+id/preview_caffeine"
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
-                        android:layout_centerHorizontal="true"
-                        android:layout_above="@id/button3"
-                        android:layout_marginBottom="10dp"
-                        android:background="@drawable/preview_shape_circle"/>
-
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -190,6 +225,28 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:padding="10dp">
+
+                    <TextView
+                        android:id="@+id/title_bluetooth"
+                        style="@style/CustomTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/bluetooth_battery_name"
+                        android:textAppearance="?attr/textAppearanceCaption" />
+
+                    <FrameLayout
+                        android:id="@+id/preview_bluetooth"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:layout_below="@id/title_bluetooth"
+                        android:layout_above="@+id/button4"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:background="@drawable/round_layout"/>
 
                     <Button
                         android:id="@+id/button4"
@@ -205,17 +262,6 @@
                         android:insetBottom="0dp"
                         android:text="@string/add" />
 
-                    <FrameLayout
-                        android:id="@+id/preview_bluetooth"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button4"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="5dp"
-                        android:background="@drawable/round_layout"/>
-
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -231,6 +277,28 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:padding="10dp">
+
+                    <TextView
+                        android:id="@+id/title_sun"
+                        style="@style/CustomTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/sun_tracker_description"
+                        android:textAppearance="?attr/textAppearanceCaption" />
+
+                    <FrameLayout
+                        android:id="@+id/preview_sun"
+                        android:layout_width="140dp"
+                        android:layout_height="100dp"
+                        android:layout_below="@id/title_sun"
+                        android:layout_above="@+id/button5"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:background="@drawable/round_layout"/>
 
                     <Button
                         android:id="@+id/button5"
@@ -246,17 +314,6 @@
                         android:insetBottom="0dp"
                         android:text="@string/add" />
 
-                    <FrameLayout
-                        android:id="@+id/preview_sun"
-                        android:layout_width="140dp"
-                        android:layout_height="100dp"
-                        android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button5"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="5dp"
-                        android:background="@drawable/round_layout"/>
-
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -273,27 +330,24 @@
                     android:layout_height="match_parent"
                     android:padding="10dp">
 
-                    <Button
-                        android:id="@+id/button6"
+                    <TextView
+                        android:id="@+id/title_network_speed"
                         style="@style/CustomTextView"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentBottom="true"
-                        android:layout_centerHorizontal="true"
-                        android:layout_marginBottom="10dp"
-                        android:paddingVertical="8dp"
-                        android:textSize="12sp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="@string/add" />
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/network_speed_widget_description"
+                        android:textAppearance="?attr/textAppearanceCaption" />
 
                     <LinearLayout
                         android:id="@+id/network_preview_container"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_below="@id/title_network_speed"
+                        android:layout_above="@+id/button6"
                         android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button6"
                         android:layout_marginTop="15dp"
                         android:layout_marginBottom="5dp"
                         android:orientation="horizontal"
@@ -311,6 +365,20 @@
                             android:background="@drawable/preview_shape_pill"/>
                     </LinearLayout>
 
+                    <Button
+                        android:id="@+id/button6"
+                        style="@style/CustomTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginBottom="10dp"
+                        android:paddingVertical="8dp"
+                        android:textSize="12sp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/add" />
+
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -327,27 +395,24 @@
                     android:layout_height="match_parent"
                     android:padding="10dp">
 
-                    <Button
-                        android:id="@+id/button7"
+                    <TextView
+                        android:id="@+id/title_wifi_usage"
                         style="@style/CustomTextView"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentBottom="true"
-                        android:layout_centerHorizontal="true"
-                        android:layout_marginBottom="10dp"
-                        android:paddingVertical="8dp"
-                        android:textSize="12sp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="@string/add" />
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/wifi_data_usage_description"
+                        android:textAppearance="?attr/textAppearanceCaption" />
 
                     <LinearLayout
                         android:id="@+id/wifi_preview_container"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_below="@id/title_wifi_usage"
+                        android:layout_above="@+id/button7"
                         android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button7"
                         android:layout_marginTop="15dp"
                         android:layout_marginBottom="5dp"
                         android:orientation="horizontal"
@@ -365,6 +430,20 @@
                             android:background="@drawable/preview_shape_pill"/>
                     </LinearLayout>
 
+                    <Button
+                        android:id="@+id/button7"
+                        style="@style/CustomTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginBottom="10dp"
+                        android:paddingVertical="8dp"
+                        android:textSize="12sp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/add" />
+
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -381,27 +460,24 @@
                     android:layout_height="match_parent"
                     android:padding="10dp">
 
-                    <Button
-                        android:id="@+id/button8"
+                    <TextView
+                        android:id="@+id/title_sim_usage"
                         style="@style/CustomTextView"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentBottom="true"
-                        android:layout_centerHorizontal="true"
-                        android:layout_marginBottom="10dp"
-                        android:paddingVertical="8dp"
-                        android:textSize="12sp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="@string/add" />
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/sim_data_usage_description"
+                        android:textAppearance="?attr/textAppearanceCaption" />
 
                     <LinearLayout
                         android:id="@+id/sim_preview_container"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_below="@id/title_sim_usage"
+                        android:layout_above="@+id/button8"
                         android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button8"
                         android:layout_marginTop="15dp"
                         android:layout_marginBottom="5dp"
                         android:orientation="horizontal"
@@ -419,6 +495,20 @@
                             android:background="@drawable/preview_shape_pill"/>
                     </LinearLayout>
 
+                    <Button
+                        android:id="@+id/button8"
+                        style="@style/CustomTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginBottom="10dp"
+                        android:paddingVertical="8dp"
+                        android:textSize="12sp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/add" />
+
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -434,6 +524,28 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:padding="10dp">
+
+                    <TextView
+                        android:id="@+id/title_notes"
+                        style="@style/CustomTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/notes_widget_name"
+                        android:textAppearance="?attr/textAppearanceCaption" />
+
+                    <FrameLayout
+                        android:id="@+id/preview_notes"
+                        android:layout_width="140dp"
+                        android:layout_height="100dp"
+                        android:layout_below="@id/title_notes"
+                        android:layout_above="@+id/button10"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:background="@drawable/round_layout"/>
 
                     <Button
                         android:id="@+id/button10"
@@ -449,17 +561,6 @@
                         android:insetBottom="0dp"
                         android:text="@string/add" />
 
-                    <FrameLayout
-                        android:id="@+id/preview_notes"
-                        android:layout_width="140dp"
-                        android:layout_height="100dp"
-                        android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button10"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="5dp"
-                        android:background="@drawable/round_layout"/>
-
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -476,27 +577,24 @@
                     android:layout_height="match_parent"
                     android:padding="10dp">
 
-                    <Button
-                        android:id="@+id/button11"
+                    <TextView
+                        android:id="@+id/title_analog_clock"
                         style="@style/CustomTextView"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentBottom="true"
-                        android:layout_centerHorizontal="true"
-                        android:layout_marginBottom="10dp"
-                        android:paddingVertical="8dp"
-                        android:textSize="12sp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="@string/add"/>
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/analog_clock"
+                        android:textAppearance="?attr/textAppearanceCaption" />
 
                     <LinearLayout
                         android:id="@+id/analog_preview_container"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_below="@id/title_analog_clock"
+                        android:layout_above="@+id/button11"
                         android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button11"
                         android:layout_marginTop="15dp"
                         android:layout_marginBottom="5dp"
                         android:orientation="horizontal"
@@ -514,6 +612,20 @@
                             android:background="@drawable/rounded_layout_bg"/>
                     </LinearLayout>
 
+                    <Button
+                        android:id="@+id/button11"
+                        style="@style/CustomTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginBottom="10dp"
+                        android:paddingVertical="8dp"
+                        android:textSize="12sp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/add"/>
+
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -530,6 +642,28 @@
                     android:layout_height="match_parent"
                     android:padding="10dp">
 
+                    <TextView
+                        android:id="@+id/title_gif"
+                        style="@style/CustomTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/gif_widget"
+                        android:textAppearance="?attr/textAppearanceCaption" />
+
+                    <FrameLayout
+                        android:id="@+id/preview_gif"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:layout_below="@id/title_gif"
+                        android:layout_above="@+id/button12"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:background="@drawable/round_layout"/>
+
                     <Button
                         android:id="@+id/button12"
                         style="@style/CustomTextView"
@@ -543,17 +677,6 @@
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
                         android:text="@string/add"/>
-
-                    <FrameLayout
-                        android:id="@+id/preview_gif"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:layout_centerHorizontal="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_above="@id/button12"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="5dp"
-                        android:background="@drawable/round_layout"/>
 
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
