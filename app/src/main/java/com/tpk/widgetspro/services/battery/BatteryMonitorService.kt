@@ -25,27 +25,31 @@ import android.content.res.Configuration
 class BatteryMonitorService : BaseMonitorService() {
     private lateinit var batteryMonitor: BatteryMonitor
     private var prefs: SharedPreferences? = null
+    private var initialized = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val commandResult = super.onStartCommand(intent, flags, startId)
+
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, BatteryWidgetProvider::class.java))
         if (widgetIds.isEmpty()) {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (!::batteryMonitor.isInitialized) {
+
+        if (!initialized) {
             initializeMonitoring()
+            initialized = true
         }
 
         val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         val currentPercentage = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val currentHealth = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
-
         if (shouldUpdate()) {
             updateWidgetViews(currentPercentage, currentHealth)
         }
 
-        return super.onStartCommand(intent, flags, startId)
+        return commandResult
     }
 
     private fun initializeMonitoring() {
