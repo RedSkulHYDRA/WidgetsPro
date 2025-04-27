@@ -25,7 +25,8 @@ class AnimationService : BaseMonitorService() {
         var frames: List<Frame>? = null,
         var currentFrame: Int = 0,
         var uriString: String? = null,
-        var syncGroupId: String? = null
+        var syncGroupId: String? = null,
+        var runnable: Runnable? = null
     )
     data class SyncGroupData(
         val widgetIds: MutableSet<Int> = mutableSetOf(),
@@ -205,6 +206,8 @@ class AnimationService : BaseMonitorService() {
     private fun startAnimation(appWidgetId: Int) {
         widgetData[appWidgetId]?.let { data ->
             if (data.frames?.isNotEmpty() == true) {
+                data.runnable?.let { handler.removeCallbacks(it) }
+
                 val runnable = object : Runnable {
                     override fun run() {
                         if (shouldUpdate()) {
@@ -214,6 +217,7 @@ class AnimationService : BaseMonitorService() {
                         handler.postDelayed(this, frameDuration)
                     }
                 }
+                data.runnable = runnable
                 handler.post(runnable)
             }
         }
@@ -277,8 +281,8 @@ class AnimationService : BaseMonitorService() {
 
     private fun stopAnimation(appWidgetId: Int) {
         widgetData[appWidgetId]?.let { data ->
-            if (data.syncGroupId == null) {
-            }
+            data.runnable?.let { handler.removeCallbacks(it) }
+            data.runnable = null
         }
     }
 
@@ -310,6 +314,8 @@ class AnimationService : BaseMonitorService() {
         widgetData.forEach { (appWidgetId, data) ->
             if (data.syncGroupId != null) {
                 syncGroups[data.syncGroupId]?.widgetIds?.remove(appWidgetId)
+            } else {
+                data.runnable?.let { handler.removeCallbacks(it) }
             }
             data.frames?.forEach { it.bitmap.recycle() }
         }
