@@ -167,8 +167,10 @@ class SettingsFragment : Fragment() {
         view.findViewById<Button>(R.id.reset_image_button).setOnClickListener {
             resetBluetoothImage()
         }
-
-        view.findViewById<Button>(R.id.button9).setOnClickListener {
+        val switchThemes = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.button9)
+        switchThemes.isChecked = prefs.getBoolean("theme_enabled", false)
+        switchThemes.setOnCheckedChangeListener {_, isChecked ->
+            prefs.edit().putBoolean("theme_enabled", isChecked).apply()
             (activity as? MainActivity)?.switchTheme()
         }
 
