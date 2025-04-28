@@ -8,11 +8,35 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
         android:layout_marginLeft="15dp"
+        android:layout_marginTop="15dp"
         android:layout_marginRight="15dp"
         android:background="?attr/colorSurface"
         android:orientation="vertical">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="6dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="10dp">
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/button9"
+                    style="@style/CustomTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/switch_to_red_accent" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -200,7 +224,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/enable_60_fps_clock_updates"/>
+                        android:text="@string/enable_60_fps_clock_updates" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switch_clock_fps"
@@ -234,10 +258,10 @@
                     android:id="@+id/location_input_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/rounded_layout_bg"
                     android:layout_marginTop="10dp"
-                    android:padding="5dp"
+                    android:background="@drawable/rounded_layout_bg"
                     android:gravity="center"
+                    android:padding="5dp"
                     app:boxCornerRadiusBottomEnd="8dp"
                     app:boxCornerRadiusBottomStart="8dp"
                     app:boxCornerRadiusTopEnd="8dp"
@@ -253,12 +277,12 @@
 
                 <Button
                     android:id="@+id/set_location_button"
+                    style="@style/CustomTextView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginTop="10dp"
-                    android:text="@string/set_location"
-                    style="@style/CustomTextView" />
+                    android:text="@string/set_location" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -428,14 +452,5 @@
                     android:text="@string/sync_gif_widgets" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <Button
-            android:id="@+id/button9"
-            style="@style/CustomTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            android:layout_marginBottom="6dp"
-            android:text="@string/switch_to_red_accent" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
