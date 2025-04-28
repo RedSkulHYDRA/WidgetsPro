@@ -26,7 +26,6 @@ class NoteWidgetInputService : AppCompatActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
         setTheme(R.style.Theme_NotesWidget)
 
         super.onCreate(savedInstanceState)
@@ -34,7 +33,7 @@ class NoteWidgetInputService : AppCompatActivity() {
 
         window?.setLayout(
             (resources.displayMetrics.widthPixels * 0.9).toInt(),
-            (resources.displayMetrics.heightPixels * 0.4).toInt()
+            (resources.displayMetrics.heightPixels * 0.3).toInt()
         )
         window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
 

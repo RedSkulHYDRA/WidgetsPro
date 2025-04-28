@@ -44,10 +44,14 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
         applicationVariants.configureEach {
             outputs.configureEach {
                 (this as? com.android.build.gradle.internal.api.ApkVariantOutputImpl)?.outputFileName =
-                    "Widgets-Pro-v$versionName.apk"
+                    "Widgets-Pro-${buildType.name}-v$versionName.apk"
             }
         }
     }

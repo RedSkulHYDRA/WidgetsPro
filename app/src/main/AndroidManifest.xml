@@ -294,6 +294,7 @@
         <activity
             android:name=".services.notes.NoteWidgetInputService"
             android:excludeFromRecents="true"
+            android:label="Notes"
             android:theme="@style/Theme.NotesWidget"/>
 
         <provider
