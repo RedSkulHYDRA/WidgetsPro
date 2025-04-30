@@ -14,6 +14,9 @@ import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import pl.droidsonroids.gif.GifDrawable
 import java.io.BufferedInputStream
+import java.io.FileNotFoundException
+import java.util.*
+import kotlin.collections.set
 
 class AnimationService : BaseMonitorService() {
     private val handler = Handler(Looper.getMainLooper())
@@ -21,6 +24,7 @@ class AnimationService : BaseMonitorService() {
     private val syncGroups = mutableMapOf<String, SyncGroupData>()
 
     data class Frame(val bitmap: Bitmap, val duration: Int)
+
     data class WidgetAnimationData(
         var frames: List<Frame>? = null,
         var currentFrame: Int = 0,
@@ -28,10 +32,10 @@ class AnimationService : BaseMonitorService() {
         var syncGroupId: String? = null,
         var runnable: Runnable? = null
     )
+
     data class SyncGroupData(
         val widgetIds: MutableSet<Int> = mutableSetOf(),
         var currentFrame: Int = 0,
-        var totalDuration: Long = 0,
         var runnable: Runnable? = null
     )
 
@@ -48,9 +52,7 @@ class AnimationService : BaseMonitorService() {
             widgetIds.forEach { appWidgetId ->
                 val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
                 val uriString = prefs.getString("file_uri_$appWidgetId", null)
-                if (uriString != null) {
-                    handleAddWidget(appWidgetId, uriString)
-                }
+                uriString?.let { handleAddWidget(appWidgetId, it) }
             }
         } else {
             val action = intent.getStringExtra("action")
@@ -59,9 +61,7 @@ class AnimationService : BaseMonitorService() {
                 "ADD_WIDGET" -> {
                     if (appWidgetId != -1) {
                         val uriString = intent.getStringExtra("file_uri")
-                        if (uriString != null) {
-                            handleAddWidget(appWidgetId, uriString)
-                        }
+                        uriString?.let { handleAddWidget(appWidgetId, it) }
                     }
                 }
                 "REMOVE_WIDGET" -> {
@@ -72,9 +72,7 @@ class AnimationService : BaseMonitorService() {
                 "UPDATE_FILE" -> {
                     if (appWidgetId != -1) {
                         val uriString = intent.getStringExtra("file_uri")
-                        if (uriString != null) {
-                            handleUpdateFile(appWidgetId, uriString)
-                        }
+                        uriString?.let { handleUpdateFile(appWidgetId, it) }
                     }
                 }
                 "SYNC_WIDGETS" -> {
@@ -97,17 +95,22 @@ class AnimationService : BaseMonitorService() {
             return
         }
 
-        val frames = getFrames(Uri.parse(uriString))
+        val frames = decodeGifToFrames(Uri.parse(uriString))
         if (frames.isNotEmpty()) {
             val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
             val syncGroupId = prefs.getString("sync_group_$appWidgetId", null)
-            widgetData[appWidgetId] = WidgetAnimationData(
+            val data = WidgetAnimationData(
                 frames = frames,
                 uriString = uriString,
                 syncGroupId = syncGroupId
             )
-            if (syncGroupId != null && syncGroups.containsKey(syncGroupId)) {
-                syncGroups[syncGroupId]?.widgetIds?.add(appWidgetId)
+            widgetData[appWidgetId] = data
+
+            if (syncGroupId != null) {
+                val group = syncGroups.getOrPut(syncGroupId) { SyncGroupData() }
+                group.widgetIds.add(appWidgetId)
+                group.runnable?.let { handler.removeCallbacks(it) }
+                startSyncAnimation(syncGroupId)
             } else {
                 startAnimation(appWidgetId)
             }
@@ -116,210 +119,326 @@ class AnimationService : BaseMonitorService() {
 
     private fun handleRemoveWidget(appWidgetId: Int) {
         widgetData[appWidgetId]?.let { data ->
-            if (data.syncGroupId != null) {
-                syncGroups[data.syncGroupId]?.let { group ->
+            data.runnable?.let { handler.removeCallbacks(it) }
+            recycleFrames(data.frames)
+
+            data.syncGroupId?.let { syncGroupId ->
+                syncGroups[syncGroupId]?.let { group ->
                     group.widgetIds.remove(appWidgetId)
                     if (group.widgetIds.isEmpty()) {
                         group.runnable?.let { handler.removeCallbacks(it) }
-                        syncGroups.remove(data.syncGroupId)
+                        syncGroups.remove(syncGroupId)
                     }
                 }
-            } else {
-                stopAnimation(appWidgetId)
             }
-            data.frames?.forEach { it.bitmap.recycle() }
             widgetData.remove(appWidgetId)
         }
-        if (widgetData.isEmpty()) {
+
+        if (widgetData.isEmpty() && syncGroups.isEmpty()) {
             stopForeground(true)
             stopSelf()
         }
     }
 
     private fun handleUpdateFile(appWidgetId: Int, uriString: String) {
-        widgetData[appWidgetId]?.let { data ->
-            if (data.syncGroupId != null) {
-                syncGroups[data.syncGroupId]?.let { group ->
-                    group.widgetIds.remove(appWidgetId)
-                    if (group.widgetIds.isEmpty()) {
-                        group.runnable?.let { handler.removeCallbacks(it) }
-                        syncGroups.remove(data.syncGroupId)
-                    }
+        val oldData = widgetData[appWidgetId]
+
+        oldData?.runnable?.let { handler.removeCallbacks(it) }
+        recycleFrames(oldData?.frames)
+
+        oldData?.syncGroupId?.let { oldSyncId ->
+            syncGroups[oldSyncId]?.let { group ->
+                group.widgetIds.remove(appWidgetId)
+                if (group.widgetIds.isEmpty()) {
+                    group.runnable?.let { handler.removeCallbacks(it) }
+                    syncGroups.remove(oldSyncId)
                 }
-                data.syncGroupId = null
-            } else {
-                stopAnimation(appWidgetId)
             }
-            data.frames?.forEach { it.bitmap.recycle() }
-            val newFrames = getFrames(Uri.parse(uriString))
-            if (newFrames.isNotEmpty()) {
-                data.frames = newFrames
-                data.currentFrame = 0
-                data.uriString = uriString
-                val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
-                data.syncGroupId = prefs.getString("sync_group_$appWidgetId", null)
-                if (data.syncGroupId != null && syncGroups.containsKey(data.syncGroupId)) {
-                    syncGroups[data.syncGroupId]?.widgetIds?.add(appWidgetId)
-                } else {
-                    startAnimation(appWidgetId)
-                }
+        }
+
+        val newFrames = decodeGifToFrames(Uri.parse(uriString))
+        if (newFrames.isNotEmpty()) {
+            val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
+            val newSyncGroupId = prefs.getString("sync_group_$appWidgetId", null)
+            val newData = WidgetAnimationData(
+                frames = newFrames,
+                uriString = uriString,
+                syncGroupId = newSyncGroupId
+            )
+            widgetData[appWidgetId] = newData
+
+            if (newSyncGroupId != null) {
+                val group = syncGroups.getOrPut(newSyncGroupId) { SyncGroupData() }
+                group.widgetIds.add(appWidgetId)
+                group.runnable?.let { handler.removeCallbacks(it) }
+                startSyncAnimation(newSyncGroupId)
             } else {
-                widgetData.remove(appWidgetId)
+                startAnimation(appWidgetId)
             }
-        } ?: run {
-            handleAddWidget(appWidgetId, uriString)
+        } else {
+            widgetData.remove(appWidgetId)
+            if (widgetData.isEmpty() && syncGroups.isEmpty()) {
+                stopForeground(true)
+                stopSelf()
+            }
         }
     }
 
-    private fun handleSyncWidgets(syncGroupId: String, widgetIds: Set<Int>) {
-        widgetIds.forEach { appWidgetId ->
+    private fun handleSyncWidgets(syncGroupId: String, widgetIdsToSync: Set<Int>) {
+        val affectedSyncGroups = mutableSetOf<String>()
+
+        widgetIdsToSync.forEach { appWidgetId ->
             widgetData[appWidgetId]?.let { data ->
+
+                data.runnable?.let { handler.removeCallbacks(it) }
+                data.runnable = null
+
                 if (data.syncGroupId != null && data.syncGroupId != syncGroupId) {
+                    affectedSyncGroups.add(data.syncGroupId!!)
                     syncGroups[data.syncGroupId]?.widgetIds?.remove(appWidgetId)
-                    if (syncGroups[data.syncGroupId]?.widgetIds?.isEmpty() == true) {
-                        syncGroups[data.syncGroupId]?.runnable?.let { handler.removeCallbacks(it) }
-                        syncGroups.remove(data.syncGroupId)
-                    }
                 }
                 data.syncGroupId = syncGroupId
             }
         }
-        val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE)
-        val editor = prefs.edit()
-        widgetIds.forEach { appWidgetId ->
-            editor.putString("sync_group_$appWidgetId", syncGroupId)
+
+        affectedSyncGroups.forEach { oldSyncId ->
+            syncGroups[oldSyncId]?.let { group ->
+                if (group.widgetIds.isEmpty()) {
+                    group.runnable?.let { handler.removeCallbacks(it) }
+                    syncGroups.remove(oldSyncId)
+                } else {
+                    group.runnable?.let { handler.removeCallbacks(it) }
+                    startSyncAnimation(oldSyncId)
+                }
+            }
         }
-        editor.apply()
+
+        val prefs = getSharedPreferences("gif_widget_prefs", MODE_PRIVATE).edit()
+        widgetIdsToSync.forEach { appWidgetId ->
+            prefs.putString("sync_group_$appWidgetId", syncGroupId)
+        }
+        prefs.apply()
 
         val syncGroup = syncGroups.getOrPut(syncGroupId) { SyncGroupData() }
-        syncGroup.widgetIds.addAll(widgetIds)
-
-        val totalDuration = widgetIds
-            .mapNotNull { widgetData[it]?.frames }
-            .maxOfOrNull { frames -> frames.sumOf { it.duration.toLong() } } ?: 0L
-        syncGroup.totalDuration = totalDuration
-
+        syncGroup.widgetIds.clear()
+        syncGroup.widgetIds.addAll(widgetIdsToSync)
+        syncGroup.currentFrame = 0
         syncGroup.runnable?.let { handler.removeCallbacks(it) }
         startSyncAnimation(syncGroupId)
+
+        widgetData.keys.forEach { appWidgetId ->
+            if (widgetData[appWidgetId]?.syncGroupId == null && widgetData[appWidgetId]?.runnable == null) {
+                startAnimation(appWidgetId)
+            }
+        }
     }
 
     private fun startAnimation(appWidgetId: Int) {
         widgetData[appWidgetId]?.let { data ->
-            if (data.frames?.isNotEmpty() == true) {
-                data.runnable?.let { handler.removeCallbacks(it) }
+            val frames = data.frames
+            if (frames.isNullOrEmpty()) return
+            data.runnable?.let { handler.removeCallbacks(it) }
 
-                val runnable = object : Runnable {
-                    override fun run() {
+            val runnable = object : Runnable {
+                override fun run() {
+                    if (widgetData.containsKey(appWidgetId)) {
                         if (shouldUpdate()) {
                             updateWidget(appWidgetId)
                         }
-                        val frameDuration = data.frames!![data.currentFrame].duration.toLong()
-                        handler.postDelayed(this, frameDuration)
+                        val frameDuration = data.frames?.getOrNull(data.currentFrame)?.duration?.toLong() ?: 100L
+                        if (data.runnable == this) {
+                            handler.postDelayed(this, frameDuration.coerceAtLeast(1L))
+                        }
                     }
                 }
-                data.runnable = runnable
-                handler.post(runnable)
             }
+            data.runnable = runnable
+            handler.post(runnable)
         }
     }
 
     private fun startSyncAnimation(syncGroupId: String) {
         syncGroups[syncGroupId]?.let { group ->
-            if (group.widgetIds.isNotEmpty()) {
-                val runnable = object : Runnable {
-                    override fun run() {
+            if (group.widgetIds.isEmpty()){
+                syncGroups.remove(syncGroupId)
+                return
+            }
+            group.runnable?.let { handler.removeCallbacks(it) }
+
+            val runnable = object : Runnable {
+                override fun run() {
+                    if (syncGroups.containsKey(syncGroupId)) {
                         if (shouldUpdate()) {
                             updateSyncGroup(syncGroupId)
                         }
-                        val currentFrameTimes = group.widgetIds
-                            .mapNotNull { widgetData[it]?.frames?.getOrNull(widgetData[it]?.currentFrame ?: 0)?.duration }
-                        val minFrameDuration = currentFrameTimes.minOrNull()?.toLong() ?: 100L
-                        group.runnable = this
-                        handler.postDelayed(this, minFrameDuration)
+
+                        val minFrameDuration = group.widgetIds
+                            .mapNotNull { widgetData[it]?.frames?.getOrNull(group.currentFrame)?.duration?.toLong() }
+                            .minOrNull() ?: 100L
+
+                        if (group.runnable == this) {
+                            handler.postDelayed(this, minFrameDuration.coerceAtLeast(1L))
+                        }
                     }
                 }
-                group.runnable = runnable
-                handler.post(runnable)
             }
+            group.runnable = runnable
+            handler.post(runnable)
         }
     }
 
     private fun updateWidget(appWidgetId: Int) {
         widgetData[appWidgetId]?.let { data ->
-            val frames = data.frames ?: return
-            val frame = frames[data.currentFrame]
-            val appWidgetManager = AppWidgetManager.getInstance(this)
-            val remoteViews = RemoteViews(packageName, R.layout.gif_widget_layout)
-            remoteViews.setImageViewBitmap(R.id.imageView, frame.bitmap)
-            appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+            val frames = data.frames
+            if (frames.isNullOrEmpty()) {
+                handleRemoveWidget(appWidgetId)
+                return
+            }
+
+            if (data.currentFrame < 0 || data.currentFrame >= frames.size) {
+                data.currentFrame = 0
+            }
+            if (frames.isEmpty()) return
+
+            val frameIndexToShow = data.currentFrame
+            val frame = frames[frameIndexToShow]
+
+            if (!frame.bitmap.isRecycled) {
+                val appWidgetManager = AppWidgetManager.getInstance(this)
+                val remoteViews = RemoteViews(packageName, R.layout.gif_widget_layout)
+                remoteViews.setImageViewBitmap(R.id.imageView, frame.bitmap)
+                try {
+                    appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+                } catch (e: Exception) {
+                    handleRemoveWidget(appWidgetId)
+                    return
+                }
+            } else {
+                handleRemoveWidget(appWidgetId)
+                return
+            }
+
             data.currentFrame = (data.currentFrame + 1) % frames.size
         }
     }
 
     private fun updateSyncGroup(syncGroupId: String) {
         syncGroups[syncGroupId]?.let { group ->
+            if (group.widgetIds.isEmpty()) {
+                syncGroups.remove(syncGroupId)
+                return
+            }
+            val appWidgetManager = AppWidgetManager.getInstance(this)
+            var maxFrameCount = 0
+            val widgetsToRemove = mutableListOf<Int>()
+
             group.widgetIds.forEach { appWidgetId ->
                 widgetData[appWidgetId]?.let { data ->
-                    val frames = data.frames ?: return@forEach
-                    val appWidgetManager = AppWidgetManager.getInstance(this)
-                    val remoteViews = RemoteViews(packageName, R.layout.gif_widget_layout)
-                    val frame = frames[group.currentFrame % frames.size]
-                    remoteViews.setImageViewBitmap(R.id.imageView, frame.bitmap)
-                    appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
-                    data.currentFrame = group.currentFrame % frames.size
+                    val frames = data.frames
+                    if (frames.isNullOrEmpty()) {
+                        widgetsToRemove.add(appWidgetId)
+                        return@forEach
+                    }
+
+                    maxFrameCount = maxOf(maxFrameCount, frames.size)
+                    if (group.currentFrame < 0) group.currentFrame = 0
+                    if (frames.isEmpty()) {
+                        widgetsToRemove.add(appWidgetId)
+                        return@forEach
+                    }
+
+                    val frameIndexToShow = group.currentFrame % frames.size
+                    val frame = frames[frameIndexToShow]
+
+                    if (!frame.bitmap.isRecycled) {
+                        val remoteViews = RemoteViews(packageName, R.layout.gif_widget_layout)
+                        remoteViews.setImageViewBitmap(R.id.imageView, frame.bitmap)
+                        try {
+                            appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+                        } catch (e: Exception) {
+                            widgetsToRemove.add(appWidgetId)
+                            return@forEach
+                        }
+                    } else {
+                        widgetsToRemove.add(appWidgetId)
+                        return@forEach
+                    }
+                    data.currentFrame = frameIndexToShow
+                } ?: widgetsToRemove.add(appWidgetId)
+            }
+
+            widgetsToRemove.forEach { appWidgetId ->
+                handleRemoveWidget(appWidgetId)
+            }
+
+
+            if (maxFrameCount > 0 && syncGroups.containsKey(syncGroupId)) {
+                if (group.widgetIds.isNotEmpty()) {
+                    group.currentFrame = (group.currentFrame + 1) % maxFrameCount
+                } else {
+                    group.runnable?.let { handler.removeCallbacks(it) }
+                    syncGroups.remove(syncGroupId)
+                }
+
+            } else if (syncGroups.containsKey(syncGroupId)) {
+                group.currentFrame = 0
+                if (group.widgetIds.isEmpty()) {
+                    group.runnable?.let { handler.removeCallbacks(it) }
+                    syncGroups.remove(syncGroupId)
                 }
             }
-            group.currentFrame = (group.currentFrame + 1)
-            val maxFrameCount = group.widgetIds
-                .mapNotNull { widgetData[it]?.frames?.size }
-                .maxOrNull() ?: 1
-            if (group.currentFrame >= maxFrameCount) {
-                group.currentFrame = 0
+        }
+    }
+
+    private fun decodeGifToFrames(uri: Uri): List<Frame> {
+        return try {
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                val bufferedInputStream = BufferedInputStream(inputStream)
+                if (!bufferedInputStream.markSupported()) {
+                }
+                val gifDrawable = GifDrawable(bufferedInputStream)
+                val frames = mutableListOf<Frame>()
+                val numberOfFrames = gifDrawable.numberOfFrames
+                if (numberOfFrames <= 0) return emptyList()
+
+                for (i in 0 until numberOfFrames) {
+                    val bitmap = gifDrawable.seekToFrameAndGet(i)?.copy(Bitmap.Config.ARGB_8888, false)
+                    val duration = gifDrawable.getFrameDuration(i)
+                    if (bitmap != null) {
+                        frames.add(Frame(bitmap, duration))
+                    } else {
+                    }
+                }
+                gifDrawable.recycle()
+                frames
+            } ?: emptyList()
+        } catch (e: FileNotFoundException) {
+            emptyList()
+        } catch (e: OutOfMemoryError) {
+            emptyList()
+        }
+        catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun recycleFrames(frames: List<Frame>?) {
+        frames?.forEach {
+            if (!it.bitmap.isRecycled) {
+                it.bitmap.recycle()
             }
         }
     }
 
-    private fun stopAnimation(appWidgetId: Int) {
-        widgetData[appWidgetId]?.let { data ->
-            data.runnable?.let { handler.removeCallbacks(it) }
-            data.runnable = null
-        }
-    }
-
-    private fun getFrames(uri: Uri): List<Frame> {
-        val mimeType = contentResolver.getType(uri) ?: return emptyList()
-        return when {
-            mimeType == "image/gif" -> decodeGif(uri)
-            else -> emptyList()
-        }
-    }
-
-    private fun decodeGif(uri: Uri): List<Frame> {
-        return contentResolver.openInputStream(uri)?.use { inputStream ->
-            val bufferedInputStream = BufferedInputStream(inputStream)
-            val gifDrawable = GifDrawable(bufferedInputStream)
-            val frames = mutableListOf<Frame>()
-            for (i in 0 until gifDrawable.numberOfFrames) {
-                val bitmap = gifDrawable.seekToFrameAndGet(i)
-                val duration = gifDrawable.getFrameDuration(i)
-                frames.add(Frame(bitmap, duration))
-            }
-            frames
-        } ?: emptyList()
-    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        widgetData.forEach { (appWidgetId, data) ->
-            if (data.syncGroupId != null) {
-                syncGroups[data.syncGroupId]?.widgetIds?.remove(appWidgetId)
-            } else {
-                data.runnable?.let { handler.removeCallbacks(it) }
-            }
-            data.frames?.forEach { it.bitmap.recycle() }
+        widgetData.values.forEach { data ->
+            data.runnable?.let { handler.removeCallbacks(it) }
+            recycleFrames(data.frames)
         }
-        syncGroups.forEach { (_, group) ->
+        syncGroups.values.forEach { group ->
             group.runnable?.let { handler.removeCallbacks(it) }
         }
         widgetData.clear()

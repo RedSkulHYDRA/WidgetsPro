@@ -4,9 +4,11 @@ import android.app.AppOpsManager
 import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.View
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -62,16 +64,18 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     private fun requestNotificationPermission() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                REQUEST_CODE_NOTIFICATION_PERMISSION
-            )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_CODE_NOTIFICATION_PERMISSION
+                )
+            }
         }
     }
 
@@ -90,10 +94,16 @@ class PermissionActivity : AppCompatActivity() {
     private fun areAllPermissionsGranted(): Boolean {
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         val isIgnoringBatteryOptimizations = powerManager.isIgnoringBatteryOptimizations(packageName)
-        val hasNotificationPermission = ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.POST_NOTIFICATIONS
-        ) == PackageManager.PERMISSION_GRANTED
+
+        val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+
         val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,
@@ -101,16 +111,26 @@ class PermissionActivity : AppCompatActivity() {
             packageName
         )
         val hasUsageAccessPermission = mode == AppOpsManager.MODE_ALLOWED
-        return isIgnoringBatteryOptimizations && hasNotificationPermission && hasUsageAccessPermission
+        val hasAccessibilityPermission = isAccessibilityServiceEnabled()
+
+        return isIgnoringBatteryOptimizations && hasNotificationPermission && hasUsageAccessPermission && hasAccessibilityPermission
     }
 
     private fun updateButtonStates() {
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         btnBatteryOptimizations.isEnabled = !powerManager.isIgnoringBatteryOptimizations(packageName)
-        btnNotificationPermission.isEnabled = ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.POST_NOTIFICATIONS
-        ) != PackageManager.PERMISSION_GRANTED
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            btnNotificationPermission.isEnabled = ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+            btnNotificationPermission.visibility = View.VISIBLE
+        } else {
+            btnNotificationPermission.isEnabled = false
+            btnNotificationPermission.visibility = View.GONE
+        }
+
         val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,

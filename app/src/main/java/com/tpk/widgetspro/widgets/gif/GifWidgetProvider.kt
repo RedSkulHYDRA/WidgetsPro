@@ -15,21 +15,27 @@ class GifWidgetProvider : AppWidgetProvider() {
         appWidgetIds.forEach { appWidgetId ->
             val prefs = context.getSharedPreferences("gif_widget_prefs", Context.MODE_PRIVATE)
             val uriString = prefs.getString("file_uri_$appWidgetId", null)
+
             if (!prefs.contains("widget_index_$appWidgetId")) {
                 val currentIndices = prefs.all.keys
                     .filter { it.startsWith("widget_index_") }
-                    .mapNotNull { prefs.getInt(it, 0) }
+                    .mapNotNull { key ->
+                        try { prefs.getInt(key, 0) } catch (e: ClassCastException) { null }
+                    }
                 val newIndex = (currentIndices.maxOrNull() ?: 0) + 1
                 prefs.edit().putInt("widget_index_$appWidgetId", newIndex).apply()
             }
+
             val intent = Intent(context, AnimationService::class.java).apply {
-                putExtra("action", "ADD_WIDGET")
+                action = "ADD_WIDGET"
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                if (uriString != null) {
-                    putExtra("file_uri", uriString)
-                }
+                uriString?.let { putExtra("file_uri", it) }
             }
-            context.startService(intent)
+            try {
+                context.startForegroundService(intent)
+            } catch (e: Exception) {
+                context.startService(intent)
+            }
         }
     }
 
@@ -40,13 +46,18 @@ class GifWidgetProvider : AppWidgetProvider() {
             prefs.edit()
                 .remove("file_uri_$appWidgetId")
                 .remove("widget_index_$appWidgetId")
+                .remove("sync_group_$appWidgetId")
                 .apply()
 
             val intent = Intent(context, AnimationService::class.java).apply {
-                putExtra("action", "REMOVE_WIDGET")
+                action = "REMOVE_WIDGET"
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             }
-            context.startService(intent)
+            try {
+                context.startForegroundService(intent)
+            } catch (e: Exception) {
+                context.startService(intent)
+            }
         }
     }
 }
