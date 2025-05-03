@@ -24,6 +24,7 @@ import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
+import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 
 class UpdateReceiver : BroadcastReceiver() {
@@ -71,7 +72,8 @@ class UpdateReceiver : BroadcastReceiver() {
             NoteWidgetProvider::class.java,
             AnalogClockWidgetProvider_1::class.java,
             AnalogClockWidgetProvider_2::class.java,
-            GifWidgetProvider::class.java
+            GifWidgetProvider::class.java,
+            MusicSimpleWidgetProvider::class.java
         )
 
         providers.forEach { provider ->

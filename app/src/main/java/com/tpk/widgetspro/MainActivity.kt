@@ -27,6 +27,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.tpk.widgetspro.services.BaseMonitorService
+import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
 
 class MainActivity : AppCompatActivity() {
     internal val SHIZUKU_REQUEST_CODE = 1001
@@ -101,7 +102,8 @@ class MainActivity : AppCompatActivity() {
             SimDataUsageWidgetProviderPill::class.java,
             NoteWidgetProvider::class.java,
             AnalogClockWidgetProvider_1::class.java,
-            AnalogClockWidgetProvider_2::class.java
+            AnalogClockWidgetProvider_2::class.java,
+            MusicSimpleWidgetProvider::class.java
         )
         val intent = Intent(BaseMonitorService.ACTION_THEME_CHANGED)
         sendBroadcast(intent)

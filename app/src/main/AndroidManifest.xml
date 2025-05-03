@@ -37,6 +37,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+        tools:ignore="ProtectedPermissions" />
+
 
     <queries>
         <intent>
@@ -371,6 +374,31 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <receiver android:name=".widgets.music.MusicSimpleWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.musicsimplewidget.ACTION_PLAY_PAUSE"/>
+                <action android:name="com.example.musicsimplewidget.ACTION_NEXT"/>
+                <action android:name="com.example.musicsimplewidget.ACTION_PREVIOUS"/>
+                <action android:name="com.example.musicsimplewidget.ACTION_MEDIA_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/music_simple_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".services.music.MediaMonitorService"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="systemExempted" >
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
         </service>
     </application>
 </manifest>
