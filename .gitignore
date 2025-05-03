@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+/app/release/app-release.aab
+/app/release/Widgets-Pro-release-v1.1.9.apk
+/app/release/baselineProfiles/0/Widgets-Pro-release-v1.1.9.dm
+/app/release/baselineProfiles/1/Widgets-Pro-release-v1.1.9.dm
