@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import com.tpk.widgetspro.services.gif.AnimationService
+import android.content.ComponentName
 
 class GifWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
@@ -58,6 +59,16 @@ class GifWidgetProvider : AppWidgetProvider() {
             } catch (e: Exception) {
                 context.startService(intent)
             }
+        }
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val componentName = ComponentName(context, GifWidgetProvider::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        if (appWidgetIds.isEmpty()) {
+            context.stopService(Intent(context, AnimationService::class.java))
         }
     }
 }

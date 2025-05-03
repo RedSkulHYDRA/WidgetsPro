@@ -18,6 +18,7 @@ class AnalogClockWidgetProvider_1 : AppWidgetProvider() {
     }
 
     override fun onDisabled(context: Context) {
+        super.onDisabled(context)
         context.stopService(Intent(context, AnalogClockUpdateService_1::class.java))
     }
 

@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.base.BaseWidgetProvider
+import com.tpk.widgetspro.services.caffeine.CaffeineService
 import com.tpk.widgetspro.utils.CommonUtils
 
 class CaffeineWidget : BaseWidgetProvider() {
@@ -39,6 +40,15 @@ class CaffeineWidget : BaseWidgetProvider() {
             setInt(R.id.widget_toggle, "setColorFilter", if (isActive) CommonUtils.getAccentColor(context) else ContextCompat.getColor(context, R.color.text_color))
         }
         appWidgetManager.updateAppWidget(appWidgetIds, views)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        val caffeinePrefs = context.getSharedPreferences("caffeine", Context.MODE_PRIVATE)
+        if (caffeinePrefs.getBoolean("active", false)) {
+            context.stopService(Intent(context, CaffeineService::class.java))
+            caffeinePrefs.edit().putBoolean("active", false).apply()
+        }
     }
 
     companion object {

@@ -19,6 +19,7 @@ import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import java.util.concurrent.TimeUnit
+import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 
 abstract class BaseMonitorService : Service() {
     companion object {
@@ -202,7 +203,8 @@ abstract class BaseMonitorService : Service() {
             SimDataUsageWidgetProviderPill::class.java,
             NoteWidgetProvider::class.java,
             AnalogClockWidgetProvider_1::class.java,
-            AnalogClockWidgetProvider_2::class.java
+            AnalogClockWidgetProvider_2::class.java,
+            GifWidgetProvider::class.java
         )
 
         providers.forEach { provider ->
@@ -222,6 +224,7 @@ abstract class BaseMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        stopForeground(true)
         cancelInactiveUpdates()
         unregisterReceiver(systemReceiver)
         unregisterReceiver(launcherStateReceiver)
