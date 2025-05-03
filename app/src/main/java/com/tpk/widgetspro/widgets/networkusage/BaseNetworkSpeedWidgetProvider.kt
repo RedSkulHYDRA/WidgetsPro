@@ -37,7 +37,13 @@ abstract class BaseNetworkSpeedWidgetProvider : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        context.stopService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val circleWidgets = appWidgetManager.getAppWidgetIds(ComponentName(context, NetworkSpeedWidgetProviderCircle::class.java))
+        val pillWidgets = appWidgetManager.getAppWidgetIds(ComponentName(context, NetworkSpeedWidgetProviderPill::class.java))
+
+        if (circleWidgets.isEmpty() && pillWidgets.isEmpty()) {
+            context.stopService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
+        }
     }
 
     companion object {

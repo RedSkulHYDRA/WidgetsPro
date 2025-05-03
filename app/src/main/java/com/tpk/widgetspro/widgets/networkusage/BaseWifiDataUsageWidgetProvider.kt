@@ -23,24 +23,21 @@ abstract class BaseWifiDataUsageWidgetProvider : AppWidgetProvider() {
         appWidgetIds.forEach { appWidgetId ->
             updateAppWidget(context, appWidgetManager, appWidgetId, layoutResId)
         }
+        context.startForegroundService(Intent(context, BaseWifiDataUsageWidgetService::class.java))
     }
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-        val activeProviders = prefs.getStringSet("active_wifi_data_usage_providers", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        activeProviders.add(this::class.java.name)
-        prefs.edit().putStringSet("active_wifi_data_usage_providers", activeProviders).apply()
         context.startForegroundService(Intent(context, BaseWifiDataUsageWidgetService::class.java))
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-        val activeProviders = prefs.getStringSet("active_wifi_data_usage_providers", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        activeProviders.remove(this::class.java.name)
-        prefs.edit().putStringSet("active_wifi_data_usage_providers", activeProviders).apply()
-        if (activeProviders.isEmpty()) {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val circleWidgets = appWidgetManager.getAppWidgetIds(ComponentName(context, WifiDataUsageWidgetProviderCircle::class.java))
+        val pillWidgets = appWidgetManager.getAppWidgetIds(ComponentName(context, WifiDataUsageWidgetProviderPill::class.java))
+
+        if (circleWidgets.isEmpty() && pillWidgets.isEmpty()) {
             context.stopService(Intent(context, BaseWifiDataUsageWidgetService::class.java))
         }
     }
