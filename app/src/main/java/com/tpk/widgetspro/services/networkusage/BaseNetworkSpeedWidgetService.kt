@@ -11,9 +11,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.TrafficStats
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.widget.RemoteViews
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.R
@@ -21,29 +19,32 @@ import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
+import kotlinx.coroutines.*
 
-class BaseNetworkSpeedWidgetService : BaseMonitorService() {
+class BaseNetworkSpeedWidgetService : BaseMonitorService(), CoroutineScope {
+
+    private val supervisorJob = SupervisorJob()
+    override val coroutineContext = Dispatchers.Main + supervisorJob
 
     private var previousBytes: Long = 0
-    private val handler = Handler(Looper.getMainLooper())
     private lateinit var prefs: SharedPreferences
     private val intervalKey = "network_speed_interval"
     private var updateIntervalMs = 1000L
     private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
-    private var isRunning = false
+
+    private var updateJob: Job? = null
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == intervalKey) {
             updateIntervalMs = prefs.getInt(intervalKey, 60).coerceAtLeast(1) * 1000L
-            restartMonitoring()
+            startMonitoring()
         }
     }
 
     private val visibilityResumedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_VISIBILITY_RESUMED) {
-                handler.removeCallbacks(updateRunnable)
-                handler.post(updateRunnable)
+                startMonitoring()
             }
         }
     }
@@ -51,20 +52,8 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     private val userPresentReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == Intent.ACTION_USER_PRESENT) {
-                handler.removeCallbacks(updateRunnable)
-                handler.post(updateRunnable)
+                startMonitoring()
             }
-        }
-    }
-
-    private val updateRunnable = object : Runnable {
-        override fun run() {
-            val shouldUpdateNow = shouldUpdate()
-            if (shouldUpdateNow) {
-                updateSpeed()
-            }
-            val nextDelay = if (shouldUpdateNow) updateIntervalMs else idleUpdateInterval
-            handler.postDelayed(this, nextDelay)
         }
     }
 
@@ -84,7 +73,8 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
     }
 
     override fun onDestroy() {
-        stopMonitoring()
+        updateJob?.cancel()
+        supervisorJob.cancel()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(visibilityResumedReceiver)
         unregisterReceiver(userPresentReceiver)
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
@@ -102,29 +92,24 @@ class BaseNetworkSpeedWidgetService : BaseMonitorService() {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (!isRunning) startMonitoring()
+        startMonitoring()
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startMonitoring() {
-        if (!isRunning) {
-            isRunning = true
-            handler.post(updateRunnable)
+        updateJob?.cancel()
+        updateJob = launch {
+            while (isActive) {
+                if (shouldUpdate()) {
+                    updateSpeed()
+                    delay(updateIntervalMs)
+                } else {
+                    delay(idleUpdateInterval)
+                }
+            }
         }
-    }
-
-    private fun stopMonitoring() {
-        if (isRunning) {
-            isRunning = false
-            handler.removeCallbacks(updateRunnable)
-        }
-    }
-
-    private fun restartMonitoring() {
-        stopMonitoring()
-        startMonitoring()
     }
 
     private fun updateSpeed() {

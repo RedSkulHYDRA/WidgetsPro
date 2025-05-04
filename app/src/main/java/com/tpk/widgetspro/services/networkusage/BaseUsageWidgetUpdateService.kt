@@ -5,19 +5,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
-import android.os.Handler
-import android.os.Looper
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.services.BaseMonitorService
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
+import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
 
-abstract class BaseUsageWidgetUpdateService : BaseMonitorService() {
-    private val executorService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-    private val handler = Handler(Looper.getMainLooper())
-    private var scheduledFuture: ScheduledFuture<*>? = null
+abstract class BaseUsageWidgetUpdateService : BaseMonitorService(), CoroutineScope {
+
+    private val supervisorJob = SupervisorJob()
+    override val coroutineContext = Dispatchers.Main + supervisorJob
+
+    private var updateJob: Job? = null
     private lateinit var prefs: SharedPreferences
     protected abstract val intervalKey: String
     protected abstract val widgetProviderClass: Class<*>
@@ -53,10 +51,10 @@ abstract class BaseUsageWidgetUpdateService : BaseMonitorService() {
     }
 
     override fun onDestroy() {
+        updateJob?.cancel()
+        supervisorJob.cancel()
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         LocalBroadcastManager.getInstance(this).unregisterReceiver(visibilityResumedReceiver)
-        scheduledFuture?.cancel(true)
-        executorService.shutdown()
         super.onDestroy()
     }
 
@@ -66,17 +64,17 @@ abstract class BaseUsageWidgetUpdateService : BaseMonitorService() {
     }
 
     private fun restartMonitoring() {
-        scheduledFuture?.cancel(true)
-        scheduledFuture = executorService.schedule(object : Runnable {
-            override fun run() {
+        updateJob?.cancel()
+        updateJob = launch {
+            while (isActive) {
                 if (shouldUpdate()) {
-                    handler.post { updateWidgets() }
-                    scheduledFuture = executorService.schedule(this, userIntervalMs, TimeUnit.MILLISECONDS)
+                    updateWidgets()
+                    delay(userIntervalMs)
                 } else {
-                    scheduledFuture = executorService.schedule(this, idleIntervalMs, TimeUnit.MILLISECONDS)
+                    delay(idleIntervalMs)
                 }
             }
-        }, 0, TimeUnit.MILLISECONDS)
+        }
     }
 
     protected abstract fun updateWidgets()
