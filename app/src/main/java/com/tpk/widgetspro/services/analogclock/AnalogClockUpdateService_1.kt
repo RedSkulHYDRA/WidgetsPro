@@ -24,6 +24,7 @@ class AnalogClockUpdateService_1 : BaseMonitorService(), CoroutineScope {
     private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
     private var cachedThemeResId: Int = R.style.Theme_WidgetsPro
     private var cachedAccentColor: Int = 0
+    private var cachedShapeColor: Int = 0
 
     private val clockIntent = Intent(Intent.ACTION_MAIN).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
@@ -89,6 +90,7 @@ class AnalogClockUpdateService_1 : BaseMonitorService(), CoroutineScope {
         } else {
             cachedAccentColor = ContextCompat.getColor(themedContext, R.color.accent_color)
         }
+        cachedShapeColor = ContextCompat.getColor(themedContext, R.color.shape_background_color)
     }
 
     private fun startMonitoring() {
@@ -148,10 +150,11 @@ class AnalogClockUpdateService_1 : BaseMonitorService(), CoroutineScope {
 
         val isDark = isSystemInDarkTheme(baseContext)
         val dialResource = if (isDark) R.drawable.analog_1_dial_dark else R.drawable.analog_1_dial_light
-
+        val dialBackground = if (isDark) R.drawable.analog_1_bg_dark else R.drawable.analog_1_bg_light
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(packageName, R.layout.analog_1_widget)
-            views.setInt(R.id.analog_1_container, "setBackgroundResource", R.drawable.analog_1_bg)
+            views.setImageViewResource(R.id.analog_1_bg, dialBackground)
+            views.setInt(R.id.analog_1_bg, "setColorFilter", cachedShapeColor)
             views.setImageViewResource(R.id.analog_1_dial, dialResource)
             views.setImageViewResource(R.id.analog_1_hour, R.drawable.analog_1_hour)
             views.setImageViewResource(R.id.analog_1_min, R.drawable.analog_1_min)
