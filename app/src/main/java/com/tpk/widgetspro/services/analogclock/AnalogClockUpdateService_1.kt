@@ -2,7 +2,7 @@ package com.tpk.widgetspro.services.analogclock
 
 import android.appwidget.AppWidgetManager
 import android.content.*
-import android.os.*
+import android.os.IBinder
 import android.view.ContextThemeWrapper
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
@@ -10,14 +10,16 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
+import kotlinx.coroutines.*
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class AnalogClockUpdateService_1 : BaseMonitorService() {
+class AnalogClockUpdateService_1 : BaseMonitorService(), CoroutineScope {
 
-    private lateinit var handler: Handler
-    private lateinit var updateRunnable: Runnable
-    private var isRunning = false
+    private val supervisorJob = SupervisorJob()
+    override val coroutineContext = Dispatchers.Main + supervisorJob
+
+    private var updateJob: Job? = null
     private val normalUpdateInterval = TimeUnit.SECONDS.toMillis(1)
     private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
     private var cachedThemeResId: Int = R.style.Theme_WidgetsPro
@@ -32,8 +34,7 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
     private val visibilityResumedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_VISIBILITY_RESUMED) {
-                handler.removeCallbacks(updateRunnable)
-                handler.post(updateRunnable)
+                startMonitoring()
             }
         }
     }
@@ -41,12 +42,10 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
     private val userPresentReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == Intent.ACTION_USER_PRESENT) {
-                handler.removeCallbacks(updateRunnable)
-                handler.post(updateRunnable)
+                startMonitoring()
             }
         }
     }
-
 
     private val configChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -58,7 +57,6 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
 
     override fun onCreate() {
         super.onCreate()
-        handler = Handler(Looper.getMainLooper())
         updateThemeCache()
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
@@ -68,22 +66,6 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         registerReceiver(configChangeReceiver, IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED))
         registerReceiver(userPresentReceiver, IntentFilter(Intent.ACTION_USER_PRESENT))
 
-        updateRunnable = object : Runnable {
-            override fun run() {
-                val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
-                val is60FpsEnabled = prefs.getBoolean("clock_60fps_enabled", false)
-                val shouldUpdateNow = shouldUpdate()
-                if (shouldUpdateNow) {
-                    updateHandPositions()
-                }
-                val nextDelay = if (shouldUpdateNow) {
-                    if (is60FpsEnabled) 16L else normalUpdateInterval
-                } else {
-                    idleUpdateInterval
-                }
-                handler.postDelayed(this, nextDelay)
-            }
-        }
         startMonitoring()
     }
 
@@ -109,18 +91,20 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
         }
     }
 
-
     private fun startMonitoring() {
-        if (!isRunning) {
-            isRunning = true
-            handler.post(updateRunnable)
-        }
-    }
-
-    private fun stopMonitoring() {
-        if (isRunning) {
-            isRunning = false
-            handler.removeCallbacks(updateRunnable)
+        updateJob?.cancel()
+        updateJob = launch {
+            while (isActive) {
+                if (shouldUpdate()) {
+                    updateHandPositions()
+                    val prefs = getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+                    val is60FpsEnabled = prefs.getBoolean("clock_60fps_enabled", false)
+                    val delayMs = if (is60FpsEnabled) 16L else normalUpdateInterval
+                    delay(delayMs)
+                } else {
+                    delay(idleUpdateInterval)
+                }
+            }
         }
     }
 
@@ -132,7 +116,7 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
             return START_NOT_STICKY
         }
         updateThemeCache()
-        if (!isRunning) startMonitoring()
+        startMonitoring()
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -193,10 +177,11 @@ class AnalogClockUpdateService_1 : BaseMonitorService() {
     }
 
     override fun onDestroy() {
+        updateJob?.cancel()
+        supervisorJob.cancel()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(visibilityResumedReceiver)
         unregisterReceiver(configChangeReceiver)
         unregisterReceiver(userPresentReceiver)
-        stopMonitoring()
         super.onDestroy()
     }
 

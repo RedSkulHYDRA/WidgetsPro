@@ -4,9 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.*
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.widget.RemoteViews
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.tpk.widgetspro.R
@@ -16,10 +14,10 @@ import pl.droidsonroids.gif.GifDrawable
 import java.io.BufferedInputStream
 import java.io.FileNotFoundException
 import java.util.*
-import kotlin.collections.set
+import kotlinx.coroutines.*
 
 class AnimationService : BaseMonitorService() {
-    private val handler = Handler(Looper.getMainLooper())
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val widgetData = mutableMapOf<Int, WidgetAnimationData>()
     private val syncGroups = mutableMapOf<String, SyncGroupData>()
     private val idleUpdateInterval = CHECK_INTERVAL_INACTIVE_MS
@@ -31,13 +29,13 @@ class AnimationService : BaseMonitorService() {
         var currentFrame: Int = 0,
         var uriString: String? = null,
         var syncGroupId: String? = null,
-        var runnable: Runnable? = null
+        var job: Job? = null
     )
 
     data class SyncGroupData(
         val widgetIds: MutableSet<Int> = mutableSetOf(),
         var currentFrame: Int = 0,
-        var runnable: Runnable? = null
+        var job: Job? = null
     )
 
     private val visibilityResumedReceiver = object : BroadcastReceiver() {
@@ -66,17 +64,24 @@ class AnimationService : BaseMonitorService() {
     }
 
     private fun restartAllAnimations() {
+        // Cancel all existing jobs
         widgetData.values.forEach { data ->
-            data.runnable?.let {
-                handler.removeCallbacks(it)
-                handler.post(it)
-            }
+            data.job?.cancel()
         }
         syncGroups.values.forEach { group ->
-            group.runnable?.let {
-                handler.removeCallbacks(it)
-                handler.post(it)
+            group.job?.cancel()
+        }
+
+        // Restart animations for individual widgets not in sync groups
+        widgetData.forEach { (appWidgetId, data) ->
+            if (data.syncGroupId == null) {
+                startAnimation(appWidgetId)
             }
+        }
+
+        // Restart animations for sync groups
+        syncGroups.keys.forEach { syncGroupId ->
+            startSyncAnimation(syncGroupId)
         }
     }
 
@@ -146,7 +151,7 @@ class AnimationService : BaseMonitorService() {
             if (syncGroupId != null) {
                 val group = syncGroups.getOrPut(syncGroupId) { SyncGroupData() }
                 group.widgetIds.add(appWidgetId)
-                group.runnable?.let { handler.removeCallbacks(it) }
+                group.job?.cancel()
                 startSyncAnimation(syncGroupId)
             } else {
                 startAnimation(appWidgetId)
@@ -156,14 +161,13 @@ class AnimationService : BaseMonitorService() {
 
     private fun handleRemoveWidget(appWidgetId: Int) {
         widgetData[appWidgetId]?.let { data ->
-            data.runnable?.let { handler.removeCallbacks(it) }
+            data.job?.cancel()
             recycleFrames(data.frames)
-
             data.syncGroupId?.let { syncGroupId ->
                 syncGroups[syncGroupId]?.let { group ->
                     group.widgetIds.remove(appWidgetId)
                     if (group.widgetIds.isEmpty()) {
-                        group.runnable?.let { handler.removeCallbacks(it) }
+                        group.job?.cancel()
                         syncGroups.remove(syncGroupId)
                     }
                 }
@@ -178,17 +182,19 @@ class AnimationService : BaseMonitorService() {
     }
 
     private fun handleUpdateFile(appWidgetId: Int, uriString: String) {
-        val oldData = widgetData[appWidgetId]
-
-        oldData?.runnable?.let { handler.removeCallbacks(it) }
-        recycleFrames(oldData?.frames)
-
-        oldData?.syncGroupId?.let { oldSyncId ->
-            syncGroups[oldSyncId]?.let { group ->
-                group.widgetIds.remove(appWidgetId)
-                if (group.widgetIds.isEmpty()) {
-                    group.runnable?.let { handler.removeCallbacks(it) }
-                    syncGroups.remove(oldSyncId)
+        widgetData[appWidgetId]?.let { oldData ->
+            oldData.job?.cancel()
+            recycleFrames(oldData.frames)
+            oldData.syncGroupId?.let { oldSyncId ->
+                syncGroups[oldSyncId]?.let { group ->
+                    group.widgetIds.remove(appWidgetId)
+                    if (group.widgetIds.isEmpty()) {
+                        group.job?.cancel()
+                        syncGroups.remove(oldSyncId)
+                    } else {
+                        group.job?.cancel()
+                        startSyncAnimation(oldSyncId)
+                    }
                 }
             }
         }
@@ -207,7 +213,7 @@ class AnimationService : BaseMonitorService() {
             if (newSyncGroupId != null) {
                 val group = syncGroups.getOrPut(newSyncGroupId) { SyncGroupData() }
                 group.widgetIds.add(appWidgetId)
-                group.runnable?.let { handler.removeCallbacks(it) }
+                group.job?.cancel()
                 startSyncAnimation(newSyncGroupId)
             } else {
                 startAnimation(appWidgetId)
@@ -226,9 +232,8 @@ class AnimationService : BaseMonitorService() {
 
         widgetIdsToSync.forEach { appWidgetId ->
             widgetData[appWidgetId]?.let { data ->
-                data.runnable?.let { handler.removeCallbacks(it) }
-                data.runnable = null
-
+                data.job?.cancel()
+                data.job = null
                 if (data.syncGroupId != null && data.syncGroupId != syncGroupId) {
                     affectedSyncGroups.add(data.syncGroupId!!)
                     syncGroups[data.syncGroupId]?.widgetIds?.remove(appWidgetId)
@@ -240,10 +245,10 @@ class AnimationService : BaseMonitorService() {
         affectedSyncGroups.forEach { oldSyncId ->
             syncGroups[oldSyncId]?.let { group ->
                 if (group.widgetIds.isEmpty()) {
-                    group.runnable?.let { handler.removeCallbacks(it) }
+                    group.job?.cancel()
                     syncGroups.remove(oldSyncId)
                 } else {
-                    group.runnable?.let { handler.removeCallbacks(it) }
+                    group.job?.cancel()
                     startSyncAnimation(oldSyncId)
                 }
             }
@@ -259,11 +264,11 @@ class AnimationService : BaseMonitorService() {
         syncGroup.widgetIds.clear()
         syncGroup.widgetIds.addAll(widgetIdsToSync)
         syncGroup.currentFrame = 0
-        syncGroup.runnable?.let { handler.removeCallbacks(it) }
+        syncGroup.job?.cancel()
         startSyncAnimation(syncGroupId)
 
         widgetData.keys.forEach { appWidgetId ->
-            if (widgetData[appWidgetId]?.syncGroupId == null && widgetData[appWidgetId]?.runnable == null) {
+            if (widgetData[appWidgetId]?.syncGroupId == null && widgetData[appWidgetId]?.job == null) {
                 startAnimation(appWidgetId)
             }
         }
@@ -273,63 +278,41 @@ class AnimationService : BaseMonitorService() {
         widgetData[appWidgetId]?.let { data ->
             val frames = data.frames
             if (frames.isNullOrEmpty()) return
-            data.runnable?.let { handler.removeCallbacks(it) }
-
-            val runnable = object : Runnable {
-                override fun run() {
-                    if (widgetData.containsKey(appWidgetId)) {
-                        val shouldUpdateNow = shouldUpdate()
-                        if (shouldUpdateNow) {
-                            updateWidget(appWidgetId)
-                        }
-
-                        val nextDelay = if (shouldUpdateNow) {
-                            val frameDuration = data.frames?.getOrNull(data.currentFrame)?.duration?.toLong() ?: 100L
-                            frameDuration.coerceAtLeast(1L)
-                        } else {
-                            idleUpdateInterval
-                        }
-
-                        handler.postDelayed(this, nextDelay)
+            data.job?.cancel()
+            data.job = serviceScope.launch {
+                while (isActive) {
+                    if (shouldUpdate()) {
+                        updateWidget(appWidgetId)
+                        val frameDuration = data.frames?.getOrNull(data.currentFrame)?.duration?.toLong() ?: 100L
+                        delay(frameDuration.coerceAtLeast(1L))
+                    } else {
+                        delay(idleUpdateInterval)
                     }
                 }
             }
-            data.runnable = runnable
-            handler.post(runnable)
         }
     }
 
     private fun startSyncAnimation(syncGroupId: String) {
         syncGroups[syncGroupId]?.let { group ->
-            if (group.widgetIds.isEmpty()){
+            if (group.widgetIds.isEmpty()) {
                 syncGroups.remove(syncGroupId)
                 return
             }
-            group.runnable?.let { handler.removeCallbacks(it) }
-
-            val runnable = object : Runnable {
-                override fun run() {
-                    if (syncGroups.containsKey(syncGroupId)) {
-                        val shouldUpdateNow = shouldUpdate()
-                        if (shouldUpdateNow) {
-                            updateSyncGroup(syncGroupId)
-                        }
-
-                        val nextDelay = if (shouldUpdateNow) {
-                            val minFrameDuration = group.widgetIds
-                                .mapNotNull { widgetData[it]?.frames?.getOrNull(group.currentFrame)?.duration?.toLong() }
-                                .minOrNull() ?: 100L
-                            minFrameDuration.coerceAtLeast(1L)
-                        } else {
-                            idleUpdateInterval
-                        }
-
-                        handler.postDelayed(this, nextDelay)
+            group.job?.cancel()
+            group.job = serviceScope.launch {
+                while (isActive) {
+                    if (shouldUpdate()) {
+                        updateSyncGroup(syncGroupId)
+                        val minFrameDuration = group.widgetIds
+                            .mapNotNull { widgetData[it]?.frames?.getOrNull(group.currentFrame)?.duration?.toLong() }
+                            .minOrNull() ?: 100L
+                        delay(minFrameDuration.coerceAtLeast(1L))
+                    } else {
+                        delay(idleUpdateInterval)
                     }
                 }
             }
-            group.runnable = runnable
-            handler.post(runnable)
         }
     }
 
@@ -421,13 +404,11 @@ class AnimationService : BaseMonitorService() {
                 if (group.widgetIds.isNotEmpty()) {
                     group.currentFrame = (group.currentFrame + 1) % maxFrameCount
                 } else {
-                    group.runnable?.let { handler.removeCallbacks(it) }
                     syncGroups.remove(syncGroupId)
                 }
             } else if (syncGroups.containsKey(syncGroupId)) {
                 group.currentFrame = 0
                 if (group.widgetIds.isEmpty()) {
-                    group.runnable?.let { handler.removeCallbacks(it) }
                     syncGroups.remove(syncGroupId)
                 } else {
                 }
@@ -452,7 +433,6 @@ class AnimationService : BaseMonitorService() {
                     val duration = gifDrawable.getFrameDuration(i)
                     if (bitmap != null) {
                         frames.add(Frame(bitmap, duration))
-                    } else {
                     }
                 }
                 gifDrawable.recycle()
@@ -478,12 +458,9 @@ class AnimationService : BaseMonitorService() {
     override fun onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(visibilityResumedReceiver)
         unregisterReceiver(userPresentReceiver)
+        serviceScope.cancel()
         widgetData.values.forEach { data ->
-            data.runnable?.let { handler.removeCallbacks(it) }
             recycleFrames(data.frames)
-        }
-        syncGroups.values.forEach { group ->
-            group.runnable?.let { handler.removeCallbacks(it) }
         }
         widgetData.clear()
         syncGroups.clear()

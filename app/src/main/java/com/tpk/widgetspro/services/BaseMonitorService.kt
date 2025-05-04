@@ -18,10 +18,12 @@ import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
-import java.util.concurrent.TimeUnit
 import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
+import kotlinx.coroutines.*
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.CoroutineContext
 
-abstract class BaseMonitorService : Service() {
+abstract class BaseMonitorService : Service(), CoroutineScope {
     companion object {
         private const val WIDGETS_PRO_NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "widgets_pro_channel"
@@ -41,15 +43,11 @@ abstract class BaseMonitorService : Service() {
     private var isAccessibilityEnabled = false
     private var launcherStateReceived = false
 
-    private val handler = Handler(Looper.getMainLooper())
-    private val updateChecker = object : Runnable {
-        override fun run() {
-            if (!shouldUpdate()) {
-                updateAllWidgets()
-                handler.postDelayed(this, CHECK_INTERVAL_INACTIVE_MS)
-            }
-        }
-    }
+    private lateinit var serviceJob: Job
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + serviceJob
+
+    private var updateJob: Job? = null
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -71,8 +69,7 @@ abstract class BaseMonitorService : Service() {
             if (currentActiveState != isInActiveState) {
                 isInActiveState = currentActiveState
                 if (!currentActiveState) {
-                    handler.removeCallbacks(updateChecker)
-                    handler.post(updateChecker)
+                    startInactiveUpdates()
                 } else {
                     cancelInactiveUpdates()
                 }
@@ -91,6 +88,7 @@ abstract class BaseMonitorService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        serviceJob = Job()
         powerManager = getSystemService(POWER_SERVICE) as PowerManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         isInActiveState = shouldUpdate()
@@ -110,7 +108,6 @@ abstract class BaseMonitorService : Service() {
             Context.RECEIVER_NOT_EXPORTED
         )
 
-
         registerReceiver(
             launcherStateReceiver,
             IntentFilter(ACTION_LAUNCHER_STATE_CHANGED),
@@ -118,7 +115,7 @@ abstract class BaseMonitorService : Service() {
         )
 
         if (!isInActiveState) {
-            handler.post(updateChecker)
+            startInactiveUpdates()
         }
     }
 
@@ -131,8 +128,20 @@ abstract class BaseMonitorService : Service() {
         return enabledServices.contains(serviceName.flattenToString())
     }
 
+    private fun startInactiveUpdates() {
+        updateJob?.cancel()
+        updateJob = launch {
+            while (isActive) {
+                if (!shouldUpdate()) {
+                    updateAllWidgets()
+                }
+                delay(CHECK_INTERVAL_INACTIVE_MS)
+            }
+        }
+    }
+
     private fun cancelInactiveUpdates() {
-        handler.removeCallbacks(updateChecker)
+        updateJob?.cancel()
     }
 
     private fun createNotificationChannel() {
@@ -220,14 +229,14 @@ abstract class BaseMonitorService : Service() {
         }
     }
 
-
-    override fun onBind(intent: Intent?): IBinder? = null
-
     override fun onDestroy() {
         stopForeground(true)
-        cancelInactiveUpdates()
+        serviceJob.cancel()
+        updateJob?.cancel()
         unregisterReceiver(systemReceiver)
         unregisterReceiver(launcherStateReceiver)
         super.onDestroy()
     }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 }
