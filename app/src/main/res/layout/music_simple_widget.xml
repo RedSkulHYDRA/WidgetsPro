@@ -10,7 +10,7 @@
 
     <ImageView
         android:id="@+id/image_album_art"
-        android:layout_width="64dp"
+        android:layout_width="60dp"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_default_album_art"
@@ -79,4 +79,11 @@
                 tools:ignore="ContentDescription" />
         </LinearLayout>
     </LinearLayout>
+    <ImageView
+        android:id="@+id/visualizer_image_view"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:scaleType="fitXY"
+        android:layout_marginTop="5dp"
+        tools:ignore="ContentDescription" />
 </LinearLayout>

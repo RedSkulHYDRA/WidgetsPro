@@ -5,4 +5,5 @@
     <color name="accent_color">@android:color/system_accent1_500</color>
     <color name="accent_color1">#ffff0000</color>
     <color name="battery_grey">#ff444444</color>
+    <color name="transparent">#00000000</color>
 </resources>
