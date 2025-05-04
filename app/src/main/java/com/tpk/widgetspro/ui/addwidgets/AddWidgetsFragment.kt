@@ -15,6 +15,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -29,6 +30,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
+import com.tpk.widgetspro.services.music.MediaMonitorService
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
@@ -44,6 +46,7 @@ import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
+import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
 
@@ -107,6 +110,7 @@ class AddWidgetsFragment : Fragment() {
         }
 
         setupWidgetPreview(view.findViewById(R.id.preview_gif), R.layout.gif_widget_preview_static)
+        setupWidgetPreview(view.findViewById(R.id.preview_music), R.layout.music_widget_preview_static)
 
 
         view.findViewById<Button>(R.id.button1).setOnClickListener {
@@ -155,6 +159,9 @@ class AddWidgetsFragment : Fragment() {
         view.findViewById<Button>(R.id.button12).setOnClickListener {
             requestWidgetInstallation(GifWidgetProvider::class.java)
         }
+        view.findViewById<Button>(R.id.button_music).setOnClickListener {
+            requestMusicWidgetInstallation()
+        }
     }
 
 
@@ -165,7 +172,6 @@ class AddWidgetsFragment : Fragment() {
             val previewView = inflater.inflate(staticLayoutId, previewContainer, false)
             previewContainer.addView(previewView)
         } catch (e: Exception) {
-
             previewContainer.removeAllViews()
             val errorText = TextView(requireContext()).apply {
                 text = "Preview failed"
@@ -226,6 +232,13 @@ class AddWidgetsFragment : Fragment() {
             Manifest.permission.BLUETOOTH_CONNECT
         ) == PackageManager.PERMISSION_GRANTED
 
+    private fun isNotificationServiceEnabled(): Boolean {
+        val context = requireContext()
+        val componentName = ComponentName(context, MediaMonitorService::class.java)
+        val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+        return flat != null && flat.contains(componentName.flattenToString())
+    }
+
     private fun checkPermissions() {
         when {
             hasCpuPermissions() -> (activity as? MainActivity)?.startServiceAndFinish(true)
@@ -269,6 +282,25 @@ class AddWidgetsFragment : Fragment() {
         true
     } catch (e: PackageManager.NameNotFoundException) {
         false
+    }
+
+    private fun requestMusicWidgetInstallation() {
+        if (isNotificationServiceEnabled()) {
+            requestWidgetInstallation(MusicSimpleWidgetProvider::class.java)
+        } else {
+            Toast.makeText(requireContext(), "Notification Access Required for Music Widget", Toast.LENGTH_LONG).show()
+            val builder = AlertDialog.Builder(requireContext())
+                .setTitle("Permission Required")
+                .setMessage("The Music Widget needs Notification Access to function properly. Please enable it in Settings.")
+                .setPositiveButton("Go to Settings") { _, _ ->
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                }
+                .setNegativeButton("Cancel", null)
+            val dialog = builder.create()
+            dialog.show()
+            dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+            dialog.applyDialogTheme()
+        }
     }
 
     private fun requestWidgetInstallation(providerClass: Class<*>) {
