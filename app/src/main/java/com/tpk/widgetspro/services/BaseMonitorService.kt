@@ -56,6 +56,7 @@ abstract class BaseMonitorService : Service(), CoroutineScope {
                     if (shouldUpdate()) {
                         notifyVisibilityResumed()
                         cancelInactiveUpdates()
+                        updateAllWidgets()
                     }
                 }
                 Intent.ACTION_CONFIGURATION_CHANGED,
@@ -72,6 +73,7 @@ abstract class BaseMonitorService : Service(), CoroutineScope {
                     startInactiveUpdates()
                 } else {
                     cancelInactiveUpdates()
+                    updateAllWidgets()
                 }
             }
         }
@@ -82,6 +84,9 @@ abstract class BaseMonitorService : Service(), CoroutineScope {
             if (intent.action == ACTION_LAUNCHER_STATE_CHANGED) {
                 isLauncherActive = intent.getBooleanExtra(EXTRA_IS_ACTIVE, false)
                 launcherStateReceived = true
+                if (shouldUpdate()) {
+                    updateAllWidgets()
+                }
             }
         }
     }
