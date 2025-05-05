@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".ui.help.HelpFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="15dp"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title_help_main"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ndot"
+            android:paddingBottom="20dp"
+            android:text="@string/help_amp_support"
+            android:textAlignment="center"
+            android:textColor="?attr/colorAccent"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/title_accessibility"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/accessibility_service"
+            android:textColor="?attr/colorAccent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/desc_accessibility"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/the_accessibility_service"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/title_shizuku"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/shizuku_root"
+            android:textColor="?attr/colorAccent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/desc_shizuku"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/shizuku_is_needed"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/title_permissions"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/permissions"
+            android:textColor="?attr/colorAccent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/perm_desc_foreground_service"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/foreground_service"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_fg_data_sync"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/data_sync"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_battery_stats"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/battery_stats"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_post_notifications"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/post_notifications"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_wake_lock"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/wake_lock"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_fg_system_exempted"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/system_exempted"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_exact_alarm"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/exact_alarm"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_bluetooth"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/bluetooth"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_bluetooth_connect"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/bluetooth_connect"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_internet"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/internet"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_cache_fs"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/cache_fs"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_bluetooth_admin"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/bluetooth_admin"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_fine_location"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/fine_location"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_boot_completed"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/boot_completed"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_coarse_location"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/coarse_location"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_ignore_optimizations"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/ignore_optimizations"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_package_usage"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/package_usage"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_read_media"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/read_media"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_bind_notif_listener"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/notif_listener"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_record_audio"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/record_audio"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_modify_audio"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/modify_audio"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/perm_desc_interact_users"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/interact_users"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/title_support"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/support_channel"
+            android:textColor="?attr/colorAccent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/link_telegram"
+            style="@style/CustomTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:autoLink="web"
+            android:paddingBottom="50dp"
+            android:text="@string/join_our_telegram_channel"
+            android:textColorLink="?attr/colorAccent"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+</ScrollView>

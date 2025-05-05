@@ -1,5 +1,6 @@
 package com.tpk.widgetspro.ui.settings
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.appwidget.AppWidgetManager
@@ -7,9 +8,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -17,14 +20,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputLayout
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.api.ImageApiClient
+import com.tpk.widgetspro.services.LauncherStateAccessibilityService
 import com.tpk.widgetspro.services.gif.AnimationService
 import com.tpk.widgetspro.services.sun.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
@@ -61,6 +67,9 @@ class SettingsFragment : Fragment() {
     private lateinit var btnResetNow: Button
     private lateinit var tvNextReset: TextView
     private var pendingAppWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
+    private lateinit var switchAccessibility: MaterialSwitch
+    private lateinit var switchMicrophone: MaterialSwitch
+    private val REQUEST_RECORD_AUDIO_PERMISSION = 101
     private val enumOptions = arrayOf(
         "black", "blue", "white", "silver", "transparent",
         "case", "fullproduct", "product", "withcase",
@@ -85,6 +94,10 @@ class SettingsFragment : Fragment() {
                 pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
             }
         }
+    }
+
+    private val accessibilitySettingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        updateAccessibilitySwitchState()
     }
 
     override fun onCreateView(
@@ -113,6 +126,8 @@ class SettingsFragment : Fragment() {
         radioGroupResetMode = view.findViewById(R.id.radio_group_reset_mode)
         btnResetNow = view.findViewById(R.id.btn_reset_now)
         tvNextReset = view.findViewById(R.id.tv_next_reset)
+        switchAccessibility = view.findViewById(R.id.switch_accessibility)
+        switchMicrophone = view.findViewById(R.id.switch_microphone_access)
 
         val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         seekBarCpu.progress = prefs.getInt("cpu_interval", 60)
@@ -214,6 +229,32 @@ class SettingsFragment : Fragment() {
             prefs.edit().putBoolean("clock_60fps_enabled", isChecked).apply()
             if (isChecked) {
                 Toast.makeText(requireContext(), R.string.warning_battery_drain, Toast.LENGTH_LONG).show()
+            }
+        }
+        updateAccessibilitySwitchState()
+        switchAccessibility.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                Toast.makeText(requireContext(), "Please enable Widgets Pro in Accessibility Services", Toast.LENGTH_LONG).show()
+                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                accessibilitySettingsLauncher.launch(intent)
+            } else {
+                if (isAccessibilityServiceEnabled()) {
+                    Toast.makeText(requireContext(), "Please disable Widgets Pro manually in Accessibility Settings", Toast.LENGTH_LONG).show()
+                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    accessibilitySettingsLauncher.launch(intent)
+                }
+                updateAccessibilitySwitchState()
+            }
+        }
+        updateMicrophoneSwitchState()
+        switchMicrophone.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                requestMicrophonePermission()
+            } else {
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(requireContext(), "Please disable via App Settings", Toast.LENGTH_SHORT).show()
+                    switchMicrophone.isChecked = true
+                }
             }
         }
     }
@@ -624,5 +665,56 @@ class SettingsFragment : Fragment() {
         } catch (e: Exception) {
             null
         }
+    }
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val context = requireContext()
+        val serviceName = ComponentName(context, LauncherStateAccessibilityService::class.java)
+        val enabledServices = Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains(serviceName.flattenToString())
+    }
+
+    private fun updateAccessibilitySwitchState() {
+        if (view != null && ::switchAccessibility.isInitialized) {
+            switchAccessibility.isChecked = isAccessibilityServiceEnabled()
+        }
+    }
+
+    private fun hasMicrophonePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun updateMicrophoneSwitchState() {
+        switchMicrophone.isChecked = hasMicrophonePermission()
+    }
+
+    private fun requestMicrophonePermission() {
+        if (!hasMicrophonePermission()) {
+            ActivityCompat.requestPermissions(
+                requireActivity(),
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                REQUEST_RECORD_AUDIO_PERMISSION
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                switchMicrophone.isChecked = true
+            } else {
+                switchMicrophone.isChecked = false
+                Toast.makeText(requireContext(), "Microphone permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateAccessibilitySwitchState()
+        updateMicrophoneSwitchState()
     }
 }

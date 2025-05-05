@@ -11,6 +11,7 @@ import com.tpk.widgetspro.services.battery.BatteryMonitorService
 import com.tpk.widgetspro.services.caffeine.CaffeineService
 import com.tpk.widgetspro.services.cpu.CpuMonitorService
 import com.tpk.widgetspro.services.gif.AnimationService
+import com.tpk.widgetspro.services.music.MediaMonitorService
 import com.tpk.widgetspro.services.networkusage.BaseNetworkSpeedWidgetService
 import com.tpk.widgetspro.services.networkusage.BaseSimDataUsageWidgetService
 import com.tpk.widgetspro.services.networkusage.BaseWifiDataUsageWidgetService
@@ -21,17 +22,41 @@ import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.networkusage.*
-import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
+import com.tpk.widgetspro.widgets.networkusage.*
+import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 
 class UpdateReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            stopAllServices(context)
             startRelevantServices(context)
             updateAllWidgetProviders(context)
+        }
+    }
+
+    private fun stopAllServices(context: Context) {
+        val servicesToStop = listOf(
+            CpuMonitorService::class.java,
+            BatteryMonitorService::class.java,
+            AnalogClockUpdateService_1::class.java,
+            AnalogClockUpdateService_2::class.java,
+            AnimationService::class.java,
+            BaseNetworkSpeedWidgetService::class.java,
+            BaseWifiDataUsageWidgetService::class.java,
+            BaseSimDataUsageWidgetService::class.java,
+            SunSyncService::class.java,
+            CaffeineService::class.java,
+            MediaMonitorService::class.java
+        )
+
+        servicesToStop.forEach { serviceClass ->
+            try {
+                context.stopService(Intent(context, serviceClass))
+            } catch (e: Exception) {
+            }
         }
     }
 
@@ -51,7 +76,12 @@ class UpdateReceiver : BroadcastReceiver() {
             if (caffeinePrefs.getBoolean("active", false)) {
                 context.startForegroundService(Intent(context, CaffeineService::class.java))
             }
+
+            if (MusicSimpleWidgetProvider.getWidgetIds(context).isNotEmpty()) {
+                context.startForegroundService(Intent(context, MediaMonitorService::class.java))
+            }
         } catch (e: Exception) {
+            // Handle exceptions if needed
         }
     }
 
@@ -90,12 +120,10 @@ class UpdateReceiver : BroadcastReceiver() {
                 setPackage(context.packageName)
                 component = provider
             }
-
             try {
                 context.sendBroadcast(updateIntent)
             } catch (e: Exception) {
             }
-        } else {
         }
     }
 }

@@ -29,6 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
+            android:contentDescription="@string/app_name"
             android:src="@drawable/ic_launcher_foreground" />
 
         <Space
@@ -47,7 +48,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="16dp"
-                android:text="Please grant the following permissions to use the app:"
+                android:text="@string/grant_permission_prompt"
                 android:textColor="@color/accent_color"
                 android:textSize="18sp" />
 
@@ -66,14 +67,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:text="@string/grant_notification_permission" />
-
-            <Button
-                android:id="@+id/btn_accessibility"
-                style="@style/CustomTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/enable_accessibility_service" />
 
             <Button
                 android:id="@+id/btn_usage_access"

@@ -3,6 +3,7 @@ package com.tpk.widgetspro.services.analogclock
 import android.appwidget.AppWidgetManager
 import android.content.*
 import android.os.IBinder
+import android.util.Log
 import android.view.ContextThemeWrapper
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat

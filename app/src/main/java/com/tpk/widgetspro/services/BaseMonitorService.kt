@@ -41,7 +41,6 @@ abstract class BaseMonitorService : Service(), CoroutineScope {
     private lateinit var keyguardManager: KeyguardManager
     private var isInActiveState = false
     private var isLauncherActive = false
-    private var isAccessibilityEnabled = false
     private var launcherStateReceived = false
 
     private lateinit var serviceJob: Job
@@ -98,7 +97,6 @@ abstract class BaseMonitorService : Service(), CoroutineScope {
         powerManager = getSystemService(POWER_SERVICE) as PowerManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         isInActiveState = shouldUpdate()
-        isAccessibilityEnabled = isAccessibilityServiceEnabled()
 
         createNotificationChannel()
 
@@ -191,12 +189,13 @@ abstract class BaseMonitorService : Service(), CoroutineScope {
         val isKeyguardLocked = keyguardManager.isKeyguardLocked
         val baseCondition = isScreenOn && !isKeyguardLocked
 
-        return if (isAccessibilityEnabled) {
+        return if (isAccessibilityServiceEnabled()) {
             baseCondition && (isLauncherActive || !launcherStateReceived)
         } else {
-            baseCondition
+            true
         }
     }
+
 
     private fun notifyVisibilityResumed() {
         LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(ACTION_VISIBILITY_RESUMED))

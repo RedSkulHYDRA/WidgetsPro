@@ -288,7 +288,6 @@ class AddWidgetsFragment : Fragment() {
         if (isNotificationServiceEnabled()) {
             requestWidgetInstallation(MusicSimpleWidgetProvider::class.java)
         } else {
-            Toast.makeText(requireContext(), "Notification Access Required for Music Widget", Toast.LENGTH_LONG).show()
             val builder = AlertDialog.Builder(requireContext())
                 .setTitle("Permission Required")
                 .setMessage("The Music Widget needs Notification Access to function properly. Please enable it in Settings.")

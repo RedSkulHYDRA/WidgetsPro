@@ -10,11 +10,9 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
 import android.widget.Button
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.tpk.widgetspro.services.LauncherStateAccessibilityService
 
 class PermissionActivity : AppCompatActivity() {
     private val REQUEST_IGNORE_BATTERY_OPTIMIZATIONS = 1
@@ -23,7 +21,6 @@ class PermissionActivity : AppCompatActivity() {
     private lateinit var btnBatteryOptimizations: Button
     private lateinit var btnNotificationPermission: Button
     private lateinit var btnUsageAccess: Button
-    private lateinit var btnAccessibility: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,15 +29,10 @@ class PermissionActivity : AppCompatActivity() {
         btnBatteryOptimizations = findViewById(R.id.btn_battery_optimizations)
         btnNotificationPermission = findViewById(R.id.btn_notification_permission)
         btnUsageAccess = findViewById(R.id.btn_usage_access)
-        btnAccessibility = findViewById(R.id.btn_accessibility)
 
         btnBatteryOptimizations.setOnClickListener { checkBatteryOptimizations() }
         btnNotificationPermission.setOnClickListener { requestNotificationPermission() }
         btnUsageAccess.setOnClickListener { requestUsageAccessPermission() }
-        btnAccessibility.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            Toast.makeText(this, "Please enable Widgets Pro in Accessibility Services", Toast.LENGTH_LONG).show()
-        }
     }
 
     override fun onResume() {
@@ -111,9 +103,8 @@ class PermissionActivity : AppCompatActivity() {
             packageName
         )
         val hasUsageAccessPermission = mode == AppOpsManager.MODE_ALLOWED
-        val hasAccessibilityPermission = isAccessibilityServiceEnabled()
 
-        return isIgnoringBatteryOptimizations && hasNotificationPermission && hasUsageAccessPermission && hasAccessibilityPermission
+        return isIgnoringBatteryOptimizations && hasNotificationPermission && hasUsageAccessPermission
     }
 
     private fun updateButtonStates() {
@@ -138,15 +129,5 @@ class PermissionActivity : AppCompatActivity() {
             packageName
         )
         btnUsageAccess.isEnabled = mode != AppOpsManager.MODE_ALLOWED
-        btnAccessibility.isEnabled = !isAccessibilityServiceEnabled()
-    }
-
-    private fun isAccessibilityServiceEnabled(): Boolean {
-        val serviceName = ComponentName(this, LauncherStateAccessibilityService::class.java)
-        val enabledServices = Settings.Secure.getString(
-            contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
-        return enabledServices.contains(serviceName.flattenToString())
     }
 }

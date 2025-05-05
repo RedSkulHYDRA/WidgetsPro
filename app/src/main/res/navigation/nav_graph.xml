@@ -16,4 +16,10 @@
         android:name="com.tpk.widgetspro.ui.settings.SettingsFragment"
         android:label="@string/title_settings"
         tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/navigation_help"
+        android:name="com.tpk.widgetspro.ui.help.HelpFragment"
+        android:label="@string/title_help"
+        tools:layout="@layout/fragment_help" />
 </navigation>
