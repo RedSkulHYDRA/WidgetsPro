@@ -151,7 +151,7 @@ class AnalogClockUpdateService_1 : BaseMonitorService(), CoroutineScope {
 
         val isDark = isSystemInDarkTheme(baseContext)
         val dialResource = if (isDark) R.drawable.analog_1_dial_dark else R.drawable.analog_1_dial_light
-        val dialBackground = if (isDark) R.drawable.analog_1_bg_dark else R.drawable.analog_1_bg_light
+        val dialBackground = R.drawable.analog_1_bg
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(packageName, R.layout.analog_1_widget)
             views.setImageViewResource(R.id.analog_1_bg, dialBackground)
