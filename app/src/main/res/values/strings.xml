@@ -161,4 +161,5 @@
     <string name="record_audio">Record Audio: Allows access to the microphone for the music visualizer feature.</string>
     <string name="modify_audio">Modify Audio Settings: Allows changing global audio settings, potentially used by the music visualizer.</string>
     <string name="interact_users">Interact Across Users Full: System-level permission related to the Shizuku provider[cite: 30], allowing interaction across user profiles. (Requires system signing).</string>
+    <string name="metapi_description">Huge thanks to MET Weather API</string>
 </resources>
