@@ -125,13 +125,13 @@
     <string name="analog_clock">Analog Clock Widget</string>
     <string name="music_widget">Music Widget</string>
     <string name="grant_permission_prompt">Please grant the following permissions to use the app:</string>
-    <string name="enable_accessibility_switch">Enable Accessibility Service (Optional)</string>
+    <string name="enable_accessibility_switch">Enable Accessibility Service</string>
     <string name="title_help">Help</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="help_amp_support"><![CDATA[Help & Support]]></string>
     <string name="accessibility_service">Accessibility Service</string>
     <string name="the_accessibility_service">The Accessibility Service helps Widgets Pro optimize performance and battery usage. It allows the app to detect when you are on your home screen (launcher). Widgets only update frequently when they are visible on the launcher. This permission is optional but recommended for the best experience.</string>
+    <string name="grant_permission_optional">The Accessibility Service and Usage Access helps Widgets Pro optimize performance and battery usage. It allows the app to detect when you are on your home screen (launcher). Widgets only update frequently when they are visible on the launcher. This permissions are optional but recommended for the best experience.</string>
     <string name="shizuku_is_needed">Shizuku is needed for certain widgets, like the CPU Monitor, to access specific system information (e.g., CPU usage and temperature). It provides a secure way to grant these permissions without requiring full root access.</string>
     <string name="shizuku_root">Shizuku/Root</string>
     <string name="support_channel">Support Channel</string>
@@ -162,4 +162,9 @@
     <string name="modify_audio">Modify Audio Settings: Allows changing global audio settings, potentially used by the music visualizer.</string>
     <string name="interact_users">Interact Across Users Full: System-level permission related to the Shizuku provider[cite: 30], allowing interaction across user profiles. (Requires system signing).</string>
     <string name="metapi_description">Huge thanks to MET Weather API</string>
+    <string name="accessibility_disclosure_title">Accessibility Service Required</string>
+    <string name="accessibility_disclosure_message">To optimize widget updates and save battery, Widgets Pro needs Accessibility Service access.\n\nThis allows the app to:\n • Detect when you are on the home screen (launcher) by monitoring window changes.\n • Retrieve the name of the currently active app for this detection.\n\nThis information is used ONLY to reduce widget update frequency when they aren\'t visible. No personal data is collected or shared.</string>
+    <string name="accessibility_disclosure_agree">Grant Permission</string>
+    <string name="accessibility_disclosure_decline">Decline</string>
+    <string name="manage_accessibility_switch">Manage Accessibility Service</string>
 </resources>

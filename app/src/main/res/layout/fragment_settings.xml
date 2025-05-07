@@ -42,20 +42,28 @@
                     android:text="@string/switch_to_red_accent" />
 
                 <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_accessibility"
-                    android:paddingLeft="10dp"
-                    style="@style/CustomTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/enable_accessibility_switch" />
-
-                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switch_microphone_access"
                     android:paddingLeft="10dp"
                     style="@style/CustomTextView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/enable_microphone_access" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_usage_access"
+                    style="@style/CustomTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="10dp"
+                    android:text="@string/grant_usage_access" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_accessibility_settings"
+                    style="@style/CustomTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="10dp"
+                    android:text="@string/enable_accessibility_switch" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

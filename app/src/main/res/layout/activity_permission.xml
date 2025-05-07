@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     android:background="?attr/colorSurface"
+    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_margin="25dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:layout_weight="1" >
 
         <TextView
             android:id="@+id/title_main"
@@ -21,7 +23,7 @@
             android:paddingBottom="20dp"
             android:text="@string/widgets_pro"
             android:textAlignment="center"
-            android:textColor="@color/accent_color"
+            android:textColor="?attr/colorAccent"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -34,48 +36,36 @@
 
         <Space
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/title_permissions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingBottom="16dp"
+            android:text="@string/grant_permission_prompt"
+            android:textColor="?attr/colorAccent"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp"/>
 
-            <TextView
-                android:id="@+id/title_permissions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingBottom="16dp"
-                android:text="@string/grant_permission_prompt"
-                android:textColor="@color/accent_color"
-                android:textSize="18sp" />
-
-            <Button
-                android:id="@+id/btn_battery_optimizations"
-                style="@style/CustomTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/disable_battery_optimization" />
-
-            <Button
-                android:id="@+id/btn_notification_permission"
-                style="@style/CustomTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/grant_notification_permission" />
-
-            <Button
-                android:id="@+id/btn_usage_access"
-                style="@style/CustomTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="@string/grant_usage_access" />
-
-        </LinearLayout>
     </LinearLayout>
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/permission_viewpager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/permission_tab_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        app:tabGravity="fill"
+        app:tabIndicatorColor="?attr/colorAccent"
+        app:tabMode="fixed"
+        app:tabSelectedTextColor="?attr/colorAccent"
+        app:tabTextColor="@color/text_color" />
+
 </LinearLayout>

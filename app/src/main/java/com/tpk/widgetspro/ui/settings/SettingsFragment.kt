@@ -3,7 +3,9 @@ package com.tpk.widgetspro.ui.settings
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.app.AppOpsManager
 import android.appwidget.AppWidgetManager
+import android.bluetooth.BluetoothAdapter
 import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
@@ -30,7 +32,6 @@ import com.google.android.material.textfield.TextInputLayout
 import com.tpk.widgetspro.MainActivity
 import com.tpk.widgetspro.R
 import com.tpk.widgetspro.api.ImageApiClient
-import com.tpk.widgetspro.services.LauncherStateAccessibilityService
 import com.tpk.widgetspro.services.gif.AnimationService
 import com.tpk.widgetspro.services.sun.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
@@ -67,8 +68,9 @@ class SettingsFragment : Fragment() {
     private lateinit var btnResetNow: Button
     private lateinit var tvNextReset: TextView
     private var pendingAppWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
-    private lateinit var switchAccessibility: MaterialSwitch
     private lateinit var switchMicrophone: MaterialSwitch
+    private lateinit var switchUsageAccess: MaterialSwitch
+    private lateinit var switchAccessibilitySettings: MaterialSwitch
     private val REQUEST_RECORD_AUDIO_PERMISSION = 101
     private val enumOptions = arrayOf(
         "black", "blue", "white", "silver", "transparent",
@@ -81,24 +83,33 @@ class SettingsFragment : Fragment() {
             if (pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
                 val prefs = requireContext().getSharedPreferences("gif_widget_prefs", Context.MODE_PRIVATE)
                 prefs.edit().putString("file_uri_$pendingAppWidgetId", it.toString()).apply()
-                requireContext().contentResolver.takePersistableUriPermission(
-                    it, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
+                try {
+                    requireContext().contentResolver.takePersistableUriPermission(
+                        it, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: SecurityException) {
+                    // Handle exception if needed
+                }
                 val intent = Intent(requireContext(), AnimationService::class.java).apply {
                     putExtra("action", "UPDATE_FILE")
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingAppWidgetId)
                     putExtra("file_uri", it.toString())
                 }
-                requireContext().startService(intent)
+                try {
+                    requireContext().startService(intent)
+                } catch (e: Exception) {
+                    // Handle exception if needed
+                }
                 Toast.makeText(requireContext(), R.string.gif_selected_message, Toast.LENGTH_SHORT).show()
                 pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
             }
         }
     }
 
-    private val accessibilitySettingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        updateAccessibilitySwitchState()
+    private val settingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        updatePermissionSwitchStates()
     }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -109,6 +120,7 @@ class SettingsFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         seekBarCpu = view.findViewById(R.id.seekBarCpu)
         seekBarBattery = view.findViewById(R.id.seekBarBattery)
         seekBarWifi = view.findViewById(R.id.seekBarWifi)
@@ -126,8 +138,10 @@ class SettingsFragment : Fragment() {
         radioGroupResetMode = view.findViewById(R.id.radio_group_reset_mode)
         btnResetNow = view.findViewById(R.id.btn_reset_now)
         tvNextReset = view.findViewById(R.id.tv_next_reset)
-        switchAccessibility = view.findViewById(R.id.switch_accessibility)
         switchMicrophone = view.findViewById(R.id.switch_microphone_access)
+        switchUsageAccess = view.findViewById(R.id.switch_usage_access)
+        switchAccessibilitySettings = view.findViewById(R.id.switch_accessibility_settings)
+
 
         val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
         seekBarCpu.progress = prefs.getInt("cpu_interval", 60)
@@ -183,9 +197,10 @@ class SettingsFragment : Fragment() {
             resetBluetoothImage()
         }
         val switchThemes = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.button9)
-        switchThemes.isChecked = prefs.getBoolean("theme_enabled", false)
-        switchThemes.setOnCheckedChangeListener {_, isChecked ->
-            prefs.edit().putBoolean("theme_enabled", isChecked).apply()
+        val themePrefs = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        switchThemes.isChecked = themePrefs.getBoolean("red_accent", false)
+
+        switchThemes.setOnCheckedChangeListener { _, isChecked ->
             (activity as? MainActivity)?.switchTheme()
         }
 
@@ -231,21 +246,7 @@ class SettingsFragment : Fragment() {
                 Toast.makeText(requireContext(), R.string.warning_battery_drain, Toast.LENGTH_LONG).show()
             }
         }
-        updateAccessibilitySwitchState()
-        switchAccessibility.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                Toast.makeText(requireContext(), "Please enable Widgets Pro in Accessibility Services", Toast.LENGTH_LONG).show()
-                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                accessibilitySettingsLauncher.launch(intent)
-            } else {
-                if (isAccessibilityServiceEnabled()) {
-                    Toast.makeText(requireContext(), "Please disable Widgets Pro manually in Accessibility Settings", Toast.LENGTH_LONG).show()
-                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                    accessibilitySettingsLauncher.launch(intent)
-                }
-                updateAccessibilitySwitchState()
-            }
-        }
+
         updateMicrophoneSwitchState()
         switchMicrophone.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
@@ -257,19 +258,126 @@ class SettingsFragment : Fragment() {
                 }
             }
         }
+        setupPermissionSwitches()
+
+
     }
 
-    private fun showWidgetSelectionDialog() {
-        val prefss = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
-        val isDarkTheme = prefss.getBoolean("dark_theme", false)
-        val isRedAccent = prefss.getBoolean("red_accent", false)
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        if (!isAdded) return false
+        val context = requireContext()
+        val serviceName = ComponentName(context, com.tpk.widgetspro.services.LauncherStateAccessibilityService::class.java)
+        val enabledServices = Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains(serviceName.flattenToString())
+    }
 
+    private fun showAccessibilityDisclosureDialog() {
+        if (!isAdded) return
+
+        val themePrefs = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val isDarkTheme = themePrefs.getBoolean("dark_theme", false)
+        val isRedAccent = themePrefs.getBoolean("red_accent", false)
         val dialogThemeStyle = when {
             isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
             isDarkTheme && !isRedAccent -> R.style.CustomDialogTheme
             !isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
             else -> R.style.CustomDialogTheme
         }
+
+        val builder = AlertDialog.Builder(requireContext(), dialogThemeStyle)
+        builder.setTitle(R.string.accessibility_disclosure_title)
+            .setMessage(R.string.accessibility_disclosure_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.accessibility_disclosure_agree) { dialog, _ ->
+                dialog.dismiss()
+                openAccessibilitySettings()
+            }
+            .setNegativeButton(R.string.accessibility_disclosure_decline) { dialog, _ ->
+                dialog.dismiss()
+                updatePermissionSwitchStates()
+            }
+        val dialog = builder.create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+        try {
+            val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
+            dialog.findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
+            dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(textColor)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(textColor)
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(textColor)
+        } catch (e: Exception) {
+            // Handle view not found or other exceptions
+        }
+    }
+
+    private fun openAccessibilitySettings() {
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        try {
+            settingsLauncher.launch(intent)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Could not open Accessibility settings.", Toast.LENGTH_SHORT).show()
+            updatePermissionSwitchStates()
+        }
+    }
+
+    private fun setupPermissionSwitches() {
+        switchUsageAccess.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked != isUsageAccessGranted()) {
+                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                try {
+                    settingsLauncher.launch(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), "Could not open Usage Access settings.", Toast.LENGTH_SHORT).show()
+                    updatePermissionSwitchStates()
+                }
+            }
+        }
+
+        switchAccessibilitySettings.setOnCheckedChangeListener { _, isChecked ->
+            val currentlyEnabled = isAccessibilityServiceEnabled()
+            if (isChecked && !currentlyEnabled) {
+                showAccessibilityDisclosureDialog()
+            } else if (!isChecked && currentlyEnabled) {
+                openAccessibilitySettings()
+            }
+        }
+        updatePermissionSwitchStates()
+    }
+
+
+    private fun updatePermissionSwitchStates() {
+        if (!isAdded) return
+        switchUsageAccess.isChecked = isUsageAccessGranted()
+        switchAccessibilitySettings.isChecked = isAccessibilityServiceEnabled()
+    }
+
+    private fun isUsageAccessGranted(): Boolean {
+        if (!isAdded) return false
+        val appOps = requireContext().getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager?
+        val mode = appOps?.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            requireContext().packageName
+        ) ?: AppOpsManager.MODE_DEFAULT
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+
+
+    private fun showWidgetSelectionDialog() {
+        val themePrefs = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val isDarkTheme = themePrefs.getBoolean("dark_theme", false)
+        val isRedAccent = themePrefs.getBoolean("red_accent", false)
+        val dialogThemeStyle = when {
+            isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
+            isDarkTheme && !isRedAccent -> R.style.CustomDialogTheme
+            !isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
+            else -> R.style.CustomDialogTheme
+        }
+
         val appWidgetManager = AppWidgetManager.getInstance(requireContext())
         val widgetIds = appWidgetManager.getAppWidgetIds(
             ComponentName(requireContext(), com.tpk.widgetspro.widgets.gif.GifWidgetProvider::class.java)
@@ -291,35 +399,33 @@ class SettingsFragment : Fragment() {
                 pendingAppWidgetId = widgetIds[which]
                 selectFileLauncher.launch(arrayOf("image/gif"))
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.cancel, null)
             .create()
             .apply {
                 setOnShowListener {
                     window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
-                    findViewById<TextView>(android.R.id.title)?.setTextColor(
-                        ContextCompat.getColor(requireContext(), R.color.text_color)
-                    )
-                    getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
-                        ContextCompat.getColor(requireContext(), R.color.text_color)
-                    )
+                    try {
+                        val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
+                        findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
+                        getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
+                    } catch (e: Exception) { }
                 }
             }
         dialog.show()
-        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
-        dialog.applyDialogTheme()
     }
 
-    private fun showSyncWidgetSelectionDialog() {
-        val prefss = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
-        val isDarkTheme = prefss.getBoolean("dark_theme", false)
-        val isRedAccent = prefss.getBoolean("red_accent", false)
 
+    private fun showSyncWidgetSelectionDialog() {
+        val themePrefs = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val isDarkTheme = themePrefs.getBoolean("dark_theme", false)
+        val isRedAccent = themePrefs.getBoolean("red_accent", false)
         val dialogThemeStyle = when {
             isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
             isDarkTheme && !isRedAccent -> R.style.CustomDialogTheme
             !isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
             else -> R.style.CustomDialogTheme
         }
+
         val appWidgetManager = AppWidgetManager.getInstance(requireContext())
         val widgetIds = appWidgetManager.getAppWidgetIds(
             ComponentName(requireContext(), com.tpk.widgetspro.widgets.gif.GifWidgetProvider::class.java)
@@ -334,26 +440,29 @@ class SettingsFragment : Fragment() {
             getString(R.string.gif_widget_name, index)
         }.toTypedArray()
         val checkedItems = BooleanArray(widgetIds.size) { false }
-        var selectedWidgetIds = mutableSetOf<Int>()
+        val selectedWidgetIds = mutableSetOf<Int>()
 
         var dialog: AlertDialog? = null
 
         dialog = AlertDialog.Builder(requireContext(), dialogThemeStyle)
             .setTitle(R.string.sync_widgets)
-            .setMultiChoiceItems(items, checkedItems) { dialogInterface, which, isChecked ->
+            .setMultiChoiceItems(items, checkedItems) { _, which, isChecked ->
                 if (isChecked) {
                     selectedWidgetIds.add(widgetIds[which])
                     if (selectedWidgetIds.size > 2) {
                         val oldest = selectedWidgetIds.first()
                         selectedWidgetIds.remove(oldest)
-                        checkedItems[widgetIds.indexOf(oldest)] = false
-                        dialog?.listView?.setItemChecked(widgetIds.indexOf(oldest), false)
+                        val oldestIndex = widgetIds.indexOf(oldest)
+                        if(oldestIndex != -1) {
+                            checkedItems[oldestIndex] = false
+                            dialog?.listView?.setItemChecked(oldestIndex, false)
+                        }
                     }
                 } else {
                     selectedWidgetIds.remove(widgetIds[which])
                 }
             }
-            .setPositiveButton("Sync") { _, _ ->
+            .setPositiveButton(R.string.sync_gif_widgets) { _, _ ->
                 if (selectedWidgetIds.size == 2) {
                     val syncGroupId = UUID.randomUUID().toString()
                     val intent = Intent(requireContext(), AnimationService::class.java).apply {
@@ -361,30 +470,29 @@ class SettingsFragment : Fragment() {
                         putExtra("sync_group_id", syncGroupId)
                         putExtra("sync_widget_ids", selectedWidgetIds.toIntArray())
                     }
-                    requireContext().startService(intent)
-                    Toast.makeText(requireContext(), R.string.widgets_synced, Toast.LENGTH_SHORT).show()
+                    try {
+                        requireContext().startService(intent)
+                        Toast.makeText(requireContext(), R.string.widgets_synced, Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), "Failed to start sync service", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
                     Toast.makeText(requireContext(), R.string.select_two_widgets, Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.cancel, null)
             .create()
 
         dialog.setOnShowListener {
             dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
-            dialog.findViewById<TextView>(android.R.id.title)?.setTextColor(
-                ContextCompat.getColor(requireContext(), R.color.text_color)
-            )
-            dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
-                ContextCompat.getColor(requireContext(), R.color.text_color)
-            )
-            dialog.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
-                ContextCompat.getColor(requireContext(), R.color.text_color)
-            )
+            try {
+                val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
+                dialog.findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
+                dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)
+                dialog.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
+            } catch (e: Exception) { }
         }
         dialog.show()
-        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
-        dialog.applyDialogTheme()
     }
 
     private fun updateNextResetText(mode: String) {
@@ -396,7 +504,7 @@ class SettingsFragment : Fragment() {
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
             }
-            val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy • hh:mm a", Locale.getDefault())
+            val dateFormat = SimpleDateFormat("EEE, dd MMM HH:mm a", Locale.getDefault())
             tvNextReset.text = "$nextResetLabel ${dateFormat.format(calendar.time)}"
         } else {
             tvNextReset.text = "$nextResetLabel ${getString(R.string.until_reset_now_pressed)}"
@@ -495,7 +603,6 @@ class SettingsFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
         val isDarkTheme = prefs.getBoolean("dark_theme", false)
         val isRedAccent = prefs.getBoolean("red_accent", false)
-
         val dialogThemeStyle = when {
             isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
             isDarkTheme && !isRedAccent -> R.style.CustomDialogTheme
@@ -503,31 +610,42 @@ class SettingsFragment : Fragment() {
             else -> R.style.CustomDialogTheme
         }
 
+        val currentSelected = getSelectedItemsAsString().split(" ").filter { it.isNotEmpty() }.toSet()
+        val checkedItems = enumOptions.map { currentSelected.contains(it) }.toBooleanArray()
+
         val builder = AlertDialog.Builder(requireContext(), dialogThemeStyle)
-        builder.setTitle("Select options")
-        builder.setMultiChoiceItems(enumOptions, null) { _, _, _ -> }
-        builder.setPositiveButton("OK") { dialog, _ ->
-            val checkedItems = (dialog as AlertDialog).listView.checkedItemPositions
+        builder.setTitle(R.string.select_option)
+        builder.setMultiChoiceItems(enumOptions, checkedItems) { _, which, isChecked ->
+            checkedItems[which] = isChecked
+        }
+        builder.setPositiveButton(R.string.bluetooth_battery_name) { dialog, _ ->
             chipGroup.removeAllViews()
-            for (i in 0 until enumOptions.size) {
+            for (i in enumOptions.indices) {
                 if (checkedItems[i]) {
                     addChipToGroup(enumOptions[i])
                 }
             }
         }
-        builder.setNegativeButton("Cancel", null)
+        builder.setNegativeButton(R.string.cancel, null)
         val dialog = builder.create()
         dialog.show()
         dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
-        dialog.applyDialogTheme()
+        try {
+            val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
+            dialog.findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
+            dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)
+            dialog.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
+            // Optionally style list items if needed
+        } catch (e: Exception) { }
     }
+
 
     private fun addChipToGroup(enumText: String) {
         val chip = Chip(requireContext())
         chip.text = enumText
         chip.isCloseIconVisible = true
         chip.setChipBackgroundColorResource(R.color.text_color)
-        chip.setTextColor(resources.getColor(R.color.shape_background_color))
+        chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.shape_background_color))
         chip.setCloseIconTintResource(R.color.shape_background_color)
         chip.setOnCloseIconClickListener { chipGroup.removeView(chip) }
         chipGroup.addView(chip)
@@ -542,13 +660,6 @@ class SettingsFragment : Fragment() {
         return selectedItems.joinToString(" ")
     }
 
-    private fun AlertDialog.applyDialogTheme() {
-        val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
-        findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
-        findViewById<TextView>(android.R.id.message)?.setTextColor(textColor)
-        getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)
-        getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
-    }
 
     private fun getCoordinatesFromLocation(location: String) {
         val geocoder = Geocoder(requireContext(), Locale.getDefault())
@@ -565,7 +676,7 @@ class SettingsFragment : Fragment() {
                 Toast.makeText(requireContext(), R.string.location_not_found_message, Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), getString(R.string.location_error_message, e.message), Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.location_error_message, e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -582,13 +693,15 @@ class SettingsFragment : Fragment() {
         val geocoder = Geocoder(requireContext(), Locale.getDefault())
         try {
             val addresses = geocoder.getFromLocationName(query, 5)
-            val suggestions = addresses?.map { it.getAddressLine(0) } ?: emptyList()
+            val suggestions = addresses?.mapNotNull { it.getAddressLine(0) } ?: emptyList()
             suggestionsAdapter.clear()
             suggestionsAdapter.addAll(suggestions)
             suggestionsAdapter.notifyDataSetChanged()
-            locationAutoComplete.showDropDown()
+            if (suggestions.isNotEmpty()) {
+                locationAutoComplete.showDropDown()
+            }
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), R.string.suggestions_error_message, Toast.LENGTH_SHORT).show()
+            // Optionally show a message
         }
     }
 
@@ -599,14 +712,16 @@ class SettingsFragment : Fragment() {
             deviceAddress?.let { address ->
                 val device = getBluetoothDeviceByAddress(address)
                 device?.let { btDevice ->
-                    resetImageForDevice(requireContext(), btDevice.name, appWidgetId)
-                    clearCustomQueryForDevice(requireContext(), btDevice.name, appWidgetId)
-                    setCustomQueryForDevice(requireContext(), btDevice.name, getSelectedItemsAsString(), appWidgetId)
-                    Toast.makeText(requireContext(), getString(R.string.bluetooth_reset_message, btDevice.name), Toast.LENGTH_SHORT).show()
+                    val deviceName = btDevice.name ?: "Unknown_Device_${btDevice.address}"
+                    resetImageForDevice(requireContext(), deviceName, appWidgetId)
+                    clearCustomQueryForDevice(requireContext(), deviceName, appWidgetId)
+                    setCustomQueryForDevice(requireContext(), deviceName, getSelectedItemsAsString(), appWidgetId)
+                    Toast.makeText(requireContext(), getString(R.string.bluetooth_reset_message, deviceName), Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
+
 
     private fun resetImageForDevice(context: Context, deviceName: String, appWidgetId: Int) {
         ImageApiClient.clearUrlCache(context, deviceName)
@@ -623,14 +738,19 @@ class SettingsFragment : Fragment() {
     private fun clearCustomQueryForDevice(context: Context, deviceName: String, appWidgetId: Int) {
         ImageApiClient.clearCustomQuery(context, deviceName)
         resetImageForDevice(context, deviceName, appWidgetId)
+        resetUpdateWidget(context, appWidgetId)
     }
 
     private fun updateWidget(context: Context, appWidgetId: Int) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val views = android.widget.RemoteViews(context.packageName, R.layout.bluetooth_widget_layout)
         views.setImageViewResource(R.id.device_image, R.drawable.ic_bluetooth_placeholder)
+        views.setViewVisibility(R.id.device_image1, View.VISIBLE) // Show placeholder initially
+        views.setTextViewText(R.id.device_name, getString(R.string.unknown_device)) // Default text
+        views.setTextViewText(R.id.battery_percentage, "--%") // Default text
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
+
 
     private fun resetUpdateWidget(context: Context, appWidgetId: Int) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -639,11 +759,17 @@ class SettingsFragment : Fragment() {
         deviceAddress?.let {
             val device = getBluetoothDeviceByAddress(it)
             device?.let { btDevice ->
+                views.setTextViewText(R.id.device_name, btDevice.name ?: getString(R.string.unknown_device))
                 ImageLoader(context, appWidgetManager, appWidgetId, views).loadImageAsync(btDevice)
+            } ?: run {
+                updateWidget(context, appWidgetId) // Revert to placeholder if device not found
             }
+        } ?: run {
+            updateWidget(context, appWidgetId) // Revert to placeholder if no address saved
         }
-        appWidgetManager.updateAppWidget(appWidgetId, views)
+        appWidgetManager.partiallyUpdateAppWidget(appWidgetId, views) // Use partial update if possible
     }
+
 
     private fun getBluetoothWidgetIds(context: Context): IntArray {
         val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -659,39 +785,36 @@ class SettingsFragment : Fragment() {
 
     @SuppressLint("MissingPermission")
     private fun getBluetoothDeviceByAddress(address: String): android.bluetooth.BluetoothDevice? {
+        if (!checkBluetoothPermission()) return null
         val bluetoothAdapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter() ?: return null
         return try {
-            bluetoothAdapter.getRemoteDevice(address)
+            if (BluetoothAdapter.checkBluetoothAddress(address)) {
+                bluetoothAdapter.getRemoteDevice(address)
+            } else {
+                null
+            }
         } catch (e: Exception) {
             null
         }
     }
-    private fun isAccessibilityServiceEnabled(): Boolean {
-        val context = requireContext()
-        val serviceName = ComponentName(context, LauncherStateAccessibilityService::class.java)
-        val enabledServices = Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
-        return enabledServices.contains(serviceName.flattenToString())
+
+    private fun checkBluetoothPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun updateAccessibilitySwitchState() {
-        if (view != null && ::switchAccessibility.isInitialized) {
-            switchAccessibility.isChecked = isAccessibilityServiceEnabled()
-        }
-    }
 
     private fun hasMicrophonePermission(): Boolean {
         return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun updateMicrophoneSwitchState() {
-        switchMicrophone.isChecked = hasMicrophonePermission()
+        if (isAdded) {
+            switchMicrophone.isChecked = hasMicrophonePermission()
+        }
     }
 
     private fun requestMicrophonePermission() {
-        if (!hasMicrophonePermission()) {
+        if (isAdded && !hasMicrophonePermission()) {
             ActivityCompat.requestPermissions(
                 requireActivity(),
                 arrayOf(Manifest.permission.RECORD_AUDIO),
@@ -707,14 +830,16 @@ class SettingsFragment : Fragment() {
                 switchMicrophone.isChecked = true
             } else {
                 switchMicrophone.isChecked = false
-                Toast.makeText(requireContext(), "Microphone permission denied", Toast.LENGTH_SHORT).show()
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Microphone permission denied", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        updateAccessibilitySwitchState()
         updateMicrophoneSwitchState()
+        updatePermissionSwitchStates()
     }
 }
