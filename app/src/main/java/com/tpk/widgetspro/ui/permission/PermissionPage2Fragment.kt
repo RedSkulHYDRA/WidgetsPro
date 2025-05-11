@@ -31,12 +31,12 @@ class PermissionPage2Fragment : Fragment() {
 
     private val accessibilitySettingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         updateButtonStates()
-        (activity as? PermissionActivity)?.areAllPermissionsGrantedInPage2()
+        checkAndRedirect()
     }
 
     private val usageAccessSettingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         updateButtonStates()
-        (activity as? PermissionActivity)?.areAllPermissionsGrantedInPage2()
+        checkAndRedirect()
     }
 
     override fun onCreateView(
@@ -76,7 +76,17 @@ class PermissionPage2Fragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateButtonStates()
-        (activity as? PermissionActivity)?.areAllPermissionsGrantedInPage2()
+        checkAndRedirect()
+    }
+
+    private fun checkAndRedirect() {
+        if ((activity as? PermissionActivity)?.areAllPermissionsGrantedInPage2() == true) {
+            if (prefs.getBoolean("optional_permissions_interacted", false) || !btnNextToMain.isEnabled) {
+                val intent = Intent(requireContext(), MainActivity::class.java)
+                startActivity(intent)
+                activity?.finish()
+            }
+        }
     }
 
     private fun requestUsageAccessPermission() {

@@ -12,7 +12,8 @@
         android:layout_height="32dp"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_default_album_art"
-        android:layout_marginEnd="8dp"/>
+        android:layout_marginEnd="8dp"
+        app:tint="?attr/colorAccent"/>
 
     <LinearLayout
         android:layout_width="0dp"

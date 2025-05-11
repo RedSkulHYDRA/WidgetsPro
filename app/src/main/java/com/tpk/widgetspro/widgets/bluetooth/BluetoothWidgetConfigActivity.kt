@@ -66,11 +66,12 @@ class BluetoothWidgetConfigActivity : AppCompatActivity() {
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             attributes.dimAmount = 0.5f
         }
+        window.setBackgroundDrawableResource(R.color.transparent)
         setFinishOnTouchOutside(true)
 
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundResource(R.drawable.dialog_background)
+            setBackgroundResource(R.drawable.round_layout)
             setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
         }
 

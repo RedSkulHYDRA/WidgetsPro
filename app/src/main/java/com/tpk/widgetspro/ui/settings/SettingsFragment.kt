@@ -88,7 +88,6 @@ class SettingsFragment : Fragment() {
                         it, Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
                 } catch (e: SecurityException) {
-                    // Handle exception if needed
                 }
                 val intent = Intent(requireContext(), AnimationService::class.java).apply {
                     putExtra("action", "UPDATE_FILE")
@@ -98,7 +97,6 @@ class SettingsFragment : Fragment() {
                 try {
                     requireContext().startService(intent)
                 } catch (e: Exception) {
-                    // Handle exception if needed
                 }
                 Toast.makeText(requireContext(), R.string.gif_selected_message, Toast.LENGTH_SHORT).show()
                 pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
@@ -309,7 +307,6 @@ class SettingsFragment : Fragment() {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(textColor)
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(textColor)
         } catch (e: Exception) {
-            // Handle view not found or other exceptions
         }
     }
 
@@ -455,7 +452,7 @@ class SettingsFragment : Fragment() {
                         val oldestIndex = widgetIds.indexOf(oldest)
                         if(oldestIndex != -1) {
                             checkedItems[oldestIndex] = false
-                            dialog?.listView?.setItemChecked(oldestIndex, false)
+                            (dialog?.listView?.setItemChecked(oldestIndex, false))
                         }
                     }
                 } else {
@@ -618,7 +615,7 @@ class SettingsFragment : Fragment() {
         builder.setMultiChoiceItems(enumOptions, checkedItems) { _, which, isChecked ->
             checkedItems[which] = isChecked
         }
-        builder.setPositiveButton(R.string.bluetooth_battery_name) { dialog, _ ->
+        builder.setPositiveButton(R.string.ok) { dialog, _ ->
             chipGroup.removeAllViews()
             for (i in enumOptions.indices) {
                 if (checkedItems[i]) {
@@ -635,7 +632,6 @@ class SettingsFragment : Fragment() {
             dialog.findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
             dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(textColor)
             dialog.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
-            // Optionally style list items if needed
         } catch (e: Exception) { }
     }
 
@@ -701,75 +697,43 @@ class SettingsFragment : Fragment() {
                 locationAutoComplete.showDropDown()
             }
         } catch (e: Exception) {
-            // Optionally show a message
         }
     }
 
     private fun resetBluetoothImage() {
         val appWidgetIds = getBluetoothWidgetIds(requireContext())
+        if (appWidgetIds.isEmpty()) {
+            Toast.makeText(requireContext(), "No Bluetooth widgets found to reset.", Toast.LENGTH_SHORT).show()
+            return
+        }
         appWidgetIds.forEach { appWidgetId ->
             val deviceAddress = getSelectedDeviceAddress(requireContext(), appWidgetId)
             deviceAddress?.let { address ->
                 val device = getBluetoothDeviceByAddress(address)
                 device?.let { btDevice ->
                     val deviceName = btDevice.name ?: "Unknown_Device_${btDevice.address}"
-                    resetImageForDevice(requireContext(), deviceName, appWidgetId)
-                    clearCustomQueryForDevice(requireContext(), deviceName, appWidgetId)
-                    setCustomQueryForDevice(requireContext(), deviceName, getSelectedItemsAsString(), appWidgetId)
+
+                    ImageApiClient.clearUrlCache(requireContext(), deviceName)
+                    BitmapCacheManager.clearBitmapCache(requireContext(), deviceName)
+
+                    ImageApiClient.clearCustomQuery(requireContext(), deviceName)
+
+                    val currentCustomQuery = getSelectedItemsAsString()
+                    if (currentCustomQuery.isNotBlank()) {
+                        ImageApiClient.setCustomQuery(requireContext(), deviceName, currentCustomQuery)
+                    }
+                    val updateIntent = Intent(requireContext(), BluetoothWidgetProvider::class.java).apply {
+                        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+                        component = ComponentName(requireContext(), BluetoothWidgetProvider::class.java)
+                    }
+                    requireContext().sendBroadcast(updateIntent)
+
                     Toast.makeText(requireContext(), getString(R.string.bluetooth_reset_message, deviceName), Toast.LENGTH_SHORT).show()
-                }
-            }
+                } ?: Toast.makeText(requireContext(), "Bluetooth device not found for address: $address", Toast.LENGTH_SHORT).show()
+            } ?: Toast.makeText(requireContext(), "No device selected for widget ID: $appWidgetId", Toast.LENGTH_SHORT).show()
         }
     }
-
-
-    private fun resetImageForDevice(context: Context, deviceName: String, appWidgetId: Int) {
-        ImageApiClient.clearUrlCache(context, deviceName)
-        BitmapCacheManager.clearBitmapCache(context, deviceName)
-        updateWidget(context, appWidgetId)
-    }
-
-    private fun setCustomQueryForDevice(context: Context, deviceName: String, query: String, appWidgetId: Int) {
-        ImageApiClient.setCustomQuery(context, deviceName, query)
-        resetImageForDevice(context, deviceName, appWidgetId)
-        resetUpdateWidget(context, appWidgetId)
-    }
-
-    private fun clearCustomQueryForDevice(context: Context, deviceName: String, appWidgetId: Int) {
-        ImageApiClient.clearCustomQuery(context, deviceName)
-        resetImageForDevice(context, deviceName, appWidgetId)
-        resetUpdateWidget(context, appWidgetId)
-    }
-
-    private fun updateWidget(context: Context, appWidgetId: Int) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val views = android.widget.RemoteViews(context.packageName, R.layout.bluetooth_widget_layout)
-        views.setImageViewResource(R.id.device_image, R.drawable.ic_bluetooth_placeholder)
-        views.setViewVisibility(R.id.device_image1, View.VISIBLE) // Show placeholder initially
-        views.setTextViewText(R.id.device_name, getString(R.string.unknown_device)) // Default text
-        views.setTextViewText(R.id.battery_percentage, "--%") // Default text
-        appWidgetManager.updateAppWidget(appWidgetId, views)
-    }
-
-
-    private fun resetUpdateWidget(context: Context, appWidgetId: Int) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val views = android.widget.RemoteViews(context.packageName, R.layout.bluetooth_widget_layout)
-        val deviceAddress = getSelectedDeviceAddress(context, appWidgetId)
-        deviceAddress?.let {
-            val device = getBluetoothDeviceByAddress(it)
-            device?.let { btDevice ->
-                views.setTextViewText(R.id.device_name, btDevice.name ?: getString(R.string.unknown_device))
-                ImageLoader(context, appWidgetManager, appWidgetId, views).loadImageAsync(btDevice)
-            } ?: run {
-                updateWidget(context, appWidgetId) // Revert to placeholder if device not found
-            }
-        } ?: run {
-            updateWidget(context, appWidgetId) // Revert to placeholder if no address saved
-        }
-        appWidgetManager.partiallyUpdateAppWidget(appWidgetId, views) // Use partial update if possible
-    }
-
 
     private fun getBluetoothWidgetIds(context: Context): IntArray {
         val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -799,11 +763,13 @@ class SettingsFragment : Fragment() {
     }
 
     private fun checkBluetoothPermission(): Boolean {
+        if (!isAdded || context == null) return false
         return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
     }
 
 
     private fun hasMicrophonePermission(): Boolean {
+        if (!isAdded || context == null) return false
         return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -827,10 +793,10 @@ class SettingsFragment : Fragment() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                switchMicrophone.isChecked = true
+                if (isAdded) switchMicrophone.isChecked = true
             } else {
-                switchMicrophone.isChecked = false
                 if (isAdded) {
+                    switchMicrophone.isChecked = false
                     Toast.makeText(requireContext(), "Microphone permission denied", Toast.LENGTH_SHORT).show()
                 }
             }
