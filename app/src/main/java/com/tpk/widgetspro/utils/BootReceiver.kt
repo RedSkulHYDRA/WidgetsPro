@@ -5,22 +5,23 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import com.tpk.widgetspro.services.gif.AnimationService
 import com.tpk.widgetspro.widgets.battery.BatteryWidgetProvider
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.caffeine.CaffeineWidget
 import com.tpk.widgetspro.widgets.cpu.CpuWidgetProvider
-import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
+import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
+import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.NetworkSpeedWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
+import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
-import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
-import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -40,8 +41,8 @@ class BootReceiver : BroadcastReceiver() {
             updateWidgets(context, appWidgetManager, NoteWidgetProvider::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_1::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_2::class.java)
-            updateWidgets(context, appWidgetManager, GifWidgetProvider::class.java)
             updateWidgets(context, appWidgetManager, MusicSimpleWidgetProvider::class.java)
+            startGifAnimationService(context)
         }
     }
 
@@ -54,6 +55,19 @@ class BootReceiver : BroadcastReceiver() {
                 component = provider
                 context.sendBroadcast(this)
             }
+        }
+    }
+
+    private fun startGifAnimationService(context: Context) {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val gifProvider = ComponentName(context, GifWidgetProvider::class.java)
+        val gifWidgetIds = appWidgetManager.getAppWidgetIds(gifProvider)
+
+        if (gifWidgetIds.isNotEmpty()) {
+            val serviceIntent = Intent(context, AnimationService::class.java).apply {
+                action = "BOOT_COMPLETED"
+            }
+            context.startForegroundService(serviceIntent)
         }
     }
 }

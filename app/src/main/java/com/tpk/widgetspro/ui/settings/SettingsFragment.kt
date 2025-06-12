@@ -44,6 +44,8 @@ import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.networkusage.BaseWifiDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
+import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -81,26 +83,46 @@ class SettingsFragment : Fragment() {
     private val selectFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             if (pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-                val prefs = requireContext().getSharedPreferences("gif_widget_prefs", Context.MODE_PRIVATE)
-                prefs.edit().putString("file_uri_$pendingAppWidgetId", it.toString()).apply()
-                try {
-                    requireContext().contentResolver.takePersistableUriPermission(
-                        it, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (e: SecurityException) {
-                }
-                val intent = Intent(requireContext(), AnimationService::class.java).apply {
-                    putExtra("action", "UPDATE_FILE")
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingAppWidgetId)
-                    putExtra("file_uri", it.toString())
-                }
-                try {
+                val internalPath = copyGifToDeviceStorage(requireContext(), it, pendingAppWidgetId)
+                if (internalPath != null) {
+                    val deviceContext = requireContext().createDeviceProtectedStorageContext()
+                    val prefs = deviceContext.getSharedPreferences("gif_widget_prefs", Context.MODE_PRIVATE)
+                    prefs.edit().putString("file_path_$pendingAppWidgetId", internalPath).apply()
+
+                    val intent = Intent(requireContext(), AnimationService::class.java).apply {
+                        action = "UPDATE_FILE"
+                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingAppWidgetId)
+                        putExtra("file_path", internalPath)
+                    }
                     requireContext().startService(intent)
-                } catch (e: Exception) {
+
+                    Toast.makeText(requireContext(), R.string.gif_selected_message, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "Failed to copy GIF", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(requireContext(), R.string.gif_selected_message, Toast.LENGTH_SHORT).show()
                 pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
             }
+        }
+    }
+
+    private fun copyGifToDeviceStorage(context: Context, sourceUri: Uri, widgetId: Int): String? {
+        return try {
+            val deviceContext = context.createDeviceProtectedStorageContext()
+            val destinationDir = File(deviceContext.filesDir, "gifs")
+            if (!destinationDir.exists()) {
+                destinationDir.mkdirs()
+            }
+            val destinationFile = File(destinationDir, "widget_$widgetId.gif")
+
+            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                destinationFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            destinationFile.absolutePath
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
         }
     }
 
@@ -374,11 +396,8 @@ class SettingsFragment : Fragment() {
             !isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
             else -> R.style.CustomDialogTheme
         }
-
         val appWidgetManager = AppWidgetManager.getInstance(requireContext())
-        val widgetIds = appWidgetManager.getAppWidgetIds(
-            ComponentName(requireContext(), com.tpk.widgetspro.widgets.gif.GifWidgetProvider::class.java)
-        )
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(requireContext(), com.tpk.widgetspro.widgets.gif.GifWidgetProvider::class.java))
         if (widgetIds.isEmpty()) {
             Toast.makeText(requireContext(), R.string.no_gif_widgets_found, Toast.LENGTH_SHORT).show()
             return
@@ -389,28 +408,22 @@ class SettingsFragment : Fragment() {
             getString(R.string.gif_widget_name, index)
         }.toTypedArray()
         var dialog: AlertDialog? = null
-
-        dialog = AlertDialog.Builder(requireContext(), dialogThemeStyle)
-            .setTitle(R.string.select_gif_widget)
-            .setItems(items) { _, which ->
-                pendingAppWidgetId = widgetIds[which]
-                selectFileLauncher.launch(arrayOf("image/gif"))
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-            .apply {
-                setOnShowListener {
-                    window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
-                    try {
-                        val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
-                        findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
-                        getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
-                    } catch (e: Exception) { }
+        dialog = AlertDialog.Builder(requireContext(), dialogThemeStyle).setTitle(R.string.select_gif_widget).setItems(items) { _, which ->
+            pendingAppWidgetId = widgetIds[which]
+            selectFileLauncher.launch(arrayOf("image/gif"))
+        }.setNegativeButton(R.string.cancel, null).create().apply {
+            setOnShowListener {
+                window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
+                try {
+                    val textColor = ContextCompat.getColor(requireContext(), R.color.text_color)
+                    findViewById<TextView>(android.R.id.title)?.setTextColor(textColor)
+                    getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(textColor)
+                } catch (e: Exception) {
                 }
             }
+        }
         dialog.show()
     }
-
 
     private fun showSyncWidgetSelectionDialog() {
         val themePrefs = requireContext().getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
@@ -422,11 +435,8 @@ class SettingsFragment : Fragment() {
             !isDarkTheme && isRedAccent -> R.style.CustomDialogTheme1
             else -> R.style.CustomDialogTheme
         }
-
         val appWidgetManager = AppWidgetManager.getInstance(requireContext())
-        val widgetIds = appWidgetManager.getAppWidgetIds(
-            ComponentName(requireContext(), com.tpk.widgetspro.widgets.gif.GifWidgetProvider::class.java)
-        )
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(requireContext(), com.tpk.widgetspro.widgets.gif.GifWidgetProvider::class.java))
         if (widgetIds.size < 2) {
             Toast.makeText(requireContext(), R.string.insufficient_gif_widgets, Toast.LENGTH_SHORT).show()
             return
@@ -438,9 +448,7 @@ class SettingsFragment : Fragment() {
         }.toTypedArray()
         val checkedItems = BooleanArray(widgetIds.size) { false }
         val selectedWidgetIds = mutableSetOf<Int>()
-
         var dialog: AlertDialog? = null
-
         dialog = AlertDialog.Builder(requireContext(), dialogThemeStyle)
             .setTitle(R.string.sync_widgets)
             .setMultiChoiceItems(items, checkedItems) { _, which, isChecked ->
