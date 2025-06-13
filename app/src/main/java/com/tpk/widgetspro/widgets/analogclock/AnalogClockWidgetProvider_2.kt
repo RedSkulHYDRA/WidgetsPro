@@ -19,7 +19,11 @@ class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        context.stopService(Intent(context, AnalogClockUpdateService_2::class.java))
+        try {
+            context.stopService(Intent(context, AnalogClockUpdateService_2::class.java))
+        } catch (e: Exception) {
+
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -30,7 +34,11 @@ class AnalogClockWidgetProvider_2 : AppWidgetProvider() {
     }
 
     private fun startService(context: Context) {
-        val intent = Intent(context, AnalogClockUpdateService_2::class.java)
-        context.startForegroundService(intent)
+        try {
+            val intent = Intent(context, AnalogClockUpdateService_2::class.java)
+            context.startForegroundService(intent)
+        } catch (e: Exception) {
+
+        }
     }
 }

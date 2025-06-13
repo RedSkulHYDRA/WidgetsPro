@@ -6,6 +6,7 @@ import android.app.AlertDialog
 import android.app.AppOpsManager
 import android.appwidget.AppWidgetManager
 import android.bluetooth.BluetoothAdapter
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
@@ -36,7 +37,6 @@ import com.tpk.widgetspro.services.gif.AnimationService
 import com.tpk.widgetspro.services.sun.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.utils.CommonUtils
-import com.tpk.widgetspro.utils.ImageLoader
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.BaseSimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
@@ -410,7 +410,11 @@ class SettingsFragment : Fragment() {
         var dialog: AlertDialog? = null
         dialog = AlertDialog.Builder(requireContext(), dialogThemeStyle).setTitle(R.string.select_gif_widget).setItems(items) { _, which ->
             pendingAppWidgetId = widgetIds[which]
-            selectFileLauncher.launch(arrayOf("image/gif"))
+            try {
+                selectFileLauncher.launch(arrayOf("image/gif"))
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(requireContext(), "No file picker app found to select a GIF.", Toast.LENGTH_LONG).show()
+            }
         }.setNegativeButton(R.string.cancel, null).create().apply {
             setOnShowListener {
                 window?.setBackgroundDrawableResource(R.drawable.rounded_layout_bg_alt)
@@ -471,7 +475,7 @@ class SettingsFragment : Fragment() {
                 if (selectedWidgetIds.size == 2) {
                     val syncGroupId = UUID.randomUUID().toString()
                     val intent = Intent(requireContext(), AnimationService::class.java).apply {
-                        putExtra("action", "SYNC_WIDGETS")
+                        action = "SYNC_WIDGETS"
                         putExtra("sync_group_id", syncGroupId)
                         putExtra("sync_widget_ids", selectedWidgetIds.toIntArray())
                     }

@@ -61,16 +61,42 @@ class UpdateReceiver : BroadcastReceiver() {
     }
 
     private fun startRelevantServices(context: Context) {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+
         try {
-            context.startForegroundService(Intent(context, CpuMonitorService::class.java))
-            context.startForegroundService(Intent(context, BatteryMonitorService::class.java))
-            context.startForegroundService(Intent(context, AnalogClockUpdateService_1::class.java))
-            context.startForegroundService(Intent(context, AnalogClockUpdateService_2::class.java))
-            context.startForegroundService(Intent(context, AnimationService::class.java))
-            context.startForegroundService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
-            context.startForegroundService(Intent(context, BaseWifiDataUsageWidgetService::class.java))
-            context.startForegroundService(Intent(context, BaseSimDataUsageWidgetService::class.java))
-            context.startForegroundService(Intent(context, SunSyncService::class.java))
+            if (appWidgetManager.getAppWidgetIds(ComponentName(context, CpuWidgetProvider::class.java)).isNotEmpty()) {
+                context.startForegroundService(Intent(context, CpuMonitorService::class.java))
+            }
+            if (appWidgetManager.getAppWidgetIds(ComponentName(context, BatteryWidgetProvider::class.java)).isNotEmpty()) {
+                context.startForegroundService(Intent(context, BatteryMonitorService::class.java))
+            }
+            if (appWidgetManager.getAppWidgetIds(ComponentName(context, AnalogClockWidgetProvider_1::class.java)).isNotEmpty()) {
+                context.startForegroundService(Intent(context, AnalogClockUpdateService_1::class.java))
+            }
+            if (appWidgetManager.getAppWidgetIds(ComponentName(context, AnalogClockWidgetProvider_2::class.java)).isNotEmpty()) {
+                context.startForegroundService(Intent(context, AnalogClockUpdateService_2::class.java))
+            }
+            if (appWidgetManager.getAppWidgetIds(ComponentName(context, GifWidgetProvider::class.java)).isNotEmpty()) {
+                context.startForegroundService(Intent(context, AnimationService::class.java))
+            }
+            val networkSpeedCircleIds = appWidgetManager.getAppWidgetIds(ComponentName(context, NetworkSpeedWidgetProviderCircle::class.java))
+            val networkSpeedPillIds = appWidgetManager.getAppWidgetIds(ComponentName(context, NetworkSpeedWidgetProviderPill::class.java))
+            if (networkSpeedCircleIds.isNotEmpty() || networkSpeedPillIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, BaseNetworkSpeedWidgetService::class.java))
+            }
+            val wifiCircleIds = appWidgetManager.getAppWidgetIds(ComponentName(context, WifiDataUsageWidgetProviderCircle::class.java))
+            val wifiPillIds = appWidgetManager.getAppWidgetIds(ComponentName(context, WifiDataUsageWidgetProviderPill::class.java))
+            if (wifiCircleIds.isNotEmpty() || wifiPillIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, BaseWifiDataUsageWidgetService::class.java))
+            }
+            val simCircleIds = appWidgetManager.getAppWidgetIds(ComponentName(context, SimDataUsageWidgetProviderCircle::class.java))
+            val simPillIds = appWidgetManager.getAppWidgetIds(ComponentName(context, SimDataUsageWidgetProviderPill::class.java))
+            if (simCircleIds.isNotEmpty() || simPillIds.isNotEmpty()) {
+                context.startForegroundService(Intent(context, BaseSimDataUsageWidgetService::class.java))
+            }
+            if (appWidgetManager.getAppWidgetIds(ComponentName(context, SunTrackerWidget::class.java)).isNotEmpty()) {
+                context.startForegroundService(Intent(context, SunSyncService::class.java))
+            }
 
             val caffeinePrefs = context.getSharedPreferences("caffeine", Context.MODE_PRIVATE)
             if (caffeinePrefs.getBoolean("active", false)) {
@@ -81,9 +107,9 @@ class UpdateReceiver : BroadcastReceiver() {
                 context.startForegroundService(Intent(context, MediaMonitorService::class.java))
             }
         } catch (e: Exception) {
-            // Handle exceptions if needed
         }
     }
+
 
     private fun updateAllWidgetProviders(context: Context) {
         val appWidgetManager = AppWidgetManager.getInstance(context)

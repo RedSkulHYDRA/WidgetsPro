@@ -24,14 +24,15 @@ class ImageLoader(
 
     fun loadImageAsync(device: android.bluetooth.BluetoothDevice) {
         scope.launch {
-            val imageUrl = ImageApiClient.getCachedUrl(context, device.name)
-                ?: ImageApiClient.getImageUrl(context, device.name).also {
-                    if (it.isNotEmpty()) ImageApiClient.cacheUrl(context, device.name, it)
+            val deviceName = device.name ?: "Unknown_Device_${device.address}"
+            val imageUrl = ImageApiClient.getCachedUrl(context, deviceName)
+                ?: ImageApiClient.getImageUrl(context, deviceName).also {
+                    if (it.isNotEmpty()) ImageApiClient.cacheUrl(context, deviceName, it)
                 }
 
             if (imageUrl.isNotEmpty()) {
                 downloadBitmap(imageUrl)?.let { bitmap ->
-                    BitmapCacheManager.cacheBitmap(context, device.name, bitmap)
+                    BitmapCacheManager.cacheBitmap(context, deviceName, bitmap)
                     withContext(Dispatchers.Main) {
                         views.setImageViewBitmap(R.id.device_image, bitmap)
                         appWidgetManager.updateAppWidget(appWidgetId, views)
