@@ -65,6 +65,14 @@
                     android:paddingLeft="10dp"
                     android:text="@string/enable_accessibility_switch" />
 
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_gif_margin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gif_widget_frame"
+                    style="@style/CustomTextView"
+                    android:paddingLeft="10dp"/>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

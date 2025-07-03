@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/gif_widget_container"
     android:layout_width="match_parent"
     android:background="@color/shape_background_color"
     android:layout_height="match_parent">
     <ImageView
-        android:layout_margin="9dp"
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

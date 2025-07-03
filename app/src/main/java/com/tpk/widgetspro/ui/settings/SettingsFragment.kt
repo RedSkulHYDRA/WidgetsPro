@@ -38,6 +38,7 @@ import com.tpk.widgetspro.services.sun.SunSyncService
 import com.tpk.widgetspro.utils.BitmapCacheManager
 import com.tpk.widgetspro.utils.CommonUtils
 import com.tpk.widgetspro.widgets.bluetooth.BluetoothWidgetProvider
+import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.BaseSimDataUsageWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderCircle
 import com.tpk.widgetspro.widgets.networkusage.SimDataUsageWidgetProviderPill
@@ -73,6 +74,7 @@ class SettingsFragment : Fragment() {
     private lateinit var switchMicrophone: MaterialSwitch
     private lateinit var switchUsageAccess: MaterialSwitch
     private lateinit var switchAccessibilitySettings: MaterialSwitch
+    private lateinit var switchGifMargin: MaterialSwitch
     private val REQUEST_RECORD_AUDIO_PERMISSION = 101
     private val enumOptions = arrayOf(
         "black", "blue", "white", "silver", "transparent",
@@ -161,6 +163,7 @@ class SettingsFragment : Fragment() {
         switchMicrophone = view.findViewById(R.id.switch_microphone_access)
         switchUsageAccess = view.findViewById(R.id.switch_usage_access)
         switchAccessibilitySettings = view.findViewById(R.id.switch_accessibility_settings)
+        switchGifMargin = view.findViewById(R.id.switch_gif_margin)
 
 
         val prefs = requireContext().getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
@@ -280,7 +283,23 @@ class SettingsFragment : Fragment() {
         }
         setupPermissionSwitches()
 
+        switchGifMargin.isChecked = prefs.getBoolean("gif_margin_enabled", false)
 
+        switchGifMargin.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("gif_margin_enabled", isChecked).apply()
+            updateAllGifWidgets()
+        }
+    }
+
+    private fun updateAllGifWidgets() {
+        val intent = Intent(requireContext(), GifWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+            val appWidgetManager = AppWidgetManager.getInstance(requireContext())
+            val componentName = ComponentName(requireContext(), GifWidgetProvider::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+        }
+        requireContext().sendBroadcast(intent)
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {
