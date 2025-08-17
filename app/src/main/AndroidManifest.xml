@@ -421,5 +421,30 @@
             android:foregroundServiceType="systemExempted"
             android:exported="false" />
 
+        <receiver
+            android:name=".widgets.sports.SportsWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sports_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".services.sports.SportsWidgetService"
+            android:exported="false"
+            android:foregroundServiceType="systemExempted"/>
+
+        <activity
+            android:name=".widgets.sports.SportsWidgetConfigActivity"
+            android:theme="@style/BluetoothConfigTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
     </application>
 </manifest>

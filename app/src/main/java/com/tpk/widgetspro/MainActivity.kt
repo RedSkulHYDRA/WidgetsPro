@@ -28,6 +28,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.tpk.widgetspro.services.BaseMonitorService
 import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
+import com.tpk.widgetspro.widgets.sports.SportsWidgetProvider
 
 class MainActivity : AppCompatActivity() {
     internal val SHIZUKU_REQUEST_CODE = 1001
@@ -103,7 +104,8 @@ class MainActivity : AppCompatActivity() {
             NoteWidgetProvider::class.java,
             AnalogClockWidgetProvider_1::class.java,
             AnalogClockWidgetProvider_2::class.java,
-            MusicSimpleWidgetProvider::class.java
+            MusicSimpleWidgetProvider::class.java,
+            SportsWidgetProvider::class.java
         )
         val intent = Intent(BaseMonitorService.ACTION_THEME_CHANGED)
         sendBroadcast(intent)

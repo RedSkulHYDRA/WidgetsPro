@@ -15,6 +15,7 @@ import com.tpk.widgetspro.services.music.MediaMonitorService
 import com.tpk.widgetspro.services.networkusage.BaseNetworkSpeedWidgetService
 import com.tpk.widgetspro.services.networkusage.BaseSimDataUsageWidgetService
 import com.tpk.widgetspro.services.networkusage.BaseWifiDataUsageWidgetService
+import com.tpk.widgetspro.services.sports.SportsWidgetService
 import com.tpk.widgetspro.services.sun.SunSyncService
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
@@ -26,6 +27,7 @@ import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
 import com.tpk.widgetspro.widgets.networkusage.*
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
+import com.tpk.widgetspro.widgets.sports.SportsWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 
 class UpdateReceiver : BroadcastReceiver() {
@@ -49,7 +51,8 @@ class UpdateReceiver : BroadcastReceiver() {
             BaseSimDataUsageWidgetService::class.java,
             SunSyncService::class.java,
             CaffeineService::class.java,
-            MediaMonitorService::class.java
+            MediaMonitorService::class.java,
+            SportsWidgetService::class.java
         )
 
         servicesToStop.forEach { serviceClass ->
@@ -106,6 +109,9 @@ class UpdateReceiver : BroadcastReceiver() {
             if (MusicSimpleWidgetProvider.getWidgetIds(context).isNotEmpty()) {
                 context.startForegroundService(Intent(context, MediaMonitorService::class.java))
             }
+            if (appWidgetManager.getAppWidgetIds(ComponentName(context, SportsWidgetProvider::class.java)).isNotEmpty()) {
+                context.startForegroundService(Intent(context, SportsWidgetService::class.java))
+            }
         } catch (e: Exception) {
         }
     }
@@ -129,7 +135,8 @@ class UpdateReceiver : BroadcastReceiver() {
             AnalogClockWidgetProvider_1::class.java,
             AnalogClockWidgetProvider_2::class.java,
             GifWidgetProvider::class.java,
-            MusicSimpleWidgetProvider::class.java
+            MusicSimpleWidgetProvider::class.java,
+            SportsWidgetProvider::class.java
         )
 
         providers.forEach { provider ->

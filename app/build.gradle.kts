@@ -25,8 +25,8 @@ android {
         applicationId = "com.tpk.widgetspro"
         minSdk = 31
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.2.5"
+        versionCode = 8
+        versionName = "1.2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -91,5 +91,6 @@ dependencies {
     implementation(libs.picasso)
     implementation(libs.androidx.preference.ktx)
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.29")
-    implementation("androidx.media:media:1.7.0")
+    implementation("androidx.media:media:1.7.1")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }

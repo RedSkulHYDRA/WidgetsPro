@@ -172,4 +172,6 @@
     <string name="gif_wigdet_bg">GIF Widget Background</string>
     <string name="bottle_desc">Spin the bottle widget</string>
     <string name="bottle_spinner_description">A fun spin the bottle game widget.</string>
+    <string name="sports_widget_title">Sports Widget</string>
+    <string name="sports_widget_description">Sports Widget</string>
 </resources>

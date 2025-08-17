@@ -48,6 +48,7 @@ import com.tpk.widgetspro.widgets.networkusage.WifiDataUsageWidgetProviderPill
 import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.gif.GifWidgetProvider
 import com.tpk.widgetspro.widgets.music.MusicSimpleWidgetProvider
+import com.tpk.widgetspro.widgets.sports.SportsWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import rikka.shizuku.Shizuku
 
@@ -165,6 +166,9 @@ class AddWidgetsFragment : Fragment() {
         }
         view.findViewById<Button>(R.id.button_spin_the_bottle).setOnClickListener {
             requestWidgetInstallation(BottleSpinnerWidgetProvider::class.java)
+        }
+        view.findViewById<Button>(R.id.button_sports).setOnClickListener {
+            requestWidgetInstallation(SportsWidgetProvider::class.java)
         }
     }
 

@@ -22,6 +22,7 @@ import com.tpk.widgetspro.widgets.notes.NoteWidgetProvider
 import com.tpk.widgetspro.widgets.sun.SunTrackerWidget
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_1
 import com.tpk.widgetspro.widgets.analogclock.AnalogClockWidgetProvider_2
+import com.tpk.widgetspro.widgets.sports.SportsWidgetProvider
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -42,6 +43,7 @@ class BootReceiver : BroadcastReceiver() {
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_1::class.java)
             updateWidgets(context, appWidgetManager, AnalogClockWidgetProvider_2::class.java)
             updateWidgets(context, appWidgetManager, MusicSimpleWidgetProvider::class.java)
+            updateWidgets(context, appWidgetManager, SportsWidgetProvider::class.java)
             startGifAnimationService(context)
         }
     }
